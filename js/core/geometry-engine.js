@@ -144,6 +144,41 @@
     return resultado;
   }
 
+  /* Assinatura da geometria analisada. A base fixa escolhida só vale enquanto
+   * a faca tiver a mesma geometria (mesmo documento, mesmas faces e caixa). */
+  function assinatura(resultado) {
+    if (!resultado) return "";
+    var g = resultado.geometria || {};
+    var meta = g.meta || {};
+    var caixa = g.caixa || {};
+    var topo = resultado.topologia && resultado.topologia.resumo ? resultado.topologia.resumo : {};
+    var faces = resultado.faces && resultado.faces.faces ? resultado.faces.faces : [];
+    var somaAreas = 0;
+    for (var i = 0; i < faces.length; i++) somaAreas += faces[i].areaMm2 || 0;
+    function centesimos(n) {
+      return Math.round((n || 0) * 100);
+    }
+    return [
+      meta.documento || "",
+      (g.caminhos || []).length,
+      topo.faces || faces.length,
+      centesimos(caixa.largura),
+      centesimos(caixa.altura),
+      Math.round(somaAreas)
+    ].join("|");
+  }
+
+  /* Chave curta e estável da faca, usada para guardar/restaurar os ângulos
+   * definidos à mão (documento + geometria). 8 caracteres hexadecimais. */
+  function chaveDobra(resultado) {
+    var texto = typeof resultado === "string" ? resultado : assinatura(resultado);
+    var h = 5381;
+    for (var i = 0; i < texto.length; i++) {
+      h = ((h * 33) ^ texto.charCodeAt(i)) >>> 0;
+    }
+    return ("00000000" + h.toString(16)).slice(-8);
+  }
+
   function resumoTexto(resultado) {
     var t = resultado.topologia;
     if (!t) return "Sem topologia.";
@@ -174,6 +209,8 @@
     carregarGeometria: carregarGeometria,
     analisar: analisar,
     analisarGeometria: analisarGeometria,
+    assinatura: assinatura,
+    chaveDobra: chaveDobra,
     resumoTexto: resumoTexto,
     LOTE_PADRAO: LOTE_PADRAO
   };

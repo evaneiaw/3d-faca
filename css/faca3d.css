@@ -796,6 +796,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border, #e1e1e1);
   font-size: 12px;
@@ -809,6 +810,59 @@ body {
   flex: 1 1 auto;
   font-size: 10px;
   color: var(--text-muted, #707070);
+}
+
+.faca3d-diag-head .faca3d-diag-base {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ok, #12805c);
+  white-space: nowrap;
+}
+
+.faca3d-diag-head .faca3d-diag-base.is-manual {
+  color: #b45309;
+}
+
+/* Botões de salvar/restaurar os ângulos definidos à mão. */
+.faca3d-dobra-salva {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border, #e1e1e1);
+}
+
+/* Barra de escolha da base fixa (fase de seleção/confirmação). */
+.faca3d-base-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid var(--border, #e1e1e1);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+}
+
+.faca3d-base-bar[hidden] {
+  display: none !important;
+}
+
+.faca3d-base-bar span {
+  flex: 1 1 auto;
+  color: #3c4452;
+  line-height: 1.4;
+}
+
+.faca3d-base-bar .faca3d-btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .faca3d-diag-legend {

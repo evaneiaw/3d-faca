@@ -13,6 +13,12 @@ await import("../js/core/contour-builder.js");
 await import("../js/core/face-detector.js");
 await import("../js/core/topology.js");
 await import("../js/core/geometry-engine.js");
+await import("../js/core/structural-lines.js");
+await import("../js/core/hinge-audit.js");
+
+const threeModulo = await import("../js/vendor/three.min.js");
+globalThis.THREE = threeModulo.default || threeModulo;
+await import("../js/view/three3d.js");
 
 const F = globalThis.Faca3D;
 const U = F.geometry.utils;
@@ -306,6 +312,350 @@ resultados.push("TOPOLOGIA");
   ok("area total", quase(topologia.resumo.areaFacesMm2, 100, 1e-6));
   ok("arestas preservam caminho", topologia.arestas[0].caminho === 0);
   ok("sem dependencia de renderer", typeof topologia.faces[0].pontos === "undefined");
+}
+
+/* ------------------------------------------------------- costura e furos */
+resultados.push("COSTURA DE PONTAS");
+{
+  // Retângulo com um vão de 2 mm na borda esquerda (picote da base da aba).
+  const segs = [
+    segReta(0, 0, 0, 10, 0),
+    segReta(1, 10, 0, 10, 10),
+    segReta(2, 10, 10, 0, 10),
+    segReta(3, 0, 10, 0, 2)
+  ];
+  const sem = rodarGeometria(segs, { costuraMm: 0 });
+  ok("sem costura o painel fica aberto", sem.faces.faces.length === 0, "n=" + sem.faces.faces.length);
+  ok("sem costura nao ha pontes", sem.grafo.costuras.length === 0);
+
+  const com = rodarGeometria(segs, { costuraMm: 2.5 });
+  ok("com costura 2,5 mm o painel fecha", com.faces.faces.length === 1, "n=" + com.faces.faces.length);
+  ok("uma ponte registrada", com.grafo.costuras.length === 1, "n=" + com.grafo.costuras.length);
+  ok("area preservada (100)", com.faces.faces.length === 1 && quase(com.faces.faces[0].areaMm2, 100, 1e-6),
+    com.faces.faces.map(function (f) { return f.areaMm2; }).join(","));
+
+  const curta = rodarGeometria(segs, { costuraMm: 1 });
+  ok("costura menor que o vao nao emenda", curta.faces.faces.length === 0, "n=" + curta.faces.faces.length);
+}
+{
+  // A ponte não pode cruzar uma linha existente: a linha horizontal em y=1
+  // cruza a emenda (0,2)-(0,0).
+  const segs = [
+    segReta(0, 0, 0, 10, 0),
+    segReta(1, 10, 0, 10, 10),
+    segReta(2, 10, 10, 0, 10),
+    segReta(3, 0, 10, 0, 2),
+    segReta(4, -5, 1, 5, 1)
+  ];
+  const g = rodarGeometria(segs, { costuraMm: 2.5 });
+  ok("costura nao cruza linha existente", g.grafo.costuras.length === 0, "n=" + g.grafo.costuras.length);
+}
+
+resultados.push("FUROS");
+{
+  // Painel 10x10 com janela 4..6: a janela é FURO, não painel.
+  const segs = [
+    segReta(0, 0, 0, 10, 0),
+    segReta(1, 10, 0, 10, 10),
+    segReta(2, 10, 10, 0, 10),
+    segReta(3, 0, 10, 0, 0),
+    segReta(4, 4, 4, 6, 4),
+    segReta(5, 6, 4, 6, 6),
+    segReta(6, 6, 6, 4, 6),
+    segReta(7, 4, 6, 4, 4)
+  ];
+  const r = rodarGeometria(segs, {});
+  ok("janela vira furo: 1 face", r.faces.faces.length === 1, "n=" + r.faces.faces.length);
+  ok("1 furo registrado", r.faces.furos.length === 1, "n=" + r.faces.furos.length);
+  ok("face externa guarda o poligono do furo",
+    r.faces.faces.length === 1 && r.faces.faces[0].furos && r.faces.faces[0].furos.length === 1);
+  ok("topologia conta o furo", r.topologia.resumo.furos === 1, String(r.topologia.resumo.furos));
+  ok("face do furo nao e painel", r.topologia.faces.length === 1);
+
+  // Duas vezes o mesmo recorte (linhas duplicadas no desenho) = 1 furo.
+  const dobrados = segs.concat([
+    segReta(8, 4, 4, 6, 4),
+    segReta(9, 6, 4, 6, 6),
+    segReta(10, 6, 6, 4, 6),
+    segReta(11, 4, 6, 4, 4)
+  ].map(function (s) {
+    return Object.assign({}, s, { caminho: 1 });
+  }));
+  const rd = rodarGeometria(dobrados, {});
+  ok("recorte redesenhado nao vira 2 furos", rd.faces.furos.length === 1, "n=" + rd.faces.furos.length);
+  ok("arestas duplicadas detectadas", rd.grafo.duplicados.length === 4, "n=" + rd.grafo.duplicados.length);
+  ok("recorte redesenhado continua 1 face", rd.faces.faces.length === 1, "n=" + rd.faces.faces.length);
+}
+{
+  // Dois quadrados lado a lado não são furo um do outro.
+  const segs = [
+    segReta(0, 0, 0, 10, 0),
+    segReta(1, 10, 0, 10, 10),
+    segReta(2, 10, 10, 0, 10),
+    segReta(3, 0, 10, 0, 0),
+    segReta(4, 20, 0, 30, 0),
+    segReta(5, 30, 0, 30, 10),
+    segReta(6, 30, 10, 20, 10),
+    segReta(7, 20, 10, 20, 0)
+  ];
+  const r = rodarGeometria(segs, {});
+  ok("quadrados vizinhos: 2 faces", r.faces.faces.length === 2, "n=" + r.faces.faces.length);
+  ok("quadrados vizinhos: nenhum furo", r.faces.furos.length === 0, "n=" + r.faces.furos.length);
+}
+
+resultados.push("TRIANGULACAO COM FURO");
+{
+  const T = F.view.three3d;
+  const contorno = [
+    { x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }
+  ];
+  const furo = [
+    { x: 4, y: 4 }, { x: 6, y: 4 }, { x: 6, y: 6 }, { x: 4, y: 6 }
+  ];
+  const tri = T.triangularFace({ pontos: contorno, furos: [furo] });
+  ok("triangula face com furo", !!tri && tri.triangulos.length > 0);
+  let area = 0;
+  for (const t of tri.triangulos) {
+    const a = tri.pontos[t[0]], b = tri.pontos[t[1]], c = tri.pontos[t[2]];
+    area += Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2;
+  }
+  ok("area triangulada = 100 - 4", quase(area, 96, 1e-6), String(area));
+  ok("contorno externo preservado", tri.contorno.length === 4);
+  ok("vertices = contorno + furo", tri.pontos.length === 8);
+
+  // Regressão 0.8.0: os índices apontam para a lista combinada. Usar só o
+  // contorno para montar os vértices da normal dava "undefined.x" no painel.
+  const primeiro = tri.triangulos[0];
+  ok("primeiro triangulo tem vertices definidos", primeiro.every(function (k) {
+    return !!tri.pontos[k];
+  }));
+  ok("indices ultrapassam o contorno (lista combinada e obrigatoria)", primeiro.some(function (k) {
+    return k >= tri.contorno.length;
+  }), "indices=" + primeiro.join(","));
+
+  const solido = T.triangularFace({ pontos: contorno });
+  let area2 = 0;
+  for (const t of solido.triangulos) {
+    const a = solido.pontos[t[0]], b = solido.pontos[t[1]], c = solido.pontos[t[2]];
+    area2 += Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2;
+  }
+  ok("sem furo a area continua 100", quase(area2, 100, 1e-6), String(area2));
+}
+
+resultados.push("BASE FIXA (RAIZ DA MONTAGEM)");
+{
+  // Três painéis em sequência, ligados por vinco: 0–1–2. O painel 1 tem duas
+  // dobradiças, então é a raiz automática.
+  function face3(id, x0, arestas) {
+    return {
+      id: id,
+      areaMm2: 100,
+      centro: { x: x0 + 5, y: 5 },
+      pontos: [
+        { x: x0, y: 0 }, { x: x0 + 10, y: 0 },
+        { x: x0 + 10, y: 10 }, { x: x0, y: 10 }
+      ],
+      arestas: arestas,
+      classes: { crease: arestas.length }
+    };
+  }
+  function aresta(id, v0, v1, caminho) {
+    return {
+      id: id, a: v0, b: v1, classe: "crease", spot: "Crease",
+      caminho: caminho, segmento: caminho, indiceNoCaminho: 0,
+      comprimentoMm: 10, tipoOriginal: "reta", fechadoOriginal: false, t0: 0, t1: 1
+    };
+  }
+  function resultado3(painelExtra) {
+    const faces = [
+      face3(0, 0, [0]),
+      face3(1, 10, [0, 1]),
+      face3(2, 20, [1])
+    ];
+    if (painelExtra) {
+      faces.push({
+        id: 3, areaMm2: 50, centro: { x: 40, y: 5 },
+        pontos: [{ x: 35, y: 0 }, { x: 45, y: 0 }, { x: 45, y: 10 }, { x: 35, y: 10 }],
+        arestas: [], classes: {}
+      });
+    }
+    return {
+      faces: {
+        faces: faces,
+        adjacencias: [
+          { a: 0, b: 1, arestas: [0], classes: { crease: 1 } },
+          { a: 1, b: 2, arestas: [1], classes: { crease: 1 } }
+        ]
+      },
+      topologia: {
+        vertices: [
+          { id: 0, x: 10, y: 0 }, { id: 1, x: 10, y: 10 },
+          { id: 2, x: 20, y: 0 }, { id: 3, x: 20, y: 10 }
+        ],
+        arestas: [aresta(0, 0, 1, 0), aresta(1, 2, 3, 1)],
+        resumo: { faces: faces.length }
+      },
+      geometria: {
+        meta: { documento: "sintetico" },
+        caixa: { largura: painelExtra ? 45 : 30, altura: 10 },
+        caminhos: [],
+        segmentos: []
+      }
+    };
+  }
+
+  const auto = F.geometry.hinge.construir(resultado3(false));
+  ok("raiz automática = painel com mais dobradiças (1)", auto.raiz === 1, "raiz=" + auto.raiz);
+  ok("automática marcada como não manual", auto.baseManual === false);
+  ok("automática guarda a raiz automática", auto.raizAutomatica === 1, "n=" + auto.raizAutomatica);
+  ok("3 faces montadas", auto.facesMontadas.length === 3, "n=" + auto.facesMontadas.length);
+
+  const base0 = F.geometry.hinge.construir(resultado3(false), { raiz: 0 });
+  ok("base manual 0 aplicada", base0.raiz === 0 && base0.baseManual === true, "raiz=" + base0.raiz);
+  ok("base manual 0 é a primeira da ordem", base0.ordem[0].face === 0, "n=" + base0.ordem[0].face);
+  ok("base manual 0 não tem pai", base0.ordem[0].pai === null);
+  ok("base manual 0 monta os 3 painéis", base0.facesMontadas.length === 3, "n=" + base0.facesMontadas.length);
+  ok("hierarquia recalculada a partir de 0", base0.ordem[1].pai === 0, "pai=" + base0.ordem[1].pai);
+
+  const base2 = F.geometry.hinge.construir(resultado3(false), { raiz: 2 });
+  ok("base manual 2 aplicada", base2.raiz === 2 && base2.ordem[0].face === 2, "raiz=" + base2.raiz);
+  ok("base 2 monta os 3 painéis", base2.facesMontadas.length === 3, "n=" + base2.facesMontadas.length);
+  ok("base 2: painel 1 é filho de 2", base2.ordem[1].face === 1 && base2.ordem[1].pai === 2,
+    "face=" + base2.ordem[1].face + " pai=" + base2.ordem[1].pai);
+
+  const invalida = F.geometry.hinge.construir(resultado3(false), { raiz: 99 });
+  ok("base inexistente cai na automática", invalida.raiz === 1 && invalida.baseManual === false,
+    "raiz=" + invalida.raiz);
+  ok("base inexistente informa motivo", /não existe/.test(invalida.motivoBase || ""), invalida.motivoBase);
+
+  const foraComponente = F.geometry.hinge.construir(resultado3(true), { raiz: 3 });
+  ok("painel fora do componente não vira base", foraComponente.raiz === 1 && foraComponente.baseManual === false,
+    "raiz=" + foraComponente.raiz);
+  ok("painel fora do componente informa motivo", /vinco/.test(foraComponente.motivoBase || ""),
+    foraComponente.motivoBase);
+
+  // Assinatura: a base só continua valendo se a geometria não mudou.
+  const resA = resultado3(false);
+  const resB = resultado3(false);
+  const resC = resultado3(true);
+  ok("assinatura estável para a mesma geometria",
+    F.geometry.engine.assinatura(resA) === F.geometry.engine.assinatura(resB),
+    F.geometry.engine.assinatura(resA) + " / " + F.geometry.engine.assinatura(resB));
+  ok("assinatura muda quando a faca muda",
+    F.geometry.engine.assinatura(resA) !== F.geometry.engine.assinatura(resC),
+    F.geometry.engine.assinatura(resA) + " / " + F.geometry.engine.assinatura(resC));
+
+  // Transformação real: a raiz escolhida fica imóvel em 0°, 90° e 180° e as
+  // demais faces giram em torno das próprias dobradiças (a base muda de fato).
+  const T = F.view.three3d;
+  const THREE = globalThis.THREE;
+  function matrizPerfeita(m) {
+    const e = m.elements;
+    return (
+      Math.abs(e[0] - 1) < 1e-9 && Math.abs(e[5] - 1) < 1e-9 &&
+      Math.abs(e[10] - 1) < 1e-9 && Math.abs(e[15] - 1) < 1e-9 &&
+      Math.abs(e[12]) < 1e-9 && Math.abs(e[13]) < 1e-9 && Math.abs(e[14]) < 1e-9
+    );
+  }
+  function erroEixo(mont, matrizes) {
+    let pior = 0;
+    for (let i = 1; i < mont.ordem.length; i++) {
+      const s = mont.ordem[i];
+      if (s.rigida) continue;
+      const mp = matrizes[s.pai];
+      const mc = matrizes[s.face];
+      for (const p of [s.p1, s.p2]) {
+        const a = new THREE.Vector3(p.x, p.y, 0).applyMatrix4(mp);
+        const b = new THREE.Vector3(p.x, p.y, 0).applyMatrix4(mc);
+        pior = Math.max(pior, a.distanceTo(b));
+      }
+    }
+    return pior;
+  }
+  for (const ang of [0, 90, 180]) {
+    const mr0 = T.matrizesDaMontagem(THREE, base0, {}, {}, ang, {});
+    ok(
+      "base manual 0 imóvel em " + ang + "°",
+      matrizPerfeita(mr0[base0.raiz]),
+      "root=" + base0.raiz
+    );
+    ok("eixos preservados em " + ang + "° (base 0)", erroEixo(base0, mr0) < 1e-6,
+      "erro=" + erroEixo(base0, mr0));
+
+    const mr2 = T.matrizesDaMontagem(THREE, base2, {}, {}, ang, {});
+    ok("painel 2 imóvel em " + ang + "°", matrizPerfeita(mr2[base2.raiz]), "raiz=" + base2.raiz);
+    ok("eixos preservados em " + ang + "° (base 2)", erroEixo(base2, mr2) < 1e-6,
+      "erro=" + erroEixo(base2, mr2));
+
+    if (ang === 90) {
+      // O painel 0 é filho na base 2: precisa sair do plano (z ≠ 0).
+      const v = new THREE.Vector3(5, 5, 0).applyMatrix4(mr2[0]);
+      ok("base 2: painel 0 acompanha a dobra (z ≠ 0)", Math.abs(v.z) > 1, "z=" + v.z);
+      const v2 = new THREE.Vector3(25, 5, 0).applyMatrix4(mr2[2]);
+      ok("base 2: raiz 2 continua em z=0", Math.abs(v2.z) < 1e-9, "z=" + v2.z);
+    }
+  }
+}
+
+resultados.push("ÂNGULOS SALVOS (dobras)");
+{
+  function resultadoDobra(extra) {
+    const faces = extra ? [{ id: 0, areaMm2: 100 }, { id: 1, areaMm2: 50 }] : [{ id: 0, areaMm2: 100 }];
+    return {
+      geometria: {
+        meta: { documento: "sintetico" },
+        caminhos: [],
+        caixa: { largura: extra ? 45 : 30, altura: 10 }
+      },
+      topologia: { resumo: { faces: faces.length } },
+      faces: { faces: faces }
+    };
+  }
+  const resA = resultadoDobra(false);
+  const resB = resultadoDobra(true);
+  const chaveA = F.geometry.engine.chaveDobra(resA);
+  ok("chave da dobra tem 8 hexadecimais", /^[0-9a-f]{8}$/.test(chaveA), chaveA);
+  ok("chave estável para a mesma geometria",
+    chaveA === F.geometry.engine.chaveDobra(resA), chaveA);
+  ok("chave muda quando a faca muda",
+    chaveA !== F.geometry.engine.chaveDobra(resB), chaveA + " / " + F.geometry.engine.chaveDobra(resB));
+  ok("chave aceita a assinatura em texto",
+    F.geometry.engine.chaveDobra(F.geometry.engine.assinatura(resA)) === chaveA);
+
+  const montagem = {
+    ordem: [
+      { face: 3, pai: null, rigida: false },
+      { face: 1, pai: 3, rigida: false },
+      { face: 2, pai: 1, rigida: false },
+      { face: 5, pai: 1, rigida: true }
+    ]
+  };
+  const articulaveis = { 1: true, 2: true };
+  const cfg = {
+    anguloGlobal: 90,
+    angulos: { 1: 30 },
+    sinais: { 1: -1, 2: 1 }
+  };
+  const norm = F.view.three3d.normalizarDobras(cfg, montagem, articulaveis);
+  ok("face com ângulo próprio preservado", norm.angulos[1] === 30, "n=" + norm.angulos[1]);
+  ok("face sem ângulo usa o global", norm.angulos[2] === 90, "n=" + norm.angulos[2]);
+  ok("face rígida não recebe dobra", norm.angulos[5] === undefined);
+  ok("raiz não recebe dobra", norm.angulos[3] === undefined);
+  ok("ângulo global preservado", norm.angulo === 90, "n=" + norm.angulo);
+  ok("sentido -1 só da face articulável indicada",
+    norm.sinaisOverride[1] === -1 && norm.sinaisOverride[2] === undefined,
+    JSON.stringify(norm.sinaisOverride));
+
+  const limite = F.view.three3d.normalizarDobras(
+    { angulos: { 1: -10, 2: 200 }, anguloGlobal: 90 },
+    montagem,
+    articulaveis
+  );
+  ok("ângulos limitados a 0..180", limite.angulos[1] === 0 && limite.angulos[2] === 180,
+    limite.angulos[1] + " / " + limite.angulos[2]);
+
+  const vazio = F.view.three3d.normalizarDobras(null, montagem, articulaveis);
+  ok("config vazia zera as dobras", vazio.angulos[1] === 0 && vazio.angulos[2] === 0);
 }
 
 /* -------------------------------------------------------------------- fim */

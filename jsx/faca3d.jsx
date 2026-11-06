@@ -446,12 +446,20 @@ function f3dGeoClasse(cor) {
     var nome = f3dNomeSpot(cor);
     if (!nome) return { classe: "unknown", spot: "" };
     var n = String(nome).toLowerCase();
-    if (n.indexOf("crease") >= 0 || n.indexOf("vinco") >= 0 || n.indexOf("vincos") >= 0) {
+    // Substrings para classificação de vinco/crease - padrões expandidos para incluir nomes comuns
+    var vincoPattern = /crease|vinco|vincos|dobra|dobradiça|hinge|valley|mountain/i;
+    // Substrings para classificação de corte/cut - padrões expandidos
+    var cutPattern = /cut|corte|cortar|cortadura|cutline|outline/i;
+    if (vincoPattern.test(n)) {
         return { classe: "crease", spot: nome };
     }
-    if (n.indexOf("cut") >= 0 || n.indexOf("corte") >= 0) {
+    if (cutPattern.test(n)) {
         return { classe: "cut", spot: nome };
     }
+    // Fallback: se o nome do Spot Color não corresponder aos padrões acima,
+    // classificar como "other". Caminhos "other" não são utilizados na montagem 3D
+    // que prioriza vincos, mas esta função mantém a portabilidade para documentos
+    // com nomes de Spot Color variados.
     return { classe: "other", spot: nome };
 }
 
@@ -973,6 +981,75 @@ function faca3dArtes() {
 
 function faca3dExportarArte(indicesCsv, pasta, alvoPx) {
     return f3dExportarArte(indicesCsv, pasta, alvoPx);
+}
+
+/* ------------------------------------------------- dobras salvas (ângulos)
+ *
+ * O painel guarda no disco os ângulos/sentidos que o usuário definiu à mão,
+ * por faca (chave = documento + assinatura da geometria). Fica em
+ * %APPDATA%\MazurkyTools\faca3d\dobras\<chave>.json — sobrevive a reiniciar
+ * o Illustrator. O ExtendScript só grava/lê texto; o JSON é montado no painel.
+ */
+function f3dPastaDobras() {
+    var pasta = String(Folder.userData.fsName) + "/MazurkyTools/faca3d/dobras";
+    // Cria nível a nível: Folder.create() não garante os pais no ES3.
+    var partes = pasta.split("/");
+    var atual = partes[0];
+    for (var i = 1; i < partes.length; i++) {
+        if (!partes[i]) continue;
+        atual += "/" + partes[i];
+        var f = new Folder(atual);
+        if (!f.exists) {
+            try { f.create(); } catch (e) {}
+        }
+    }
+    return new Folder(pasta);
+}
+
+function f3dArquivoDobras(chave) {
+    var nome = String(chave === null || chave === undefined ? "" : chave)
+        .replace(/[^A-Za-z0-9_-]/g, "");
+    if (!nome) return null;
+    var dir = f3dPastaDobras();
+    return new File(dir.fsName + "/" + nome + ".json");
+}
+
+function faca3dSalvarDobras(chave, texto) {
+    try {
+        var f = f3dArquivoDobras(chave);
+        if (!f) return "ERRO:chave vazia";
+        f.encoding = "UTF-8";
+        if (!f.open("w")) return "ERRO:nao foi possivel abrir para escrita";
+        f.write(String(texto === null || texto === undefined ? "" : texto));
+        f.close();
+        return "ok";
+    } catch (e) {
+        return "ERRO:" + (e && e.message ? e.message : String(e));
+    }
+}
+
+function faca3dLerDobras(chave) {
+    try {
+        var f = f3dArquivoDobras(chave);
+        if (!f || !f.exists) return "";
+        f.encoding = "UTF-8";
+        if (!f.open("r")) return "";
+        var t = f.read();
+        f.close();
+        return String(t === null || t === undefined ? "" : t);
+    } catch (e) {
+        return "";
+    }
+}
+
+function faca3dApagarDobras(chave) {
+    try {
+        var f = f3dArquivoDobras(chave);
+        if (f && f.exists) f.remove();
+        return "ok";
+    } catch (e) {
+        return "ERRO:" + (e && e.message ? e.message : String(e));
+    }
 }
 
 function faca3dDocAtivo() {

@@ -320,6 +320,78 @@
       }
     }
 
+    // 5b) Costura de pontas soltas: micro-falhas do desenho (picotes nas bases
+    //     das abas) deixam a borda de um painel aberta e o painel deixa de ser
+    //     face. Só liga ponta de grau 1 a um vértice a até costuraMm, em linha
+    //     reta que não cruza nenhuma aresta existente. costuraMm = 0 desliga.
+    var costuras = [];
+    if (tol.costuraMm > 0) {
+      function cruzaAlgumaAresta(p, q, noA, noB) {
+        for (var e = 0; e < arestas.length; e++) {
+          var ae = arestas[e];
+          if (ae.a === noA || ae.b === noA || ae.a === noB || ae.b === noB) continue;
+          for (var k = 1; k < ae.pontos.length; k++) {
+            var r = U.intersecaoRetas(p, q, ae.pontos[k - 1], ae.pontos[k], tol.intersecaoMm);
+            if (!r) continue;
+            if (r.colinear && r.sobreposicao) return true;
+            if (r.t > 0.001 && r.t < 0.999 && r.u > 0.001 && r.u < 0.999) return true;
+          }
+        }
+        return false;
+      }
+
+      var pontas = [];
+      for (i = 0; i < nos.length; i++) {
+        if (nos[i].arestas.length === 1) pontas.push(i);
+      }
+      var paresCostura = [];
+      for (i = 0; i < pontas.length; i++) {
+        var noPonta = pontas[i];
+        var arestaPonta = arestas[nos[noPonta].arestas[0]];
+        for (j = 0; j < nos.length; j++) {
+          if (j === noPonta) continue;
+          if (arestaPonta && (arestaPonta.a === j || arestaPonta.b === j)) continue;
+          var dCostura = U.distancia(nos[noPonta], nos[j]);
+          if (dCostura <= tol.juncaoMm || dCostura > tol.costuraMm) continue;
+          paresCostura.push({ a: noPonta, b: j, d: dCostura });
+        }
+      }
+      paresCostura.sort(function (x, y) {
+        return x.d - y.d;
+      });
+      var nosUsadosCostura = {};
+      for (i = 0; i < paresCostura.length; i++) {
+        var pc = paresCostura[i];
+        if (nosUsadosCostura[pc.a] || nosUsadosCostura[pc.b]) continue;
+        var pA = { x: nos[pc.a].x, y: nos[pc.a].y };
+        var pB = { x: nos[pc.b].x, y: nos[pc.b].y };
+        if (cruzaAlgumaAresta(pA, pB, pc.a, pc.b)) continue;
+        var ponte = {
+          id: arestas.length,
+          origem: -1,
+          caminho: -1,
+          classe: "cut",
+          spot: "Costura",
+          tipoOriginal: "reta",
+          fechadoOriginal: false,
+          indiceNoCaminho: 0,
+          pontos: [pA, pB],
+          comprimentoMm: pc.d,
+          t0: 0,
+          t1: 1,
+          a: pc.a,
+          b: pc.b,
+          ponte: true
+        };
+        arestas.push(ponte);
+        nos[pc.a].arestas.push(ponte.id);
+        nos[pc.b].arestas.push(ponte.id);
+        nosUsadosCostura[pc.a] = true;
+        nosUsadosCostura[pc.b] = true;
+        costuras.push({ a: pc.a, b: pc.b, comprimentoMm: U.arredondar(pc.d, 3) });
+      }
+    }
+
     // 6) Duplicados e sobrepostos.
     var duplicados = [];
     var sobrepostos = [];
@@ -338,11 +410,29 @@
           var meio2 = outro.pontos[Math.floor(outro.pontos.length / 2)];
           if (U.distancia(meio1, meio2) <= tol.juncaoMm) {
             duplicados.push({ aresta: ar1.id, de: outro.id });
+            // A aresta duplicada sai do grafo: mantê-la cria ciclos degenerados
+            // e impede a face (inclusive o furo) de ser detectada.
+            ar1.duplicada = true;
             break;
           }
         }
       }
       porPar[chaveParNo].push(i);
+    }
+
+    // Tira as arestas duplicadas das listas de adjacência dos vértices.
+    for (i = 0; i < arestas.length; i++) {
+      var arDup = arestas[i];
+      if (!arDup.duplicada) continue;
+      var limparNo = function (no) {
+        if (!no) return;
+        var listaNo = nos[no].arestas;
+        for (var kk = listaNo.length - 1; kk >= 0; kk--) {
+          if (listaNo[kk] === arDup.id) listaNo.splice(kk, 1);
+        }
+      };
+      limparNo(arDup.a);
+      limparNo(arDup.b);
     }
 
     // Sobreposição: trechos colineares do mesmo caminho que se cobrem.
@@ -494,7 +584,8 @@
       sobrepostos: sobrepostos,
       interseccoes: interseccoes,
       ambiguidades: ambiguidades,
-      invalidos: invalidos
+      invalidos: invalidos,
+      costuras: costuras
     };
   }
 

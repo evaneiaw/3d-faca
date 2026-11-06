@@ -56,7 +56,8 @@
     return Math.min(a, b) + ":" + Math.max(a, b);
   }
 
-  function construir(res) {
+  function construir(res, opcoes) {
+    var opt = opcoes || {};
     var faces = (res.faces && res.faces.faces) || [];
     var adj = (res.faces && res.faces.adjacencias) || [];
     var topo = res.topologia;
@@ -308,6 +309,35 @@
       if (grauF > grauR || (grauF === grauR && f.areaMm2 > raiz.areaMm2)) raiz = f;
     }
 
+    // Base fixa escolhida manualmente no diagnóstico. A raiz real da árvore
+    // passa a ser esse painel (é dela que as matrizes de dobra partem: a raiz
+    // fica imóvel e as demais faces giram em relação a ela).
+    var raizAutomatica = raiz ? raiz.id : null;
+    var raizSolicitada = null;
+    var baseManual = false;
+    var motivoBase = null;
+    if (opt && opt.raiz !== undefined && opt.raiz !== null && opt.raiz !== "") {
+      var pedida = Number(opt.raiz);
+      if (isFinite(pedida)) raizSolicitada = pedida;
+    }
+    if (raizSolicitada !== null) {
+      var facePedida = mapaFaces[raizSolicitada];
+      if (!facePedida) {
+        motivoBase =
+          "O painel " + raizSolicitada + " não existe nesta faca (pode ter mudado ao reler o documento).";
+      } else if (melhorGrupo.indexOf(raizSolicitada) < 0) {
+        motivoBase =
+          "O painel " + raizSolicitada +
+          " não está ligado por vinco ao componente principal (só por corte); não pode ser a base.";
+      } else if (!grau[raizSolicitada]) {
+        motivoBase =
+          "O painel " + raizSolicitada + " não tem dobradiça; não pode ser a base fixa.";
+      } else {
+        raiz = facePedida;
+        baseManual = true;
+      }
+    }
+
     var ordem = [];
     var visitados = {};
     var fora = [];
@@ -538,6 +568,10 @@
 
     return {
       raiz: raiz ? raiz.id : null,
+      raizAutomatica: raizAutomatica,
+      raizSolicitada: raizSolicitada,
+      baseManual: baseManual,
+      motivoBase: motivoBase,
       ordem: ordem,
       facesMontadas: montadas,
       fora: fora,

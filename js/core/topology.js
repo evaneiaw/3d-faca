@@ -99,7 +99,8 @@
         centro: { x: U.arredondar(fc.centro.x, 3), y: U.arredondar(fc.centro.y, 3) },
         arestas: fc.arestas.slice(),
         classes: fc.classes,
-        lados: fc.pontos.length
+        lados: fc.pontos.length,
+        furos: fc.furos ? fc.furos.length : 0
       });
     }
 
@@ -140,6 +141,9 @@
         ambiguidades: grafo.ambiguidades.length,
         invalidos: grafo.invalidos.length,
         regioesAbertas: faces.regioesAbertas.length,
+        furos: faces.furos ? faces.furos.length : 0,
+        facesDuplicadas: faces.duplicadas ? faces.duplicadas.length : 0,
+        costuras: grafo.costuras ? grafo.costuras.length : 0,
         areaFacesMm2: U.arredondar(areaTotal, 3),
         caixa: geometria.caixa,
         tolerancias: grafo.tolerancias

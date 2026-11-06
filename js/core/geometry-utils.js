@@ -28,7 +28,15 @@
     curvaMm: 0.02,       // erro máximo ao achatar uma Bézier
     intersecaoMm: 0.01,  // folga para considerar interseção real
     areaMinMm2: 0.01,    // faces menores que isso são descartadas
-    anguloMaxGraus: 35   // desvio máximo para continuar um contorno
+    anguloMaxGraus: 35,  // desvio máximo para continuar um contorno
+    /* Costura de pontas soltas: fecha micro-falhas do desenho (picotes nas
+     * bases das abas) que impedem um painel de virar face. 0 desliga; o painel
+     * liga com 2,5 mm. Só costura ponta solta (grau 1) com outra ponta próxima,
+     * em linha reta que não cruza nenhuma aresta existente. */
+    costuraMm: 0,
+    /* Faces aninhadas menores que isso (mm²) continuam sendo painéis; acima,
+     * e totalmente contidas em outra face, viram FURO da face externa. */
+    furoAreaMinMm2: 1
   };
 
   function copiarTolerancias(extra) {

@@ -9,7 +9,13 @@
 (function () {
   "use strict";
 
-  var VERSAO = "0.7.6";
+  var VERSAO = "0.8.0";
+
+  /* Costura de micro-falhas do desenho (picotes nas bases das abas): a borda
+   * de um painel fica com um vão pequeno e o painel deixa de ser face. Até
+   * este limite a ponta solta é emendada por uma reta curta que não cruza
+   * nenhuma linha existente. 0 desliga (o padrão do motor). */
+  var COSTURA_MM = 2.5;
   /* Funciona dos dois jeitos: injetado pelo hub (raiz da extensão) ou aberto
    * como painel próprio (convertidos/faca3d/faca3d.html). */
   var BASE = (function () {
@@ -61,7 +67,14 @@
     diag: null,
     diagAberto: false,
     docNomeAtual: null,
-    ultimaLeitura: 0
+    ultimaLeitura: 0,
+    /* Base fixa escolhida manualmente (id da face) e assinatura da geometria
+     * em que ela foi escolhida. Se a faca mudar, a base é descartada. */
+    baseFixa: null,
+    assinaturaGeo: "",
+    modoBase: false,
+    baseCandidata: null,
+    dobrasSalvas: null
   };
 
   function el(id) {
@@ -494,6 +507,11 @@
   }
 
   function aoSelecionarFace(face) {
+    if (estado.modoBase) {
+      // Em modo de escolha da base, o clique no 3D define o painel candidato.
+      if (face !== null && face !== undefined) escolherPainelBase(face, "3d");
+      return;
+    }
     estado.faceSelecionada = face === null || face === undefined ? null : Number(face);
     estado.facesSelecionadas = estado.viewer3d ? estado.viewer3d.facesSelecionadas() : [];
     if (estado.faceSelecionada !== null) cancelarAnimacao();
@@ -595,15 +613,21 @@
     if (!estado.diag) {
       estado.diag = F.view.diagnostico.criar({
         host: el("faca3dDiagCanvas"),
-        aoSelecionar: mostrarDetalheVinco
+        aoSelecionar: mostrarDetalheVinco,
+        aoSelecionarFace: function (faceId) {
+          escolherPainelBase(faceId, "diagnostico");
+        }
       });
     }
     // Precisa estar visível ANTES de desenhar: o canvas oculto tem tamanho 0.
     el("faca3dDiag").hidden = false;
     estado.diagAberto = true;
     estado.diag.desenhar(estado.res, m);
+    estado.diag.definirModoBase(estado.modoBase);
+    estado.diag.definirCandidatoBase(estado.modoBase ? estado.baseCandidata : null);
     el("faca3dDiagResumo").textContent = resumoVincos(m);
     mostrarDetalheVinco(null);
+    atualizarBaseUI();
     F.diagAtual = estado.diag;
     requestAnimationFrame(function () {
       if (estado.diag && estado.diagAberto && estado.res) {
@@ -642,6 +666,12 @@
     if (cruz) texto += " · " + cruz + " contato(s)/cruzamento(s) entre faces (ver diagnóstico)";
     texto += ".";
     texto += " Fonte: camada FACA.";
+    var infoBase = baseInfoAtual();
+    if (infoBase) {
+      texto +=
+        " Base fixa: painel " + infoBase.raiz +
+        (infoBase.manual ? " (escolhida no diagnóstico)" : " (automática)") + ".";
+    }
     nota.textContent = texto;
   }
 
@@ -771,7 +801,26 @@
     }
 
     var viewer = garantirViewer3D();
-    viewer.desenhar(res);
+    // Assinatura da geometria: a base fixa manual só vale para a mesma faca.
+    var assinatura =
+      F.geometry && F.geometry.engine && F.geometry.engine.assinatura
+        ? F.geometry.engine.assinatura(res)
+        : "";
+    if (estado.baseFixa !== null && assinatura !== estado.assinaturaGeo) {
+      estado.baseFixa = null;
+      estado.modoBase = false;
+      estado.baseCandidata = null;
+      esconderBarraBase();
+      setStatus("A geometria da faca mudou: base fixa anterior descartada (voltou à automática).", "err");
+    }
+    estado.assinaturaGeo = assinatura;
+    if (estado.modoBase) {
+      estado.modoBase = false;
+      estado.baseCandidata = null;
+      esconderBarraBase();
+      if (estado.diag) estado.diag.definirModoBase(false);
+    }
+    viewer.desenhar(res, { raiz: estado.baseFixa });
     F.viewer3dAtual = viewer;
     var m = viewer.montagem();
     var caixaPt = res.geometria && res.geometria.caixaPt;
@@ -782,8 +831,10 @@
     estado.faceSelecionada = null;
     estado.facesSelecionadas = [];
     estado.sinalFace = 1;
-    montarListaFaces();
-    atualizarFaceUI();    var vistaSel = el("faca3dVista");
+    montarListaFaces(false);
+    atualizarFaceUI();
+    atualizarBaseUI();
+    var vistaSel = el("faca3dVista");
     if (vistaSel) vistaSel.value = "baixo";
 
     // Aplica o perfil para medir contatos e mostrar a nota no estado final.
@@ -799,22 +850,41 @@
     }
 
     carregarArtes();
+
+    // Restaura os ângulos que o usuário salvou para esta faca (se existirem).
+    estado.dobrasSalvas = null;
+    atualizarBotoesDobra();
+    restaurarDobras(true);
   }
 
-  function montarListaFaces() {
+  function montarListaFaces(paraBase) {
     var sel = el("faca3dFaceLista");
     if (!sel || !estado.viewer3d) return;
-    var faces = estado.viewer3d.articulaveis();
+    var faces;
+    if (paraBase) {
+      var m = estado.viewer3d.montagem();
+      faces = m && m.facesMontadas ? m.facesMontadas.slice() : [];
+    } else {
+      faces = estado.viewer3d.articulaveis();
+    }
     var arts = estado.viewer3d.articulacoes ? estado.viewer3d.articulacoes() : [];
     var pai = {};
     for (var i = 0; i < arts.length; i++) pai[arts[i].faceFilho] = arts[i].facePai;
-    var html = '<option value="">todas as dobras</option>';
+    var info = baseInfoAtual();
+    var html =
+      '<option value="">' + (paraBase ? "escolha o painel base" : "todas as dobras") + "</option>";
     for (var j = 0; j < faces.length; j++) {
       var f = faces[j];
+      var extra;
+      if (paraBase) {
+        extra = info && info.raiz === f
+          ? " (base atual)"
+          : pai[f] === undefined ? "" : " (de " + pai[f] + ")";
+      } else {
+        extra = pai[f] === undefined ? "" : " (de " + pai[f] + ")";
+      }
       html +=
-        '<option value="' + f + '">face ' + f +
-        (pai[f] === undefined ? "" : " (de " + pai[f] + ")") +
-        "</option>";
+        '<option value="' + f + '">' + (paraBase ? "painel " : "face ") + f + extra + "</option>";
     }
     sel.innerHTML = html;
   }
@@ -842,7 +912,7 @@
       }
     }
     var seletor = el("faca3dFaceLista");
-    if (seletor && seletor.options.length) {
+    if (seletor && seletor.options.length && !estado.modoBase) {
       var primeira = seletor.options[0];
       primeira.textContent =
         lista.length > 1 ? lista.length + " faces · " + lista.join(", ") : "todas as dobras";
@@ -852,6 +922,301 @@
       b.disabled = !lista.length;
       b.textContent = estado.sinalFace > 0 ? "Sentido +" : "Sentido -";
     }
+  }
+
+  /* ------------------------------------------------------ base fixa (3D) */
+
+  function baseInfoAtual() {
+    return estado.viewer3d && estado.viewer3d.base ? estado.viewer3d.base() : null;
+  }
+
+  function facesMontadasAtuais() {
+    var m = estado.viewer3d && estado.viewer3d.montagem ? estado.viewer3d.montagem() : null;
+    return m && m.facesMontadas ? m.facesMontadas.slice() : [];
+  }
+
+  function atualizarBaseUI() {
+    var info = baseInfoAtual();
+    var rotulo = el("faca3dDiagBase");
+    if (rotulo) {
+      if (!info) {
+        rotulo.textContent = "Base fixa atual: —";
+        rotulo.className = "faca3d-diag-base";
+      } else if (info.manual) {
+        rotulo.textContent = "Base fixa atual: Painel " + info.raiz + " (manual)";
+        rotulo.className = "faca3d-diag-base is-manual";
+      } else {
+        rotulo.textContent = "Base fixa atual: Painel " + info.raiz + " (automática)";
+        rotulo.className = "faca3d-diag-base";
+      }
+    }
+    var auto = el("faca3dBtnBaseAuto");
+    if (auto) auto.disabled = !info || !info.manual;
+    if (estado.diag) {
+      estado.diag.definirBaseAtual(info ? info.raiz : null);
+      estado.diag.definirCandidatoBase(estado.modoBase ? estado.baseCandidata : null);
+    }
+  }
+
+  function mostrarBarraBase(texto, comConfirmar) {
+    var bar = el("faca3dBaseBar");
+    var txt = el("faca3dBaseBarText");
+    var ok = el("faca3dBaseBarOk");
+    if (!bar || !txt) return;
+    txt.textContent = texto;
+    bar.hidden = false;
+    if (ok) ok.disabled = !comConfirmar;
+  }
+
+  function esconderBarraBase() {
+    var bar = el("faca3dBaseBar");
+    if (bar) bar.hidden = true;
+  }
+
+  function entrarModoBase() {
+    if (!estado.res || !estado.viewer3d) {
+      setStatus("Leia a faca antes de escolher a base fixa.", "err");
+      return;
+    }
+    if (estado.modoBase) return;
+    estado.modoBase = true;
+    estado.baseCandidata = null;
+    montarListaFaces(true);
+    if (estado.viewer3d.selecionarFace) estado.viewer3d.selecionarFace(null);
+    if (estado.diag) {
+      estado.diag.definirModoBase(true);
+      estado.diag.definirCandidatoBase(null);
+    }
+    mostrarBarraBase(
+      "Escolha o painel que ficará imóvel: clique no painel 3D, clique num painel no diagnóstico " +
+        "ou use a lista Face. Depois confirme.",
+      false
+    );
+    setStatus("Escolha da base fixa: clique no painel desejado.", "ok");
+  }
+
+  function escolherPainelBase(faceId, origem) {
+    if (!estado.modoBase) return;
+    var id = faceId === null || faceId === undefined ? null : Number(faceId);
+    if (id === null || !isFinite(id)) return;
+    if (facesMontadasAtuais().indexOf(id) < 0) {
+      setStatus("O painel " + id + " não faz parte da montagem.", "err");
+      return;
+    }
+    var jaEra = estado.baseCandidata === id;
+    estado.baseCandidata = id;
+    if (!jaEra && estado.viewer3d && estado.viewer3d.selecionarFace) {
+      estado.viewer3d.selecionarFace(id);
+    }
+    if (estado.diag) estado.diag.definirCandidatoBase(id);
+    if (origem !== "lista") {
+      var sel = el("faca3dFaceLista");
+      if (sel) sel.value = String(id);
+    }
+    mostrarBarraBase("Definir Painel " + id + " como base fixa?", true);
+  }
+
+  function confirmarBase() {
+    if (!estado.modoBase || estado.baseCandidata === null) return;
+    var id = estado.baseCandidata;
+    if (!estado.viewer3d || !estado.viewer3d.definirBase) return;
+    var r = estado.viewer3d.definirBase(id);
+    if (!r || !r.ok) {
+      var motivo = r && r.motivo ? r.motivo : "Não foi possível usar esse painel como base.";
+      mostrarBarraBase(motivo + " Escolha outro painel ou cancele.", false);
+      setStatus(motivo, "err");
+      return;
+    }
+    estado.baseFixa = id;
+    estado.modoBase = false;
+    estado.baseCandidata = null;
+    esconderBarraBase();
+    if (estado.diag) {
+      estado.diag.definirModoBase(false);
+      estado.diag.definirCandidatoBase(null);
+    }
+    montarListaFaces(false);
+    atualizarFaceUI();
+    atualizarBaseUI();
+    var faces = estado.res && estado.res.faces ? estado.res.faces.faces.length : 0;
+    montarNota(estado.viewer3d.montagem(), faces);
+    setStatus("Base fixa: Painel " + id + " (fica imóvel ao dobrar).", "ok");
+    registrarLog("faca3d", "base fixa manual = painel " + id);
+  }
+
+  function cancelarBase() {
+    estado.modoBase = false;
+    estado.baseCandidata = null;
+    esconderBarraBase();
+    if (estado.diag) {
+      estado.diag.definirModoBase(false);
+      estado.diag.definirCandidatoBase(null);
+    }
+    if (estado.viewer3d && estado.viewer3d.selecionarFace) estado.viewer3d.selecionarFace(null);
+    montarListaFaces(false);
+    atualizarBaseUI();
+    setStatus("Escolha da base fixa cancelada.", "ok");
+  }
+
+  function voltarBaseAutomatica() {
+    if (!estado.viewer3d || !estado.viewer3d.definirBaseAutomatica) return;
+    var r = estado.viewer3d.definirBaseAutomatica();
+    if (!r || !r.ok) {
+      setStatus("Não foi possível voltar à base automática.", "err");
+      return;
+    }
+    estado.baseFixa = null;
+    estado.modoBase = false;
+    estado.baseCandidata = null;
+    esconderBarraBase();
+    if (estado.diag) {
+      estado.diag.definirModoBase(false);
+      estado.diag.definirCandidatoBase(null);
+    }
+    montarListaFaces(false);
+    atualizarFaceUI();
+    atualizarBaseUI();
+    var faces = estado.res && estado.res.faces ? estado.res.faces.faces.length : 0;
+    montarNota(estado.viewer3d.montagem(), faces);
+    setStatus("Base automática: Painel " + r.raiz + ".", "ok");
+    registrarLog("faca3d", "base fixa = automatica (painel " + r.raiz + ")");
+  }
+
+  /* ------------------------------------------- ângulos salvos (por faca) */
+
+  function chaveDobrasAtual() {
+    if (!estado.res || !F.geometry || !F.geometry.engine || !F.geometry.engine.chaveDobra) return "";
+    var chave = F.geometry.engine.chaveDobra(estado.res);
+    var doc = String(estado.docNomeAtual || "faca").replace(/[^A-Za-z0-9]+/g, "-");
+    if (doc.length > 40) doc = doc.slice(0, 40);
+    if (!doc) doc = "faca";
+    return doc + "-" + chave;
+  }
+
+  function contarDobras(cfg) {
+    var n = 0;
+    if (!cfg || !cfg.angulos) return 0;
+    for (var f in cfg.angulos) {
+      if (cfg.angulos.hasOwnProperty(f)) n++;
+    }
+    return n;
+  }
+
+  function atualizarBotoesDobra() {
+    var b = el("faca3dBtnRestaurarDobra");
+    if (!b) return;
+    if (estado.dobrasSalvas) {
+      b.title = "Restaurar os ângulos salvos (" + contarDobras(estado.dobrasSalvas) + " dobra(s))";
+    } else {
+      b.title = "Restaurar os ângulos salvos desta faca";
+    }
+  }
+
+  function coletarDobras() {
+    if (!estado.viewer3d) return null;
+    var cfg = {
+      versao: 1,
+      documento: estado.docNomeAtual || "",
+      chave: chaveDobrasAtual(),
+      anguloGlobal: estado.viewer3d.anguloGlobal ? estado.viewer3d.anguloGlobal() : 0,
+      angulos: estado.viewer3d.angulosAtuais ? estado.viewer3d.angulosAtuais() : {},
+      sinais: {},
+      base: null,
+      salvoEm: new Date().toISOString()
+    };
+    var faces = estado.viewer3d.articulaveis ? estado.viewer3d.articulaveis() : [];
+    for (var i = 0; i < faces.length; i++) {
+      var s = estado.viewer3d.sinalDaFace ? estado.viewer3d.sinalDaFace(faces[i]) : 1;
+      if (s === -1) cfg.sinais[faces[i]] = -1;
+    }
+    var info = baseInfoAtual();
+    if (info) cfg.base = { raiz: info.raiz, manual: !!info.manual };
+    return cfg;
+  }
+
+  function aplicarConfigDobra(cfg) {
+    if (!cfg || !estado.viewer3d || !estado.viewer3d.aplicarDobras) return false;
+    // A base fixa salva é aplicada antes: os ângulos são relativos à árvore.
+    if (cfg.base && cfg.base.manual && cfg.base.raiz !== null && cfg.base.raiz !== undefined) {
+      var r = estado.viewer3d.definirBase(cfg.base.raiz);
+      if (r && r.ok) estado.baseFixa = cfg.base.raiz;
+    }
+    if (!estado.viewer3d.aplicarDobras(cfg, "ângulos salvos desta faca")) return false;
+    estado.modoBase = false;
+    estado.baseCandidata = null;
+    esconderBarraBase();
+    atualizarBaseUI();
+    definirAnguloNaTela(estado.viewer3d.anguloGlobal ? estado.viewer3d.anguloGlobal() : 0);
+    return true;
+  }
+
+  function salvarDobras() {
+    if (!estado.res || !estado.viewer3d) {
+      setStatus("Leia a faca antes de salvar os ângulos.", "err");
+      return;
+    }
+    var cfg = coletarDobras();
+    var chave = cfg && cfg.chave;
+    if (!chave) {
+      setStatus("Não foi possível identificar esta faca para salvar.", "err");
+      return;
+    }
+    var n = contarDobras(cfg);
+    chamarArte("faca3dSalvarDobras", [chave, JSON.stringify(cfg)])
+      .then(function (r) {
+        if (String(r) === "ok") {
+          estado.dobrasSalvas = cfg;
+          atualizarBotoesDobra();
+          setStatus("Ângulos salvos (" + n + " dobra(s) · " + chave + ").", "ok");
+          registrarLog("faca3d", "angulos salvos chave=" + chave + " dobras=" + n);
+        } else {
+          setStatus("Não foi possível salvar os ângulos: " + r, "err");
+        }
+      })
+      .catch(function (e) {
+        setStatus("Erro ao salvar ângulos: " + (e && e.message ? e.message : e), "err");
+      });
+  }
+
+  /* silencioso=true é a restauração automática ao ler a faca: não avisa
+   * quando não há nada salvo. */
+  function restaurarDobras(silencioso) {
+    if (!estado.res || !estado.viewer3d) {
+      if (!silencioso) setStatus("Leia a faca antes de restaurar os ângulos.", "err");
+      return;
+    }
+    var chave = chaveDobrasAtual();
+    if (!chave) return;
+    chamarArte("faca3dLerDobras", [chave])
+      .then(function (texto) {
+        var cfg = null;
+        if (texto) {
+          try {
+            cfg = JSON.parse(String(texto));
+          } catch (e) {
+            cfg = null;
+          }
+        }
+        if (!cfg || !cfg.angulos) {
+          estado.dobrasSalvas = null;
+          atualizarBotoesDobra();
+          if (!silencioso) setStatus("Nenhum ângulo salvo para esta faca.", "ok");
+          return;
+        }
+        var ok = aplicarConfigDobra(cfg);
+        estado.dobrasSalvas = cfg;
+        atualizarBotoesDobra();
+        if (ok) {
+          var n = contarDobras(cfg);
+          setStatus("Ângulos restaurados (" + n + " dobra(s)).", "ok");
+          registrarLog("faca3d", "angulos restaurados chave=" + chave + " dobras=" + n);
+        }
+      })
+      .catch(function (e) {
+        if (!silencioso) {
+          setStatus("Erro ao restaurar ângulos: " + (e && e.message ? e.message : e), "err");
+        }
+      });
   }
 
   function executarLeitura() {
@@ -870,7 +1235,7 @@
     }
 
     F.geometry.engine
-      .analisar({ escopo: "documento", lote: 200 })
+      .analisar({ escopo: "documento", lote: 200, tolerancias: { costuraMm: COSTURA_MM } })
       .then(function (res) {
         var sub = F.geometry.subdivisao ? F.geometry.subdivisao.subdividir(res) : res;
         estado.res = sub;
@@ -881,10 +1246,14 @@
         var m = estado.viewer3d && estado.viewer3d.montagem();
         var total = sub.faces.faces.length;
         var totalMs = new Date().getTime() - t0;
+        var resumoTopo = sub.topologia && sub.topologia.resumo ? sub.topologia.resumo : {};
+        var extraStatus =
+          (resumoTopo.furos ? " · " + resumoTopo.furos + " furo(s)" : "") +
+          (resumoTopo.costuras ? " · " + resumoTopo.costuras + " emenda(s)" : "");
         setStatus(
           "Faca lida: " + sub.geometria.caminhos.length + " caminhos · " +
-            (m ? m.facesMontadas.length : 0) + " de " + total + " faces montadas · " +
-            totalMs + " ms",
+            (m ? m.facesMontadas.length : 0) + " de " + total + " faces montadas" +
+            extraStatus + " · " + totalMs + " ms",
           "ok"
         );
         registrarLog(
@@ -892,6 +1261,8 @@
           "3d caminhos=" + res.geometria.caminhos.length +
             " faces=" + total +
             " montadas=" + (m ? m.facesMontadas.length : 0) +
+            " furos=" + (resumoTopo.furos || 0) +
+            " costuras=" + (resumoTopo.costuras || 0) +
             " tempo=" + totalMs + "ms"
         );
       })
@@ -1075,6 +1446,10 @@
     el("faca3dFaceLista").addEventListener("change", function () {
       if (!estado.viewer3d) return;
       var valor = this.value;
+      if (estado.modoBase) {
+        if (valor !== "") escolherPainelBase(Number(valor), "lista");
+        return;
+      }
       var face = valor === "" ? null : Number(valor);
       var modo;
       if (estado.teclasMod.ctrl) modo = "alternar";
@@ -1082,6 +1457,24 @@
       cancelarAnimacao();
       estado.viewer3d.selecionarFace(face, modo);
     });
+
+    var btnBaseDefinir = el("faca3dBtnBaseDefinir");
+    if (btnBaseDefinir) btnBaseDefinir.addEventListener("click", entrarModoBase);
+    var btnBaseAuto = el("faca3dBtnBaseAuto");
+    if (btnBaseAuto) btnBaseAuto.addEventListener("click", voltarBaseAutomatica);
+    var barraOk = el("faca3dBaseBarOk");
+    if (barraOk) barraOk.addEventListener("click", confirmarBase);
+    var barraCancelar = el("faca3dBaseBarCancel");
+    if (barraCancelar) barraCancelar.addEventListener("click", cancelarBase);
+
+    var btnSalvarDobra = el("faca3dBtnSalvarDobra");
+    if (btnSalvarDobra) btnSalvarDobra.addEventListener("click", salvarDobras);
+    var btnRestaurarDobra = el("faca3dBtnRestaurarDobra");
+    if (btnRestaurarDobra) {
+      btnRestaurarDobra.addEventListener("click", function () {
+        restaurarDobras(false);
+      });
+    }
   }
 
   function iniciar() {

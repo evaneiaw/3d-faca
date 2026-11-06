@@ -53,6 +53,191 @@
     return saida;
   }
 
+  /* Triangula uma face COM os furos (recortes vazados).
+   *
+   * `pontos` devolve contorno + furos na mesma ordem usada pelos índices da
+   * triangulação; `contorno` guarda só a borda externa (UV, borda e seleção).
+   * Se a triangulação com furos falhar, cai para a face sólida (nunca some).
+   * Exposta para os testes de Node (sem WebGL). */
+  function triangularFace(face) {
+    var THREE = exigirThree();
+    var contornoPts = limparPoligono(face.pontos);
+    if (contornoPts.length < 3) return null;
+    var contorno = contornoPts.map(function (p) {
+      return new THREE.Vector2(p.x, p.y);
+    });
+    var furos = [];
+    var listaFuros = face.furos || [];
+    for (var f = 0; f < listaFuros.length; f++) {
+      var hp = limparPoligono(listaFuros[f]);
+      if (hp.length < 3) continue;
+      furos.push(
+        hp.map(function (p) {
+          return new THREE.Vector2(p.x, p.y);
+        })
+      );
+    }
+    var indices = null;
+    if (furos.length) {
+      try {
+        indices = THREE.ShapeUtils.triangulateShape(contorno, furos);
+      } catch (e) {
+        indices = null;
+      }
+      if (!indices || !indices.length) furos = [];
+    }
+    if (!indices || !indices.length) {
+      try {
+        indices = THREE.ShapeUtils.triangulateShape(contorno, []);
+      } catch (e2) {
+        indices = null;
+      }
+    }
+    if (!indices || !indices.length) {
+      indices = [];
+      for (var i = 1; i < contorno.length - 1; i++) indices.push([0, i, i + 1]);
+    }
+    var vertices = furos.length ? Array.prototype.concat.apply(contorno, furos) : contorno;
+    return { pontos: vertices, contorno: contorno, triangulos: indices };
+  }
+
+  /* Matriz de uma dobra: gira o filho em torno do eixo (p1,p2) já no mundo. */
+  function matrizDobra3(THREE, matrizPai, p1, p2, anguloRad, sinal) {
+    var v1 = new THREE.Vector3(p1.x, p1.y, 0).applyMatrix4(matrizPai);
+    var v2 = new THREE.Vector3(p2.x, p2.y, 0).applyMatrix4(matrizPai);
+    var eixo = new THREE.Vector3().subVectors(v2, v1).normalize();
+    var q = new THREE.Quaternion().setFromAxisAngle(eixo, anguloRad * sinal);
+    var rot = new THREE.Matrix4().makeRotationFromQuaternion(q);
+    var t1 = new THREE.Matrix4().makeTranslation(v1.x, v1.y, v1.z);
+    var t2 = new THREE.Matrix4().makeTranslation(-v1.x, -v1.y, -v1.z);
+    return t1.multiply(rot).multiply(t2).multiply(matrizPai);
+  }
+
+  /* Matrizes de todas as faces a partir da raiz da montagem. A raiz fica com a
+   * identidade (imóvel); cada filho gira em torno da própria dobradiça. Esta é
+   * a transformação real usada no 3D — a base fixa escolhida muda a raiz.
+   * Exposta para os testes de Node (sem WebGL). */
+  function matrizesDaMontagem(THREE, montagem, sinais, angulos, anguloGlobal, overrides) {
+    var matrizes = {};
+    if (!montagem || !montagem.ordem || !montagem.ordem.length) return matrizes;
+    matrizes[montagem.raiz] = new THREE.Matrix4();
+    for (var i = 1; i < montagem.ordem.length; i++) {
+      var passo = montagem.ordem[i];
+      if (!matrizes[passo.pai]) continue;
+      if (passo.rigida) {
+        matrizes[passo.face] = matrizes[passo.pai].clone();
+        continue;
+      }
+      var angFace =
+        angulos && angulos.hasOwnProperty(passo.face) ? angulos[passo.face] : anguloGlobal;
+      var sinalFace =
+        (sinais && sinais[passo.face] ? sinais[passo.face] : 1) *
+        (overrides && overrides.hasOwnProperty(passo.face) ? overrides[passo.face] : 1);
+      matrizes[passo.face] = matrizDobra3(
+        THREE,
+        matrizes[passo.pai],
+        passo.p1,
+        passo.p2,
+        (angFace * Math.PI) / 180,
+        sinalFace
+      );
+    }
+    return matrizes;
+  }
+
+  /* Escolhe o sentido de cada dobradiça pelo INTERIOR da caixa.
+   *
+   * A faca não traz montanha/vale. Cada painel dobra para o lado em que o
+   * centro da face raiz está, e nenhum painel pode ficar abaixo da base. O
+   * número de cruzamentos vira diagnóstico, não o critério. Exposta para os
+   * testes de Node (sem WebGL). */
+  function escolherSinaisCom(THREE, montagem, poligonos) {
+    var ordem = montagem && montagem.ordem ? montagem.ordem : [];
+    var sinais = {};
+    var matrizes = {};
+    if (!ordem.length) return { sinais: sinais, matrizes: matrizes };
+    var i;
+    var raizId = ordem[0].face;
+
+    function centroide(pontos) {
+      var x = 0, y = 0;
+      for (var c = 0; c < pontos.length; c++) {
+        x += pontos[c].x;
+        y += pontos[c].y;
+      }
+      return pontos.length ? { x: x / pontos.length, y: y / pontos.length } : { x: 0, y: 0 };
+    }
+
+    var polyRaiz = poligonos[raizId];
+    var centroRaiz = polyRaiz ? centroide(polyRaiz.contorno || polyRaiz.pontos) : { x: 0, y: 0 };
+    matrizes[raizId] = new THREE.Matrix4();
+
+    for (i = 1; i < ordem.length; i++) {
+      var passo = ordem[i];
+      if (!matrizes[passo.pai]) continue;
+      if (passo.rigida) {
+        sinais[passo.face] = 0;
+        matrizes[passo.face] = matrizes[passo.pai].clone();
+        continue;
+      }
+      var poly = poligonos[passo.face];
+      if (!poly) {
+        sinais[passo.face] = 1;
+        matrizes[passo.face] = matrizDobra3(
+          THREE, matrizes[passo.pai], passo.p1, passo.p2, Math.PI / 2, 1
+        );
+        continue;
+      }
+      var c = centroide(poly.contorno || poly.pontos);
+      var mA = matrizDobra3(THREE, matrizes[passo.pai], passo.p1, passo.p2, Math.PI / 2, 1);
+      var mB = matrizDobra3(THREE, matrizes[passo.pai], passo.p1, passo.p2, Math.PI / 2, -1);
+      var cA = new THREE.Vector3(c.x, c.y, 0).applyMatrix4(mA);
+      var cB = new THREE.Vector3(c.x, c.y, 0).applyMatrix4(mB);
+
+      function pontuar(p) {
+        var dx = p.x - centroRaiz.x;
+        var dy = p.y - centroRaiz.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var abaixo = p.z < -0.5 ? 10000 + Math.abs(p.z) : 0;
+        return dist + abaixo + Math.abs(p.z) * 0.1;
+      }
+      var escolha = pontuar(cA) <= pontuar(cB) ? 1 : -1;
+      sinais[passo.face] = escolha;
+      matrizes[passo.face] = escolha > 0 ? mA : mB;
+    }
+    return { sinais: sinais, matrizes: matrizes };
+  }
+
+  /* Normaliza uma configuração de dobra salva (JSON do disco) para o estado
+   * do visualizador: ângulos por face (0..180), sentidos (-1) e ângulo global
+   * de reserva para faces que não estavam no arquivo. Exposta para testes. */
+  function normalizarDobras(config, montagem, articulaveis) {
+    var out = { angulos: {}, sinaisOverride: {}, angulo: 0 };
+    var cfg = config || {};
+    var global = Number(cfg.anguloGlobal);
+    if (!isFinite(global)) global = 0;
+    global = Math.max(0, Math.min(180, global));
+    out.angulo = global;
+    if (!montagem || !montagem.ordem) return out;
+    var mapa = cfg.angulos || {};
+    for (var i = 1; i < montagem.ordem.length; i++) {
+      var passo = montagem.ordem[i];
+      if (passo.rigida) continue;
+      if (articulaveis && !articulaveis[passo.face]) continue;
+      var v = mapa.hasOwnProperty(passo.face) ? Number(mapa[passo.face]) : global;
+      if (!isFinite(v)) v = 0;
+      out.angulos[passo.face] = Math.max(0, Math.min(180, v));
+    }
+    var sinais = cfg.sinais || {};
+    for (var f in sinais) {
+      if (!sinais.hasOwnProperty(f)) continue;
+      var face = Number(f);
+      if (articulaveis && !articulaveis[face]) continue;
+      if (Number(sinais[f]) === -1) out.sinaisOverride[face] = -1;
+    }
+    return out;
+  }
+
   /* ----------------------------------------------------------------- criar */
 
   function criar(opcoes) {
@@ -215,14 +400,7 @@
     /* --------------------------------------------------------- matemática */
 
     function matrizDobra(matrizPai, p1, p2, anguloRad, sinal) {
-      var v1 = new THREE.Vector3(p1.x, p1.y, 0).applyMatrix4(matrizPai);
-      var v2 = new THREE.Vector3(p2.x, p2.y, 0).applyMatrix4(matrizPai);
-      var eixo = new THREE.Vector3().subVectors(v2, v1).normalize();
-      var q = new THREE.Quaternion().setFromAxisAngle(eixo, anguloRad * sinal);
-      var rot = new THREE.Matrix4().makeRotationFromQuaternion(q);
-      var t1 = new THREE.Matrix4().makeTranslation(v1.x, v1.y, v1.z);
-      var t2 = new THREE.Matrix4().makeTranslation(-v1.x, -v1.y, -v1.z);
-      return t1.multiply(rot).multiply(t2).multiply(matrizPai);
+      return matrizDobra3(THREE, matrizPai, p1, p2, anguloRad, sinal);
     }
 
     /* ------------------------------------- escolha da direção das dobras */
@@ -315,27 +493,6 @@
       return false;
     }
 
-    function matrizesComSinais(sinais, anguloRad) {
-      var ordem = estado.montagem.ordem;
-      var matrizes = {};
-      matrizes[ordem[0].face] = new THREE.Matrix4();
-      for (var i = 1; i < ordem.length; i++) {
-        var passo = ordem[i];
-        if (passo.rigida) {
-          matrizes[passo.face] = matrizes[passo.pai].clone();
-        } else {
-          matrizes[passo.face] = matrizDobra(
-            matrizes[passo.pai],
-            passo.p1,
-            passo.p2,
-            anguloRad,
-            sinais[passo.face] || 1
-          );
-        }
-      }
-      return matrizes;
-    }
-
     /* Conta pares de faces que se atravessam (aproximação por aresta -- triângulo). */
     function contarCruzamentos(poligonos, matrizes, limite, pares) {
       var montagem = estado.montagem;
@@ -383,95 +540,19 @@
       return total;
     }
 
-    /* Escolhe o sentido de cada dobradiça pelo INTERIOR da caixa.
-     *
-     * A faca não traz montanha/vale. O critério anterior (minimizar
-     * autointersecção) escolhia uma montagem metade para baixo, metade para
-     * cima. Agora cada painel dobra para o lado em que o centro da face raiz
-     * está, e nenhum painel pode ficar abaixo da base. O número de
-     * cruzamentos vira diagnóstico, não o critério. */
+    /* Escolhe o sentido de cada dobradiça pelo INTERIOR da caixa. */
     function escolherSinais(poligonos) {
-      var ordem = estado.montagem.ordem;
-      if (!ordem.length) return { sinais: {}, cruzamentos: 0 };
-      var i;
-      var raizId = ordem[0].face;
-
-      function centroide(pontos) {
-        var x = 0, y = 0;
-        for (var k = 0; k < pontos.length; k++) {
-          x += pontos[k].x;
-          y += pontos[k].y;
-        }
-        return pontos.length ? { x: x / pontos.length, y: y / pontos.length } : { x: 0, y: 0 };
-      }
-
-      var polyRaiz = poligonos[raizId];
-      var centroRaiz = polyRaiz ? centroide(polyRaiz.pontos) : { x: 0, y: 0 };
-
-      var sinais = {};
-      var matrizes = {};
-      matrizes[raizId] = new THREE.Matrix4();
-
-      for (i = 1; i < ordem.length; i++) {
-        var passo = ordem[i];
-        if (passo.rigida) {
-          sinais[passo.face] = 0;
-          matrizes[passo.face] = matrizes[passo.pai].clone();
-          continue;
-        }
-        var poly = poligonos[passo.face];
-        if (!poly) {
-          sinais[passo.face] = 1;
-          matrizes[passo.face] = matrizDobra(
-            matrizes[passo.pai], passo.p1, passo.p2, Math.PI / 2, 1
-          );
-          continue;
-        }
-        var c = centroide(poly.pontos);
-        var mA = matrizDobra(matrizes[passo.pai], passo.p1, passo.p2, Math.PI / 2, 1);
-        var mB = matrizDobra(matrizes[passo.pai], passo.p1, passo.p2, Math.PI / 2, -1);
-        var cA = new THREE.Vector3(c.x, c.y, 0).applyMatrix4(mA);
-        var cB = new THREE.Vector3(c.x, c.y, 0).applyMatrix4(mB);
-
-        function pontuar(p) {
-          var dx = p.x - centroRaiz.x;
-          var dy = p.y - centroRaiz.y;
-          var dist = Math.sqrt(dx * dx + dy * dy);
-          var abaixo = p.z < -0.5 ? 10000 + Math.abs(p.z) : 0;
-          // Desempate: fica no lado mais próximo do plano da base (abas/orelhas
-          // descem em vez de subir), sem competir com a distância ao centro.
-          return dist + abaixo + Math.abs(p.z) * 0.1;
-        }
-        var escolha = pontuar(cA) <= pontuar(cB) ? 1 : -1;
-        sinais[passo.face] = escolha;
-        matrizes[passo.face] = escolha > 0 ? mA : mB;
-      }
-
+      var r = escolherSinaisCom(THREE, estado.montagem, poligonos);
       var paresCruz = [];
-      var cruz = contarCruzamentos(poligonos, matrizes, undefined, paresCruz);
+      var cruz = contarCruzamentos(poligonos, r.matrizes, undefined, paresCruz);
       estado.cruzamentosPares = paresCruz;
-      return { sinais: sinais, cruzamentos: cruz };
+      return { sinais: r.sinais, cruzamentos: cruz };
     }
 
     /* ------------------------------------------------------ malha de faces */
 
     function triangular(face) {
-      var pontos = limparPoligono(face.pontos);
-      if (pontos.length < 3) return null;
-      var contorno = pontos.map(function (p) {
-        return new THREE.Vector2(p.x, p.y);
-      });
-      var indices = null;
-      try {
-        indices = THREE.ShapeUtils.triangulateShape(contorno, []);
-      } catch (e) {
-        indices = null;
-      }
-      if (!indices || !indices.length) {
-        indices = [];
-        for (var i = 1; i < pontos.length - 1; i++) indices.push([0, i, i + 1]);
-      }
-      return { pontos: pontos, triangulos: indices };
+      return triangularFace(face);
     }
 
     /* Ponto garantidamente dentro da face (centro do maior triângulo), já
@@ -532,30 +613,15 @@
       var mapa = {};
       for (i = 0; i < faces.length; i++) mapa[faces[i].id] = faces[i];
 
-      var matrizes = {};
-
-      // Sinais escolhidos em desenhar() (minimizam autointersecção).
-      var sinais = estado.sinais || {};
-      matrizes[estado.montagem.raiz] = new THREE.Matrix4();
-      for (i = 1; i < estado.montagem.ordem.length; i++) {
-        var p2 = estado.montagem.ordem[i];
-        if (p2.rigida) {
-          matrizes[p2.face] = matrizes[p2.pai].clone();
-        } else {
-          var angFace = estado.angulos.hasOwnProperty(p2.face)
-            ? estado.angulos[p2.face]
-            : estado.angulo;
-          var sinalFace = (sinais[p2.face] || 1) *
-            (estado.sinaisOverride.hasOwnProperty(p2.face) ? estado.sinaisOverride[p2.face] : 1);
-          matrizes[p2.face] = matrizDobra(
-            matrizes[p2.pai],
-            p2.p1,
-            p2.p2,
-            (angFace * Math.PI) / 180,
-            sinalFace
-          );
-        }
-      }
+      // Sinais escolhidos em desenhar()/montarArvore() (minimizam autointersecção).
+      var matrizes = matrizesDaMontagem(
+        THREE,
+        estado.montagem,
+        estado.sinais || {},
+        estado.angulos,
+        estado.angulo,
+        estado.sinaisOverride
+      );
 
       // Caixa final para centralizar.
       estado.matrizes = matrizes;
@@ -614,13 +680,19 @@
           var triL = estado.poligonos[idL] || triangular(faceL);
           if (!triL || !triL.triangulos.length || triL.pontos.length < 3) continue;
           var mL = matrizes[idL];
+          // Os índices da triangulação apontam para triL.pontos (contorno +
+          // furos). A normal usa esses vértices; o centroide usa só a borda
+          // externa, para o furo não puxar o centro para o lado errado.
           var vertL = [];
           for (j = 0; j < triL.pontos.length; j++) {
             vertL.push(new THREE.Vector3(triL.pontos[j].x, triL.pontos[j].y, 0).applyMatrix4(mL));
           }
+          var contL = triL.contorno || triL.pontos;
           var cenL = new THREE.Vector3(0, 0, 0);
-          for (j = 0; j < vertL.length; j++) cenL.add(vertL[j]);
-          cenL.multiplyScalar(1 / vertL.length);
+          for (j = 0; j < contL.length; j++) {
+            cenL.add(new THREE.Vector3(contL[j].x, contL[j].y, 0).applyMatrix4(mL));
+          }
+          cenL.multiplyScalar(1 / contL.length);
           var tL = triL.triangulos[0];
           var va = vertL[tL[0]];
           var vb = vertL[tL[1]];
@@ -685,11 +757,12 @@
         geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
 
         var malha = new THREE.Mesh(geo, materialFace);
+        var baseContorno = tri.contorno || tri.pontos;
         var dadosFace = {
           face: id,
           lado: "externo",
           pontoInterior: pontoInterno(tri, matriz),
-          contorno: tri.pontos.map(function (pt) {
+          contorno: baseContorno.map(function (pt) {
             var vc = new THREE.Vector3(pt.x, pt.y, 0).applyMatrix4(matriz);
             return {
               x: vc.x - estado.centro.x,
@@ -739,11 +812,11 @@
         grupo.add(malhaInterna);
         estado.malhasInternas.push(malhaInterna);
 
-        for (j = 0; j < tri.pontos.length; j++) {
-          var a = new THREE.Vector3(tri.pontos[j].x, tri.pontos[j].y, 0).applyMatrix4(matriz);
+        for (j = 0; j < baseContorno.length; j++) {
+          var a = new THREE.Vector3(baseContorno[j].x, baseContorno[j].y, 0).applyMatrix4(matriz);
           var b = new THREE.Vector3(
-            tri.pontos[(j + 1) % tri.pontos.length].x,
-            tri.pontos[(j + 1) % tri.pontos.length].y,
+            baseContorno[(j + 1) % baseContorno.length].x,
+            baseContorno[(j + 1) % baseContorno.length].y,
             0
           ).applyMatrix4(matriz);
           verticesBorda.push(
@@ -1378,6 +1451,22 @@
       avisar();
     }
 
+    /* Restaura uma configuração de dobra salva (ângulos e sentidos por face).
+     * Não mexe na base fixa nem na câmera. */
+    function aplicarDobras(config, rotulo) {
+      if (!estado.montagem) return false;
+      var norm = normalizarDobras(config, estado.montagem, estado.articulaveis);
+      estado.angulos = norm.angulos;
+      estado.sinaisOverride = norm.sinaisOverride;
+      estado.angulo = norm.angulo;
+      estado.rotuloModo = rotulo || "ângulos restaurados";
+      limparSelecao();
+      recriarMalhas();
+      renderizar();
+      avisar();
+      return true;
+    }
+
     function perfilPadrao() {
       var mapa = {};
       if (!estado.montagem) return mapa;
@@ -1446,19 +1535,27 @@
       return estado.cruzamentosPares || [];
     }
 
-    function desenhar(resultado) {
+    function infoBase() {
+      var m = estado.montagem;
+      if (!m) return null;
+      return {
+        raiz: m.raiz,
+        raizAutomatica: m.raizAutomatica,
+        raizSolicitada: m.raizSolicitada,
+        manual: !!m.baseManual,
+        motivo: m.motivoBase || null,
+        faces: (m.facesMontadas || []).length
+      };
+    }
+
+    /* Monta a árvore a partir da raiz pedida (null = automática) e recalcula
+     * os sinais de dobra. Usada pelo desenho inicial e pela troca de base. */
+    function montarArvore(resultado, raiz) {
       estado.res = resultado;
-      estado.montagem = G.hinge.construir(resultado);
+      estado.raizSolicitada = raiz === undefined ? null : raiz;
+      estado.montagem = G.hinge.construir(resultado, { raiz: estado.raizSolicitada });
       estado.poligonos = {};
       estado.articulaveis = {};
-      estado.faceSelecionada = null;
-      estado.facesSelecionadas = {};
-      estado.rotuloModo = null;
-      estado.angulos = {};
-      estado.sinaisOverride = {};
-      estado.ladoExterno = null;
-      estado.giroFace = null;
-      estado.angulo = ANGULO_PADRAO;
       for (var k = 1; k < estado.montagem.ordem.length; k++) {
         if (!estado.montagem.ordem[k].rigida) estado.articulaveis[estado.montagem.ordem[k].face] = true;
       }
@@ -1472,16 +1569,68 @@
           }
         }
       }
+      // A base mudou: o lado de fora e o giro da tampa podem mudar.
+      estado.ladoExterno = null;
+      estado.giroFace = null;
       var escolha = escolherSinais(estado.poligonos);
       estado.sinais = escolha.sinais;
       estado.cruzamentos = escolha.cruzamentos;
       G.hinge.anotarSinais(estado.montagem, escolha.sinais);
+      estado.baseInfo = infoBase();
+      return estado.baseInfo;
+    }
+
+    function desenhar(resultado, opcoes) {
+      var opt = opcoes || {};
+      estado.faceSelecionada = null;
+      estado.facesSelecionadas = {};
+      estado.rotuloModo = null;
+      estado.angulos = {};
+      estado.sinaisOverride = {};
+      estado.angulo = ANGULO_PADRAO;
+      montarArvore(resultado, opt.raiz === undefined ? null : opt.raiz);
       recriarMalhas();
       ajustarCamera();
       dimensoes();
       renderizar();
       avisar();
       notificarSelecao(null);
+    }
+
+    /* Troca a base fixa da montagem. A raiz da árvore passa a ser esse painel:
+     * a raiz não recebe matriz (fica imóvel) e as outras faces giram em
+     * relação a ela. Ângulos e sentidos já escolhidos pelo usuário são
+     * mantidos; a câmera não é reposicionada.
+     * Devolve { ok, motivo }. Em caso de recusa a montagem anterior fica. */
+    function definirBase(faceId) {
+      if (!estado.res || !estado.montagem) return { ok: false, motivo: "Nenhuma faca montada." };
+      var pedido = Number(faceId);
+      if (!isFinite(pedido)) return { ok: false, motivo: "Painel inválido." };
+      var teste = G.hinge.construir(estado.res, { raiz: pedido });
+      if (!teste.baseManual || teste.raiz !== pedido) {
+        return {
+          ok: false,
+          motivo: teste.motivoBase || "O painel " + pedido + " não pode ser a base fixa."
+        };
+      }
+      montarArvore(estado.res, pedido);
+      recriarMalhas();
+      dimensoes();
+      renderizar();
+      avisar();
+      notificarSelecao(null);
+      return { ok: true, raiz: estado.montagem.raiz, info: estado.baseInfo };
+    }
+
+    function definirBaseAutomatica() {
+      if (!estado.res || !estado.montagem) return { ok: false, motivo: "Nenhuma faca montada." };
+      montarArvore(estado.res, null);
+      recriarMalhas();
+      dimensoes();
+      renderizar();
+      avisar();
+      notificarSelecao(null);
+      return { ok: true, raiz: estado.montagem.raiz, info: estado.baseInfo };
     }
 
     function resetarVista() {
@@ -1544,11 +1693,17 @@
 
     return {
       desenhar: desenhar,
+      definirBase: definirBase,
+      definirBaseAutomatica: definirBaseAutomatica,
+      base: function () {
+        return estado.baseInfo || infoBase();
+      },
       definirAngulo: definirAngulo,
       definirArticulacao: definirArticulacao,
       definirArticulacoes: definirArticulacoes,
       definirAngulos: definirAngulos,
       perfilPadrao: perfilPadrao,
+      aplicarDobras: aplicarDobras,
       definirArtes: definirArtes,
       materiais: function () {
         var mapa = {};
@@ -1615,6 +1770,7 @@
       },
       inspecionar: function () {
         var out = {          angulo: estado.angulo,
+          base: estado.baseInfo || infoBase(),
           sinais: estado.sinais || {},
           cruzamentos: estado.cruzamentos || 0,
           montagem: estado.montagem,
@@ -1712,6 +1868,10 @@
 
   V.three3d = {
     criar: criar,
+    triangularFace: triangularFace,
+    matrizesDaMontagem: matrizesDaMontagem,
+    escolherSinaisCom: escolherSinaisCom,
+    normalizarDobras: normalizarDobras,
     ANGULO_PADRAO: ANGULO_PADRAO
   };
 })();

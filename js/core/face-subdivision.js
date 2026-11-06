@@ -108,6 +108,9 @@
     if (!fA || !fB) return null;
     var interna = fA.areaMm2 <= fB.areaMm2 ? fA : fB;
     var externa = interna === fA ? fB : fA;
+    // A subdivisão recria a face externa em três painéis; se ela tem furos
+    // (janelas/recortes), os furos se perderiam. Nesse caso não subdivide.
+    if (externa.furos && externa.furos.length) return null;
     var poly = externa.pontos;
     if (poly.length < 8) return null;
 

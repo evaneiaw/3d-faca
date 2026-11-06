@@ -7,7 +7,7 @@ interna mapeadas e diagnóstico de vincos.
 **Repositório:** https://github.com/evaneiaw/3d-faca
 **Bundle CEP:** `com.mazurky.faca3d`
 **Menu do Illustrator:** Janela > Extensões > **3D Faca**
-**Versão atual:** 0.7.6
+**Versão atual:** 0.8.0
 
 > Esta ferramenta **não faz parte** do Mazurky Tools. É um plugin separado.
 
@@ -37,6 +37,12 @@ interna mapeadas e diagnóstico de vincos.
 - **Arte**: Externa + interna / somente externa / somente interna / sem arte,
   checkbox **Espelhar interna**, **Atualizar artes**
 - **Diagnóstico** dos vincos
+- **Base fixa**: no diagnóstico, `Definir base fixa` + `Base automática`; o
+  painel base pode ser escolhido no canvas do diagnóstico, na vista 3D ou na
+  lista **Face**, com confirmação (`Definir Painel N como base fixa?`).
+- **Dobra salva**: `Salvar ângulos` grava no disco os ângulos/sentidos que o
+  usuário definiu à mão para aquela faca; `Restaurar` traz de volta (também é
+  restaurado sozinho ao reler a mesma faca).
 
 ### Interação
 
@@ -63,7 +69,8 @@ Illustrator (documento ativo)
 JS do painel (js/core/*)
    ├─ path-parser  → caminhos/segmentos em mm
    ├─ topology     → grafo planar (nós/arestas)
-   ├─ face-detector→ faces fechadas (meias-arestas)
+   ├─ contour-builder → grafo planar + costura de pontas soltas (picotes)
+   ├─ face-detector→ faces fechadas (meias-arestas), furos e duplicatas
    ├─ structural-lines → linhas virtuais (corte/vinco)
    ├─ hinge-audit  → árvore de dobradiças e classificação dos vincos
    ├─ geometry-engine → orquestra tudo e devolve o resultado
@@ -71,12 +78,35 @@ JS do painel (js/core/*)
    ▼
 js/view/three3d.js
    ├─ monta geometria (BufferGeometry), aplica matrizes de dobra
+   ├─ triangula cada face com os furos (recortes vazados)
    ├─ escolhe o lado externo de cada face
    ├─ UV da arte externa/interna
    └─ Three.js + OrbitControls (render sob demanda)
    ▼
 Canvas 3D no painel
 ```
+
+### Costura de pontas e furos (0.8.0)
+
+- **Costura**: o desenho real tem picotes de ~2 mm nas bases das abas; a borda
+  do painel fica aberta e o painel não vira face. O `contour-builder` liga cada
+  ponta solta (vértice de grau 1) ao vértice mais próximo até `costuraMm`
+  (o painel passa 2,5 mm; o motor padrão é 0) por uma reta curta que **não
+  cruza** nenhuma aresta existente. As emendas vão para `grafo.costuras` e são
+  contadas no resumo.
+- **Furos**: uma face inteiramente contida em outra é recorte/janela, não
+  painel. O `face-detector` guarda o polígono em `face.furos` da face externa e
+  remove a face interna da montagem; o `three3d` triangula com
+  `THREE.ShapeUtils.triangulateShape(contorno, furos)`. O retorno tri usa
+  `pontos` = contorno + furos (os índices apontam para a lista combinada) e
+  `contorno` = só a borda externa (usada em UV/borda/seleção).
+- **Duplicatas**: arestas coincidentes de mesma classe são retiradas do grafo
+  (`aresta.duplicada`) e faces de assinatura idêntica são descartadas; sem isso
+  o ciclo duplicado gerava faces repetidas e podia esconder o furo.
+- **Regras conservadoras**: furo só quando a face está totalmente contida;
+  recorte encostado na borda do painel continua sendo um painel separado (fica
+  fora da montagem, mas não vira buraco).
+
 
 ### Camadas do código
 
@@ -89,6 +119,9 @@ Canvas 3D no painel
   - `faca3dArtes()` — artboards e camadas de arte.
   - `faca3dExportarArte(indicesCsv, pasta, alvoPx)` — exporta PNGs por artboard,
     ocultando as camadas técnicas (FACA, MIRA, COTAS etc.).
+  - `faca3dSalvarDobras(chave, texto)` / `faca3dLerDobras(chave)` /
+    `faca3dApagarDobras(chave)` — ângulos salvos por faca (texto no disco; o
+    JSON é montado no painel).
   - `faca3dDocAtivo()` — nome do documento ativo (autoleitura).
 - **`js/core/protocol.js`** — protocolo textual `CHAVE=valor` (sem JSON no
   ExtendScript).
@@ -119,6 +152,34 @@ Canvas 3D no painel
 - `ladoExterno` define, por face, qual lado é o de fora da caixa montada.
 - `giroFace` marca faces com profundidade ≥ 2 na árvore (a tampa); quando a
   dobra passa de 45°, o UV recebe um giro de 90° para o desenho ficar em pé.
+
+### Base fixa manual (0.8.0)
+
+- A raiz da árvore é a base fixa: `hinge.construir(res, { raiz })` aceita a
+  face escolhida (precisa existir, estar no componente principal ligado por
+  vinco e ter dobradiça); senão mantém a automática e devolve `motivoBase`.
+- `three3d.definirBase(id)` / `definirBaseAutomatica()` trocam a raiz, recalculam
+  sinais/matrizes/malhas e **não** mexem na câmera; ângulos e sentidos do
+  usuário são preservados.
+- `engine.assinatura(resultado)` invalida a base manual quando a faca muda
+  (documento, caminhos, faces, caixa, soma das áreas).
+- `matrizDobra3`, `matrizesDaMontagem` e `escolherSinaisCom` ficam no escopo do
+  módulo `three3d` (exportados para teste no Node). `matrizesDaMontagem` deixa a
+  raiz com identidade; todo o resto gira em torno das dobradiças.
+- Relatório: `documentacao/FACA_3D_REPORT_BASE_FIXA.md`.
+
+### Ângulos salvos (0.8.0)
+
+- `Salvar ângulos` grava `%APPDATA%\MazurkyTools\faca3d\dobras\<doc>-<chave>.json`
+  (via ExtendScript `faca3dSalvarDobras` / `faca3dLerDobras` /
+  `faca3dApagarDobras`). A chave vem de `engine.chaveDobra(res)` — documento +
+  assinatura da geometria (8 hex). Faca diferente = arquivo diferente.
+- Conteúdo: `anguloGlobal`, `angulos` por face, `sinais` (-1) e a `base` usada.
+- `three3d.aplicarDobras(config)` normaliza (`normalizarDobras`, exportada para
+  teste), reaplica ângulos/sentidos e redesenha sem mexer na câmera.
+- Ao ler a faca, o painel tenta restaurar em silêncio; o botão `Restaurar` é
+  explícito e avisa quando não há nada salvo. Relatório:
+  `documentacao/FACA_3D_REPORT_DOBRAS_SALVAS.md`.
 
 ### Arte externa e interna
 
@@ -163,7 +224,7 @@ com.mazurky.faca3d/
   jsx/
     host.jsx                 # despachante ExtendScript
     faca3d.jsx               # backend da faca
-  testes/                    # 6 suítes
+  testes/                    # 8 suítes
   documentacao/              # relatórios, status, evidências
   icons/
 ```
@@ -174,12 +235,14 @@ Executar no painel aberto (porta de debug 7778):
 
 | Suíte | Arquivo | Resultado |
 |---|---|---|
-| Geometria | `testes/testes-geometria.mjs` | 58/58 |
+| Geometria | `testes/testes-geometria.mjs` | 126/126 |
 | Estruturais | `testes/testes-estruturais.mjs` | 28/28 |
 | Artes | `testes/testes-artes.js` | 27/27 |
 | Painel 3D | `testes/testes-3d-painel.js` | 26/26 |
 | Articulações | `testes/testes-articulacoes.js` | 129/129 |
 | Seleção | `testes/testes-selecao.js` | 51/51 |
+| Base fixa | `testes/testes-base-fixa.js` | (rodar no painel) |
+| Dobras salvas | `testes/testes-dobras.js` | (rodar no painel) |
 
 As suítes `.mjs` rodam no Node; as `.js` rodam na página do painel via CDP
 (`%TEMP%\opencode\cep_cdp2.mjs`). Elas são sensíveis ao estado: rode cada uma
@@ -190,9 +253,13 @@ após recarregar o painel.
 - Só monta faces ligadas por **vinco**; faces ligadas apenas por corte ficam
   fora (ex.: recortes/inserts separados). Em documentos reais isso pode deixar
   uma parte da faca de fora.
-- **Furos/recortes internos** ainda não são vazados no 3D: a face externa é
-  triangulada como um polígono sólido (o detector de faces não passa os furos
-  para o `triangulateShape`).
+- **Costura de pontas** (0.8.0): vãos de até 2,5 mm entre ponta solta e outro
+  vértice são emendados por uma reta curta que não cruza nenhuma linha, para o
+  painel fechar (picotes nas bases das abas). Vãos maiores continuam abertos.
+- **Furos** (0.8.0): faces totalmente contidas em outra viram furo da face
+  externa (trianguladas com `triangulateShape(contorno, furos)`); recortes que
+  encostam na borda do painel não são furos. Faces repetidas (linhas
+  duplicadas no desenho) são descartadas.
 - A arte interna só existe quando o documento tem **2 artboards**.
 - Documentos com a camada da faca fora dos nomes aceitos não são lidos.
 

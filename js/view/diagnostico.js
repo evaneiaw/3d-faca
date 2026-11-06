@@ -52,7 +52,11 @@
       tx: 0,
       ty: 0,
       selecionado: null,
-      segmentos: []
+      segmentos: [],
+      modoBase: false,
+      baseAtual: null,
+      candidatoBase: null,
+      facesTela: []
     };
 
     function dimensoes() {
@@ -106,28 +110,65 @@
 
     function desenharFaces() {
       var faces = estado.res.faces && estado.res.faces.faces ? estado.res.faces.faces : [];
+      estado.facesTela = [];
       for (var i = 0; i < faces.length; i++) {
         var f = faces[i];
         if (!f.pontos.length) continue;
+        var tela = [];
         ctx.beginPath();
-        ctx.moveTo(X(f.pontos[0].x), Y(f.pontos[0].y));
-        for (var j = 1; j < f.pontos.length; j++) ctx.lineTo(X(f.pontos[j].x), Y(f.pontos[j].y));
+        var p0 = { x: X(f.pontos[0].x), y: Y(f.pontos[0].y) };
+        ctx.moveTo(p0.x, p0.y);
+        tela.push(p0);
+        for (var j = 1; j < f.pontos.length; j++) {
+          var pj = { x: X(f.pontos[j].x), y: Y(f.pontos[j].y) };
+          ctx.lineTo(pj.x, pj.y);
+          tela.push(pj);
+        }
         ctx.closePath();
-        ctx.fillStyle = COR.face;
+        var ehBase = estado.baseAtual !== null && f.id === estado.baseAtual;
+        var ehCand = estado.candidatoBase !== null && f.id === estado.candidatoBase;
+        if (ehCand) ctx.fillStyle = "rgba(217, 119, 6, 0.32)";
+        else if (ehBase) ctx.fillStyle = "rgba(18, 128, 92, 0.18)";
+        else ctx.fillStyle = COR.face;
         ctx.fill();
-        ctx.strokeStyle = COR.faceBorda;
-        ctx.lineWidth = 0.8;
+        ctx.strokeStyle = ehCand ? "#d97706" : ehBase ? "#12805c" : COR.faceBorda;
+        ctx.lineWidth = ehCand || ehBase ? 2.4 : 0.8;
         ctx.setLineDash([]);
         ctx.stroke();
+        estado.facesTela.push({ id: f.id, pontos: tela });
       }
       ctx.font = "bold 11px Segoe UI";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       for (var k = 0; k < faces.length; k++) {
         var ff = faces[k];
-        ctx.fillStyle = "rgba(60, 70, 85, 0.75)";
+        var ehBase2 = estado.baseAtual !== null && ff.id === estado.baseAtual;
+        var ehCand2 = estado.candidatoBase !== null && ff.id === estado.candidatoBase;
+        ctx.fillStyle = ehCand2 ? "#b45309" : ehBase2 ? "#12805c" : "rgba(60, 70, 85, 0.75)";
         ctx.fillText(String(ff.id), X(ff.centro.x), Y(ff.centro.y));
       }
+    }
+
+    function pontoEmPoligonoTela(px, py, pontos) {
+      var dentro = false;
+      for (var i = 0, j = pontos.length - 1; i < pontos.length; j = i++) {
+        var pi = pontos[i];
+        var pj = pontos[j];
+        var cruza = pi.y > py !== pj.y > py;
+        if (cruza) {
+          var x = ((pj.x - pi.x) * (py - pi.y)) / (pj.y - pi.y) + pi.x;
+          if (px < x) dentro = !dentro;
+        }
+      }
+      return dentro;
+    }
+
+    function faceNoPontoTela(px, py) {
+      var lista = estado.facesTela || [];
+      for (var i = lista.length - 1; i >= 0; i--) {
+        if (pontoEmPoligonoTela(px, py, lista[i].pontos)) return lista[i].id;
+      }
+      return null;
     }
 
     function desenharCortes() {
@@ -369,6 +410,13 @@
       var r = canvas.getBoundingClientRect();
       var px = e.clientX - r.left;
       var py = e.clientY - r.top;
+      if (estado.modoBase) {
+        var idFace = faceNoPontoTela(px, py);
+        if (idFace !== null && typeof opt.aoSelecionarFace === "function") {
+          opt.aoSelecionarFace(idFace);
+        }
+        return;
+      }
       var melhor = null;
       var melhorD = 8;
       for (var i = 0; i < estado.segmentos.length; i++) {
@@ -432,6 +480,26 @@
       desenhar: desenharResultado,
       selecionar: selecionar,
       redesenhar: desenhar,
+      definirModoBase: function (ligado) {
+        estado.modoBase = !!ligado;
+        if (!estado.modoBase) estado.candidatoBase = null;
+        canvas.style.cursor = estado.modoBase ? "pointer" : "crosshair";
+        desenhar();
+      },
+      modoBase: function () {
+        return estado.modoBase;
+      },
+      definirBaseAtual: function (id) {
+        estado.baseAtual = id === null || id === undefined ? null : Number(id);
+        desenhar();
+      },
+      definirCandidatoBase: function (id) {
+        estado.candidatoBase = id === null || id === undefined ? null : Number(id);
+        desenhar();
+      },
+      candidatoBase: function () {
+        return estado.candidatoBase;
+      },
       vista: function () {
         var r = canvas.getBoundingClientRect();
         return { k: estado.k, tx: estado.tx, ty: estado.ty, cssW: r.width, cssH: r.height };

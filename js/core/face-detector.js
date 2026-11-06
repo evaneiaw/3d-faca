@@ -61,6 +61,7 @@
     for (i = 0; i < arestas.length; i++) {
       var ar = arestas[i];
       if (ar.a === ar.b) continue;
+      if (ar.duplicada) continue; // aresta duplicada já descartada no grafo
       criarMeia(ar.id * 2, ar, ar.a, ar.b);
       criarMeia(ar.id * 2 + 1, ar, ar.b, ar.a);
     }
@@ -184,6 +185,82 @@
     }
     // Reindexa as faces internas.
     for (i = 0; i < internas.length; i++) internas[i].id = i;
+    var totalBrutas = internas.length;
+
+    // Furos: uma face totalmente contida em outra é recorte/janela, não painel.
+    // As linhas duplicadas do desenho produzem o mesmo ciclo duas vezes; a
+    // duplicata é descartada. A face que contém recebe `furos` (polígonos) para
+    // o renderizador vazar o recorte em vez de desenhar a chapa sólida.
+    var furos = [];
+    var duplicadas = [];
+    (function separarFuros() {
+      var j;
+      var tolFuro = tol.furoAreaMinMm2 || 0;
+      var assinatura = {};
+      var unicas = [];
+      var removidas = {};
+      for (i = 0; i < internas.length; i++) {
+        var f = internas[i];
+        var chaveF =
+          Math.round(f.areaMm2 * 10) + "|" +
+          Math.round(f.centro.x * 10) + "|" +
+          Math.round(f.centro.y * 10) + "|" + f.pontos.length;
+        if (assinatura[chaveF] !== undefined) {
+          duplicadas.push({ face: f.id, de: assinatura[chaveF] });
+          removidas[f.id] = true;
+          continue;
+        }
+        assinatura[chaveF] = f.id;
+        unicas.push(f);
+      }
+
+      for (i = 0; i < unicas.length; i++) {
+        var fi = unicas[i];
+        if (fi.areaMm2 < tolFuro) continue;
+        var pai = null;
+        for (j = 0; j < unicas.length; j++) {
+          if (j === i) continue;
+          var fo = unicas[j];
+          if (fo.areaMm2 <= fi.areaMm2) continue;
+          if (pai && fo.areaMm2 >= pai.areaMm2) continue;
+          var dentro = true;
+          var amostras = fi.pontos.length > 8 ? 8 : fi.pontos.length;
+          for (var v = 0; v < amostras; v++) {
+            var idxV = Math.floor((v * fi.pontos.length) / amostras);
+            if (!U.pontoEmPoligono(fi.pontos[idxV], fo.pontos)) {
+              dentro = false;
+              break;
+            }
+          }
+          if (dentro || U.pontoEmPoligono(fi.centro, fo.pontos)) pai = fo;
+        }
+        if (!pai || removidas[pai.id]) continue;
+        removidas[fi.id] = true;
+        if (!pai.furos) pai.furos = [];
+        if (fi.furos && fi.furos.length) {
+          for (j = 0; j < fi.furos.length; j++) pai.furos.push(fi.furos[j]);
+        }
+        pai.furos.push(fi.pontos);
+        furos.push({ face: fi, pai: pai, areaMm2: fi.areaMm2 });
+      }
+
+      var restantes = [];
+      for (i = 0; i < internas.length; i++) {
+        if (!removidas[internas[i].id]) restantes.push(internas[i]);
+      }
+      internas.length = 0;
+      for (i = 0; i < restantes.length; i++) {
+        restantes[i].id = i;
+        internas.push(restantes[i]);
+      }
+      for (i = 0; i < furos.length; i++) {
+        furos[i] = {
+          face: furos[i].face.id,
+          pai: furos[i].pai.id,
+          areaMm2: furos[i].areaMm2
+        };
+      }
+    })();
 
     // Adjacência: aresta compartilhada por duas faces internas.
     var dono = {};
@@ -219,6 +296,9 @@
       faceExterna: externa,
       adjacencias: adjacencias,
       regioesAbertas: regioesAbertas,
+      furos: furos,
+      duplicadas: duplicadas,
+      facesBrutas: totalBrutas,
       meiasArestas: meias.length
     };
   }

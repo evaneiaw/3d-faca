@@ -36,6 +36,11 @@
               <span id="faca3dFaceAtual" class="faca3d-face-nome" title="Clique numa face; Ctrl+clique (ou Shift+clique) soma várias faces">todas as dobras</span>
               <button id="faca3dBtnSentido" class="faca3d-btn small" title="Inverter o sentido das faces selecionadas" disabled>Sentido +</button>
             </div>
+            <div class="faca3d-dobra-salva">
+              <span class="faca3d-fold-label">Dobra salva</span>
+              <button id="faca3dBtnSalvarDobra" class="faca3d-btn small" title="Salvar os ângulos e sentidos atuais desta faca (fica gravado no disco)">Salvar ângulos</button>
+              <button id="faca3dBtnRestaurarDobra" class="faca3d-btn small" title="Restaurar os ângulos salvos desta faca">Restaurar</button>
+            </div>
           </div>
           <div class="faca3d-toolbar-group">
             <div class="faca3d-view">
@@ -91,6 +96,9 @@
           <div class="faca3d-diag-head">
             <strong>Diagnóstico de vincos</strong>
             <span id="faca3dDiagResumo"></span>
+            <span id="faca3dDiagBase" class="faca3d-diag-base">Base fixa atual: —</span>
+            <button id="faca3dBtnBaseDefinir" class="faca3d-btn small" title="Escolher manualmente o painel que fica imóvel na montagem 3D">Definir base fixa</button>
+            <button id="faca3dBtnBaseAuto" class="faca3d-btn small" title="Voltar à base escolhida automaticamente">Base automática</button>
             <button id="faca3dDiagFechar" class="faca3d-btn small">Fechar</button>
           </div>
           <div class="faca3d-diag-legend">
@@ -106,6 +114,12 @@
           </div>
           <div id="faca3dDiagCanvas" class="faca3d-diag-canvas"></div>
           <div id="faca3dDiagInfo" class="faca3d-diag-info">Clique em um vinco para ver o motivo.</div>
+        </div>
+
+        <div id="faca3dBaseBar" class="faca3d-base-bar" hidden>
+          <span id="faca3dBaseBarText"></span>
+          <button id="faca3dBaseBarOk" class="faca3d-btn small faca3d-btn-primary" disabled>Confirmar</button>
+          <button id="faca3dBaseBarCancel" class="faca3d-btn small">Cancelar</button>
         </div>
       </section>
     </main>
