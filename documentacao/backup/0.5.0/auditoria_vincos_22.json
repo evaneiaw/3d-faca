@@ -1,0 +1,4963 @@
+{
+ "documento": "faca teste.pdf",
+ "geradoEm": "2026-11-05T16:27:18.205Z",
+ "versao": "0.5.0",
+ "resumo": {
+  "segmentosVinco": 22,
+  "linhas": 18,
+  "conexoes": 4,
+  "extensoes": 8,
+  "rejeitadas": 22
+ },
+ "tolerancias": {
+  "anguloGraus": 2,
+  "anguloExtensaoGraus": 6,
+  "gapMm": 7.128000871111111,
+  "gapSlotMm": 106.92001306666667,
+  "projecaoMm": 0.3564000435555556,
+  "areaRecorteMaxMm2": 15877.62388080024,
+  "cruzamentoTolMm": 1.7820002177777778
+ },
+ "montagem": {
+  "raiz": 4,
+  "facesMontadas": [
+   4,
+   5,
+   8,
+   9,
+   12,
+   6,
+   11,
+   0,
+   7,
+   10,
+   1,
+   2,
+   3
+  ],
+  "fora": [
+   13,
+   14,
+   15,
+   16
+  ],
+  "retas": 11,
+  "rigidas": 1
+ },
+ "linhas": [
+  {
+   "id": 0,
+   "segmentos": [
+    0
+   ],
+   "paths": [
+    0
+   ],
+   "faces": [
+    0,
+    1
+   ],
+   "p1": {
+    "x": 284.0000458333334,
+    "y": 756.0000613888889
+   },
+   "p2": {
+    "x": 284.0000105555557,
+    "y": 511.0000575
+   },
+   "comprimentoMm": 245,
+   "comprimentoOriginalMm": 245,
+   "conexoes": [],
+   "extensoes": [
+    {
+     "de": {
+      "x": 284.0000105555557,
+      "y": 511.0000575
+     },
+     "ponto": {
+      "x": 284.0000102675717,
+      "y": 509.00004258919057
+     },
+     "alvoClasse": "cut",
+     "alvoId": 126,
+     "alvoCaminho": 104,
+     "gapMm": 2,
+     "anguloGraus": 71.57,
+     "motivo": "ponta a 2 mm de corte; extens├úo virtual"
+    }
+   ],
+   "rejeicoes": [
+    {
+     "segmentoA": 0,
+     "segmentoB": 2,
+     "caminhos": [
+      0,
+      2
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 284.0000458333334,
+      "y": 756.0000613888889
+     },
+     "anguloGraus": 90,
+     "gapMm": 0
+    },
+    {
+     "segmentoA": 0,
+     "segmentoB": 3,
+     "caminhos": [
+      0,
+      3
+     ],
+     "motivo": "desalinhado",
+     "ponto": {
+      "x": 281.00007652777776,
+      "y": 757.6682593055555
+     },
+     "projecaoMm": 6,
+     "gapMm": 6.87
+    },
+    {
+     "segmentoA": 0,
+     "segmentoB": 19,
+     "caminhos": [
+      0,
+      19
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 284.00002819444455,
+      "y": 510.00005597222224
+     },
+     "anguloGraus": 90,
+     "gapMm": 2
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "segmentos": [
+    1
+   ],
+   "paths": [
+    1
+   ],
+   "faces": [
+    1,
+    2
+   ],
+   "p1": {
+    "x": 613.0001075000001,
+    "y": 759.3364572222222
+   },
+   "p2": {
+    "x": 613.0000369444446,
+    "y": 887.5000594444443
+   },
+   "comprimentoMm": 128.16,
+   "comprimentoOriginalMm": 128.16,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": [
+    {
+     "segmentoA": 1,
+     "segmentoB": 2,
+     "caminhos": [
+      1,
+      2
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 610.000067638889,
+      "y": 757.6682593055555
+     },
+     "anguloGraus": 90,
+     "gapMm": 6.87
+    },
+    {
+     "segmentoA": 1,
+     "segmentoB": 4,
+     "caminhos": [
+      1,
+      4
+     ],
+     "motivo": "desalinhado",
+     "ponto": {
+      "x": 610.000067638889,
+      "y": 757.6682593055555
+     },
+     "projecaoMm": 6,
+     "gapMm": 6.87
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "segmentos": [
+    2
+   ],
+   "paths": [
+    2
+   ],
+   "faces": [
+    0,
+    1
+   ],
+   "p1": {
+    "x": 284.0000458333334,
+    "y": 756.0000613888889
+   },
+   "p2": {
+    "x": 607.0000277777779,
+    "y": 756.0000613888889
+   },
+   "comprimentoMm": 323,
+   "comprimentoOriginalMm": 323,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": [
+    {
+     "segmentoA": 2,
+     "segmentoB": 3,
+     "caminhos": [
+      2,
+      3
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 281.00007652777776,
+      "y": 757.6682593055555
+     },
+     "anguloGraus": 90,
+     "gapMm": 6.87
+    },
+    {
+     "segmentoA": 2,
+     "segmentoB": 4,
+     "caminhos": [
+      2,
+      4
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 607.0000277777779,
+      "y": 756.0000613888889
+     },
+     "anguloGraus": 90,
+     "gapMm": 0
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "segmentos": [
+    3
+   ],
+   "paths": [
+    3
+   ],
+   "faces": [
+    1,
+    3
+   ],
+   "p1": {
+    "x": 278.0000366666666,
+    "y": 887.5000594444443
+   },
+   "p2": {
+    "x": 278.00010722222214,
+    "y": 759.3364572222222
+   },
+   "comprimentoMm": 128.16,
+   "comprimentoOriginalMm": 128.16,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": []
+  },
+  {
+   "id": 4,
+   "segmentos": [
+    4
+   ],
+   "paths": [
+    4
+   ],
+   "faces": [
+    0,
+    1
+   ],
+   "p1": {
+    "x": 607.0000277777779,
+    "y": 756.0000613888889
+   },
+   "p2": {
+    "x": 607.0000630555555,
+    "y": 511.0000575
+   },
+   "comprimentoMm": 245,
+   "comprimentoOriginalMm": 245,
+   "conexoes": [],
+   "extensoes": [
+    {
+     "de": {
+      "x": 607.0000630555555,
+      "y": 511.0000575
+     },
+     "ponto": {
+      "x": 607.0000633435395,
+      "y": 509.00004258919057
+     },
+     "alvoClasse": "cut",
+     "alvoId": 127,
+     "alvoCaminho": 105,
+     "gapMm": 2,
+     "anguloGraus": 71.57,
+     "motivo": "ponta a 2 mm de corte; extens├úo virtual"
+    }
+   ],
+   "rejeicoes": [
+    {
+     "segmentoA": 4,
+     "segmentoB": 19,
+     "caminhos": [
+      4,
+      19
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 607.0000454166667,
+      "y": 510.00005597222224
+     },
+     "anguloGraus": 90,
+     "gapMm": 2
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "segmentos": [
+    5,
+    6,
+    7
+   ],
+   "paths": [
+    5,
+    6,
+    7
+   ],
+   "faces": [
+    4,
+    5
+   ],
+   "p1": {
+    "x": 615.9999886111112,
+    "y": 377.00002916666665
+   },
+   "p2": {
+    "x": 616.0000944444445,
+    "y": 132.00006055555554
+   },
+   "comprimentoMm": 245,
+   "comprimentoOriginalMm": 125,
+   "conexoes": [
+    {
+     "segmentoA": 5,
+     "segmentoB": 6,
+     "gapMm": 60,
+     "anguloGraus": 0,
+     "projecaoMm": 0,
+     "tipo": "recorte",
+     "ponto": {
+      "x": 616.0000591666667,
+      "y": 314.5000483333334
+     },
+     "pA": {
+      "x": 616.0000591666667,
+      "y": 284.50003777777783
+     },
+     "pB": {
+      "x": 616.0000591666667,
+      "y": 344.50005888888893
+     }
+    },
+    {
+     "segmentoA": 5,
+     "segmentoB": 7,
+     "gapMm": 60,
+     "anguloGraus": 0,
+     "projecaoMm": 0,
+     "tipo": "recorte",
+     "ponto": {
+      "x": 616.0000768055556,
+      "y": 194.5000590277778
+     },
+     "pA": {
+      "x": 616.0000591666667,
+      "y": 224.50005194444446
+     },
+     "pB": {
+      "x": 616.0000944444445,
+      "y": 164.50006611111115
+     }
+    }
+   ],
+   "extensoes": [],
+   "rejeicoes": [
+    {
+     "segmentoA": 6,
+     "segmentoB": 20,
+     "caminhos": [
+      6,
+      20
+     ],
+     "motivo": "desalinhado",
+     "ponto": {
+      "x": 614.5000127777779,
+      "y": 376.5000372222222
+     },
+     "projecaoMm": 3,
+     "gapMm": 3.16
+    },
+    {
+     "segmentoA": 6,
+     "segmentoB": 21,
+     "caminhos": [
+      6,
+      21
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 614.5000127777779,
+      "y": 376.5000372222222
+     },
+     "anguloGraus": 90,
+     "gapMm": 3.16
+    },
+    {
+     "segmentoA": 7,
+     "segmentoB": 10,
+     "caminhos": [
+      7,
+      10
+     ],
+     "motivo": "desalinhado",
+     "ponto": {
+      "x": 613.0000545833334,
+      "y": 132.50001722222225
+     },
+     "projecaoMm": 6,
+     "gapMm": 6.08
+    },
+    {
+     "segmentoA": 7,
+     "segmentoB": 12,
+     "caminhos": [
+      7,
+      12
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 613.0000545833334,
+      "y": 132.50001722222225
+     },
+     "anguloGraus": 90,
+     "gapMm": 6.08
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "segmentos": [
+    8
+   ],
+   "paths": [
+    8
+   ],
+   "faces": [
+    6,
+    7
+   ],
+   "p1": {
+    "x": 757.0000805555555,
+    "y": 134.50009083333333
+   },
+   "p2": {
+    "x": 757.0000452777779,
+    "y": 374.5000694444444
+   },
+   "comprimentoMm": 240,
+   "comprimentoOriginalMm": 240,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": []
+  },
+  {
+   "id": 7,
+   "segmentos": [
+    9
+   ],
+   "paths": [
+    9
+   ],
+   "faces": [
+    5,
+    6
+   ],
+   "p1": {
+    "x": 749.0000330555556,
+    "y": 377.00006444444443
+   },
+   "p2": {
+    "x": 749.0001036111111,
+    "y": 132.00006055555554
+   },
+   "comprimentoMm": 245,
+   "comprimentoOriginalMm": 245,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": []
+  },
+  {
+   "id": 8,
+   "segmentos": [
+    10
+   ],
+   "paths": [
+    10
+   ],
+   "faces": [
+    8
+   ],
+   "p1": {
+    "x": 610.0000147222222,
+    "y": 2.000003055555567
+   },
+   "p2": {
+    "x": 610.0000147222222,
+    "y": 132.99997388888897
+   },
+   "comprimentoMm": 131,
+   "comprimentoOriginalMm": 131,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": [
+    {
+     "segmentoA": 10,
+     "segmentoB": 12,
+     "caminhos": [
+      10,
+      12
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     },
+     "anguloGraus": 90,
+     "gapMm": 0
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "segmentos": [
+    11
+   ],
+   "paths": [
+    11
+   ],
+   "faces": [
+    8
+   ],
+   "p1": {
+    "x": 281.00005888888904,
+    "y": 133.00011500000005
+   },
+   "p2": {
+    "x": 280.99998833333325,
+    "y": 2.000108888888917
+   },
+   "comprimentoMm": 131,
+   "comprimentoOriginalMm": 131,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": [
+    {
+     "segmentoA": 11,
+     "segmentoB": 12,
+     "caminhos": [
+      11,
+      12
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     },
+     "anguloGraus": 90,
+     "gapMm": 0
+    },
+    {
+     "segmentoA": 11,
+     "segmentoB": 15,
+     "caminhos": [
+      11,
+      15
+     ],
+     "motivo": "desalinhado",
+     "ponto": {
+      "x": 278.0000366666668,
+      "y": 132.5000877777778
+     },
+     "projecaoMm": 6,
+     "gapMm": 6.08
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "segmentos": [
+    12
+   ],
+   "paths": [
+    12
+   ],
+   "faces": [
+    4,
+    8
+   ],
+   "p1": {
+    "x": 610.0000147222222,
+    "y": 132.99997388888897
+   },
+   "p2": {
+    "x": 281.00005888888904,
+    "y": 133.00011500000005
+   },
+   "comprimentoMm": 329,
+   "comprimentoOriginalMm": 329,
+   "conexoes": [],
+   "extensoes": [
+    {
+     "de": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     },
+     "ponto": {
+      "x": 616.0000944444445,
+      "y": 132.99997131539953
+     },
+     "alvoClasse": "crease",
+     "alvoId": 7,
+     "alvoCaminho": 7,
+     "gapMm": 6,
+     "anguloGraus": 90,
+     "motivo": "ponta a 6 mm de outro vinco; extens├úo virtual"
+    },
+    {
+     "de": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     },
+     "ponto": {
+      "x": 275.00001444444456,
+      "y": 133.00011757347437
+     },
+     "alvoClasse": "crease",
+     "alvoId": 15,
+     "alvoCaminho": 15,
+     "gapMm": 6,
+     "anguloGraus": 90,
+     "motivo": "ponta a 6 mm de outro vinco; extens├úo virtual"
+    }
+   ],
+   "rejeicoes": [
+    {
+     "segmentoA": 12,
+     "segmentoB": 15,
+     "caminhos": [
+      12,
+      15
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 278.0000366666668,
+      "y": 132.5000877777778
+     },
+     "anguloGraus": 90,
+     "gapMm": 6.08
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "segmentos": [
+    13,
+    14,
+    15
+   ],
+   "paths": [
+    13,
+    14,
+    15
+   ],
+   "faces": [
+    4,
+    9
+   ],
+   "p1": {
+    "x": 275.0000850000001,
+    "y": 377.00002916666665
+   },
+   "p2": {
+    "x": 275.00001444444456,
+    "y": 132.00006055555554
+   },
+   "comprimentoMm": 245,
+   "comprimentoOriginalMm": 125,
+   "conexoes": [
+    {
+     "segmentoA": 13,
+     "segmentoB": 14,
+     "gapMm": 60,
+     "anguloGraus": 0,
+     "projecaoMm": 0,
+     "tipo": "recorte",
+     "ponto": {
+      "x": 275.00004972222223,
+      "y": 314.5000483333334
+     },
+     "pA": {
+      "x": 275.00004972222223,
+      "y": 284.50003777777783
+     },
+     "pB": {
+      "x": 275.00004972222223,
+      "y": 344.50005888888893
+     }
+    },
+    {
+     "segmentoA": 13,
+     "segmentoB": 15,
+     "gapMm": 60,
+     "anguloGraus": 0,
+     "projecaoMm": 0,
+     "tipo": "recorte",
+     "ponto": {
+      "x": 275.0000320833334,
+      "y": 194.5000590277778
+     },
+     "pA": {
+      "x": 275.00004972222223,
+      "y": 224.50005194444446
+     },
+     "pB": {
+      "x": 275.00001444444456,
+      "y": 164.50006611111115
+     }
+    }
+   ],
+   "extensoes": [],
+   "rejeicoes": [
+    {
+     "segmentoA": 14,
+     "segmentoB": 18,
+     "caminhos": [
+      14,
+      18
+     ],
+     "motivo": "desalinhado",
+     "ponto": {
+      "x": 276.50006083333335,
+      "y": 376.5000372222222
+     },
+     "projecaoMm": 3,
+     "gapMm": 3.16
+    },
+    {
+     "segmentoA": 14,
+     "segmentoB": 21,
+     "caminhos": [
+      14,
+      21
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 276.50006083333335,
+      "y": 376.5000372222222
+     },
+     "anguloGraus": 90,
+     "gapMm": 3.16
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "segmentos": [
+    16
+   ],
+   "paths": [
+    16
+   ],
+   "faces": [
+    10,
+    11
+   ],
+   "p1": {
+    "x": 134.00002833333338,
+    "y": 134.50009083333333
+   },
+   "p2": {
+    "x": 134.00006361111127,
+    "y": 374.5000694444444
+   },
+   "comprimentoMm": 240,
+   "comprimentoOriginalMm": 240,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": []
+  },
+  {
+   "id": 13,
+   "segmentos": [
+    17
+   ],
+   "paths": [
+    17
+   ],
+   "faces": [
+    9,
+    11
+   ],
+   "p1": {
+    "x": 142.0000758333333,
+    "y": 377.00006444444443
+   },
+   "p2": {
+    "x": 142.00000527777775,
+    "y": 132.00006055555554
+   },
+   "comprimentoMm": 245,
+   "comprimentoOriginalMm": 245,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": []
+  },
+  {
+   "id": 14,
+   "segmentos": [
+    18
+   ],
+   "paths": [
+    18
+   ],
+   "faces": [
+    12
+   ],
+   "p1": {
+    "x": 278.0000366666666,
+    "y": 507.0000513888889
+   },
+   "p2": {
+    "x": 278.0000366666666,
+    "y": 376.00004527777776
+   },
+   "comprimentoMm": 131,
+   "comprimentoOriginalMm": 131,
+   "conexoes": [],
+   "extensoes": [
+    {
+     "de": {
+      "x": 278.0000366666666,
+      "y": 507.0000513888889
+     },
+     "ponto": {
+      "x": 278.0000366666666,
+      "y": 511.45632945650107
+     },
+     "alvoClasse": "cut",
+     "alvoId": 28,
+     "alvoCaminho": 27,
+     "gapMm": 4.456,
+     "anguloGraus": 85.65,
+     "motivo": "ponta a 4.46 mm de corte; extens├úo virtual"
+    }
+   ],
+   "rejeicoes": [
+    {
+     "segmentoA": 18,
+     "segmentoB": 19,
+     "caminhos": [
+      18,
+      19
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 281.00004125,
+      "y": 508.0000529166667
+     },
+     "anguloGraus": 90,
+     "gapMm": 6.32
+    },
+    {
+     "segmentoA": 18,
+     "segmentoB": 21,
+     "caminhos": [
+      18,
+      21
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     },
+     "anguloGraus": 90,
+     "gapMm": 0
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "segmentos": [
+    19
+   ],
+   "paths": [
+    19
+   ],
+   "faces": [
+    0,
+    12
+   ],
+   "p1": {
+    "x": 607.0000277777779,
+    "y": 509.00005444444446
+   },
+   "p2": {
+    "x": 284.0000458333334,
+    "y": 509.00005444444446
+   },
+   "comprimentoMm": 323,
+   "comprimentoOriginalMm": 323,
+   "conexoes": [],
+   "extensoes": [],
+   "rejeicoes": [
+    {
+     "segmentoA": 19,
+     "segmentoB": 20,
+     "caminhos": [
+      19,
+      20
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 610.0000323611112,
+      "y": 508.0000529166667
+     },
+     "anguloGraus": 90,
+     "gapMm": 6.32
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "segmentos": [
+    20
+   ],
+   "paths": [
+    20
+   ],
+   "faces": [
+    12
+   ],
+   "p1": {
+    "x": 613.0000369444446,
+    "y": 376.00004527777776
+   },
+   "p2": {
+    "x": 613.0000369444446,
+    "y": 507.0000513888889
+   },
+   "comprimentoMm": 131,
+   "comprimentoOriginalMm": 131,
+   "conexoes": [],
+   "extensoes": [
+    {
+     "de": {
+      "x": 613.0000369444446,
+      "y": 507.0000513888889
+     },
+     "ponto": {
+      "x": 613.0000369444446,
+      "y": 511.45632945650107
+     },
+     "alvoClasse": "cut",
+     "alvoId": 55,
+     "alvoCaminho": 41,
+     "gapMm": 4.456,
+     "anguloGraus": 85.65,
+     "motivo": "ponta a 4.46 mm de corte; extens├úo virtual"
+    }
+   ],
+   "rejeicoes": [
+    {
+     "segmentoA": 20,
+     "segmentoB": 21,
+     "caminhos": [
+      20,
+      21
+     ],
+     "motivo": "angular",
+     "ponto": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     },
+     "anguloGraus": 90,
+     "gapMm": 0
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "segmentos": [
+    21
+   ],
+   "paths": [
+    21
+   ],
+   "faces": [
+    4,
+    12
+   ],
+   "p1": {
+    "x": 278.0000366666666,
+    "y": 376.00004527777776
+   },
+   "p2": {
+    "x": 613.0000369444446,
+    "y": 376.00004527777776
+   },
+   "comprimentoMm": 335,
+   "comprimentoOriginalMm": 335,
+   "conexoes": [],
+   "extensoes": [
+    {
+     "de": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     },
+     "ponto": {
+      "x": 275.0000839145465,
+      "y": 376.00004527777776
+     },
+     "alvoClasse": "crease",
+     "alvoId": 14,
+     "alvoCaminho": 14,
+     "gapMm": 3,
+     "anguloGraus": 90,
+     "motivo": "ponta a 3 mm de outro vinco; extens├úo virtual"
+    },
+    {
+     "de": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     },
+     "ponto": {
+      "x": 615.9999907820184,
+      "y": 376.00004527777776
+     },
+     "alvoClasse": "crease",
+     "alvoId": 6,
+     "alvoCaminho": 6,
+     "gapMm": 3,
+     "anguloGraus": 90,
+     "motivo": "ponta a 3 mm de outro vinco; extens├úo virtual"
+    }
+   ],
+   "rejeicoes": []
+  }
+ ],
+ "rejeicoes": [
+  {
+   "segmentoA": 0,
+   "segmentoB": 2,
+   "caminhos": [
+    0,
+    2
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 284.0000458333334,
+    "y": 756.0000613888889
+   },
+   "anguloGraus": 90,
+   "gapMm": 0
+  },
+  {
+   "segmentoA": 0,
+   "segmentoB": 3,
+   "caminhos": [
+    0,
+    3
+   ],
+   "motivo": "desalinhado",
+   "ponto": {
+    "x": 281.00007652777776,
+    "y": 757.6682593055555
+   },
+   "projecaoMm": 6,
+   "gapMm": 6.87
+  },
+  {
+   "segmentoA": 0,
+   "segmentoB": 19,
+   "caminhos": [
+    0,
+    19
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 284.00002819444455,
+    "y": 510.00005597222224
+   },
+   "anguloGraus": 90,
+   "gapMm": 2
+  },
+  {
+   "segmentoA": 1,
+   "segmentoB": 2,
+   "caminhos": [
+    1,
+    2
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 610.000067638889,
+    "y": 757.6682593055555
+   },
+   "anguloGraus": 90,
+   "gapMm": 6.87
+  },
+  {
+   "segmentoA": 1,
+   "segmentoB": 4,
+   "caminhos": [
+    1,
+    4
+   ],
+   "motivo": "desalinhado",
+   "ponto": {
+    "x": 610.000067638889,
+    "y": 757.6682593055555
+   },
+   "projecaoMm": 6,
+   "gapMm": 6.87
+  },
+  {
+   "segmentoA": 2,
+   "segmentoB": 3,
+   "caminhos": [
+    2,
+    3
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 281.00007652777776,
+    "y": 757.6682593055555
+   },
+   "anguloGraus": 90,
+   "gapMm": 6.87
+  },
+  {
+   "segmentoA": 2,
+   "segmentoB": 4,
+   "caminhos": [
+    2,
+    4
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 607.0000277777779,
+    "y": 756.0000613888889
+   },
+   "anguloGraus": 90,
+   "gapMm": 0
+  },
+  {
+   "segmentoA": 4,
+   "segmentoB": 19,
+   "caminhos": [
+    4,
+    19
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 607.0000454166667,
+    "y": 510.00005597222224
+   },
+   "anguloGraus": 90,
+   "gapMm": 2
+  },
+  {
+   "segmentoA": 6,
+   "segmentoB": 20,
+   "caminhos": [
+    6,
+    20
+   ],
+   "motivo": "desalinhado",
+   "ponto": {
+    "x": 614.5000127777779,
+    "y": 376.5000372222222
+   },
+   "projecaoMm": 3,
+   "gapMm": 3.16
+  },
+  {
+   "segmentoA": 6,
+   "segmentoB": 21,
+   "caminhos": [
+    6,
+    21
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 614.5000127777779,
+    "y": 376.5000372222222
+   },
+   "anguloGraus": 90,
+   "gapMm": 3.16
+  },
+  {
+   "segmentoA": 7,
+   "segmentoB": 10,
+   "caminhos": [
+    7,
+    10
+   ],
+   "motivo": "desalinhado",
+   "ponto": {
+    "x": 613.0000545833334,
+    "y": 132.50001722222225
+   },
+   "projecaoMm": 6,
+   "gapMm": 6.08
+  },
+  {
+   "segmentoA": 7,
+   "segmentoB": 12,
+   "caminhos": [
+    7,
+    12
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 613.0000545833334,
+    "y": 132.50001722222225
+   },
+   "anguloGraus": 90,
+   "gapMm": 6.08
+  },
+  {
+   "segmentoA": 10,
+   "segmentoB": 12,
+   "caminhos": [
+    10,
+    12
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 610.0000147222222,
+    "y": 132.99997388888897
+   },
+   "anguloGraus": 90,
+   "gapMm": 0
+  },
+  {
+   "segmentoA": 11,
+   "segmentoB": 12,
+   "caminhos": [
+    11,
+    12
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 281.00005888888904,
+    "y": 133.00011500000005
+   },
+   "anguloGraus": 90,
+   "gapMm": 0
+  },
+  {
+   "segmentoA": 11,
+   "segmentoB": 15,
+   "caminhos": [
+    11,
+    15
+   ],
+   "motivo": "desalinhado",
+   "ponto": {
+    "x": 278.0000366666668,
+    "y": 132.5000877777778
+   },
+   "projecaoMm": 6,
+   "gapMm": 6.08
+  },
+  {
+   "segmentoA": 12,
+   "segmentoB": 15,
+   "caminhos": [
+    12,
+    15
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 278.0000366666668,
+    "y": 132.5000877777778
+   },
+   "anguloGraus": 90,
+   "gapMm": 6.08
+  },
+  {
+   "segmentoA": 14,
+   "segmentoB": 18,
+   "caminhos": [
+    14,
+    18
+   ],
+   "motivo": "desalinhado",
+   "ponto": {
+    "x": 276.50006083333335,
+    "y": 376.5000372222222
+   },
+   "projecaoMm": 3,
+   "gapMm": 3.16
+  },
+  {
+   "segmentoA": 14,
+   "segmentoB": 21,
+   "caminhos": [
+    14,
+    21
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 276.50006083333335,
+    "y": 376.5000372222222
+   },
+   "anguloGraus": 90,
+   "gapMm": 3.16
+  },
+  {
+   "segmentoA": 18,
+   "segmentoB": 19,
+   "caminhos": [
+    18,
+    19
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 281.00004125,
+    "y": 508.0000529166667
+   },
+   "anguloGraus": 90,
+   "gapMm": 6.32
+  },
+  {
+   "segmentoA": 18,
+   "segmentoB": 21,
+   "caminhos": [
+    18,
+    21
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 278.0000366666666,
+    "y": 376.00004527777776
+   },
+   "anguloGraus": 90,
+   "gapMm": 0
+  },
+  {
+   "segmentoA": 19,
+   "segmentoB": 20,
+   "caminhos": [
+    19,
+    20
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 610.0000323611112,
+    "y": 508.0000529166667
+   },
+   "anguloGraus": 90,
+   "gapMm": 6.32
+  },
+  {
+   "segmentoA": 20,
+   "segmentoB": 21,
+   "caminhos": [
+    20,
+    21
+   ],
+   "motivo": "angular",
+   "ponto": {
+    "x": 613.0000369444446,
+    "y": 376.00004527777776
+   },
+   "anguloGraus": 90,
+   "gapMm": 0
+  }
+ ],
+ "vincos": [
+  {
+   "indice": 0,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 245,
+   "inicio": {
+    "x": 284,
+    "y": 756
+   },
+   "fim": {
+    "x": 284,
+    "y": 511
+   },
+   "arestas": [
+    0
+   ],
+   "faces": [
+    0,
+    1
+   ],
+   "pares": [
+    {
+     "a": 0,
+     "b": 1,
+     "reta": false,
+     "desvioMm": 245,
+     "arestas": 3,
+     "paths": [
+      0,
+      2,
+      4
+     ]
+    }
+   ],
+   "status": "rigida",
+   "motivo": "3 linhas estruturais entre as faces 0ÔÇô1 (contorno n├úo reto); sem eixo ├║nico",
+   "parPrincipal": "0:1",
+   "linhaEstrutural": 0,
+   "estrutural": {
+    "id": 0,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 245,
+    "faces": [
+     0,
+     1
+    ],
+    "paths": [
+     0
+    ],
+    "conexoes": [],
+    "extensoes": [
+     {
+      "de": {
+       "x": 284.0000105555557,
+       "y": 511.0000575
+      },
+      "ponto": {
+       "x": 284.0000102675717,
+       "y": 509.00004258919057
+      },
+      "alvoClasse": "cut",
+      "alvoId": 126,
+      "alvoCaminho": 104,
+      "gapMm": 2,
+      "anguloGraus": 71.57,
+      "motivo": "ponta a 2 mm de corte; extens├úo virtual"
+     }
+    ],
+    "rejeicoes": [
+     {
+      "segmentoA": 0,
+      "segmentoB": 2,
+      "caminhos": [
+       0,
+       2
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 284.0000458333334,
+       "y": 756.0000613888889
+      },
+      "anguloGraus": 90,
+      "gapMm": 0
+     },
+     {
+      "segmentoA": 0,
+      "segmentoB": 3,
+      "caminhos": [
+       0,
+       3
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 281.00007652777776,
+       "y": 757.6682593055555
+      },
+      "projecaoMm": 6,
+      "gapMm": 6.87
+     },
+     {
+      "segmentoA": 0,
+      "segmentoB": 19,
+      "caminhos": [
+       0,
+       19
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 284.00002819444455,
+       "y": 510.00005597222224
+      },
+      "anguloGraus": 90,
+      "gapMm": 2
+     }
+    ]
+   },
+   "eixo": null,
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3266.5657,
+      "y": 672.0467
+     },
+     "esqPt": {
+      "x": -3266.5657,
+      "y": 672.0467
+     },
+     "dirPt": {
+      "x": -3266.5657,
+      "y": 672.0467
+     },
+     "mm": {
+      "x": 284.0000458333334,
+      "y": 756.0000613888889
+     },
+     "esqMm": {
+      "x": 284.0000458333334,
+      "y": 756.0000613888889
+     },
+     "dirMm": {
+      "x": 284.0000458333334,
+      "y": 756.0000613888889
+     }
+    },
+    {
+     "pt": {
+      "x": -3266.5658,
+      "y": -22.4415
+     },
+     "esqPt": {
+      "x": -3266.5658,
+      "y": -22.4415
+     },
+     "dirPt": {
+      "x": -3266.5658,
+      "y": -22.4415
+     },
+     "mm": {
+      "x": 284.0000105555557,
+      "y": 511.0000575
+     },
+     "esqMm": {
+      "x": 284.0000105555557,
+      "y": 511.0000575
+     },
+     "dirMm": {
+      "x": 284.0000105555557,
+      "y": 511.0000575
+     }
+    }
+   ]
+  },
+  {
+   "indice": 1,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 128.16,
+   "inicio": {
+    "x": 613,
+    "y": 759.34
+   },
+   "fim": {
+    "x": 613,
+    "y": 887.5
+   },
+   "arestas": [
+    1,
+    2,
+    3
+   ],
+   "faces": [
+    1,
+    2
+   ],
+   "pares": [
+    {
+     "a": 1,
+     "b": 2,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      1
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L1 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "1:2",
+   "linhaEstrutural": 1,
+   "estrutural": {
+    "id": 1,
+    "comprimentoMm": 128.16,
+    "comprimentoOriginalMm": 128.16,
+    "faces": [
+     1,
+     2
+    ],
+    "paths": [
+     1
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 1,
+      "segmentoB": 2,
+      "caminhos": [
+       1,
+       2
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 610.000067638889,
+       "y": 757.6682593055555
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.87
+     },
+     {
+      "segmentoA": 1,
+      "segmentoB": 4,
+      "caminhos": [
+       1,
+       4
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 610.000067638889,
+       "y": 757.6682593055555
+      },
+      "projecaoMm": 6,
+      "gapMm": 6.87
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 613.0001075000001,
+     "y": 759.3364572222222
+    },
+    "p2": {
+     "x": 613.0000369444446,
+     "y": 887.5000594444443
+    },
+    "comprimentoMm": 128.16
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2333.9671,
+      "y": 681.5042
+     },
+     "esqPt": {
+      "x": -2333.9671,
+      "y": 681.5042
+     },
+     "dirPt": {
+      "x": -2333.9671,
+      "y": 681.5042
+     },
+     "mm": {
+      "x": 613.0001075000001,
+      "y": 759.3364572222222
+     },
+     "esqMm": {
+      "x": 613.0001075000001,
+      "y": 759.3364572222222
+     },
+     "dirMm": {
+      "x": 613.0001075000001,
+      "y": 759.3364572222222
+     }
+    },
+    {
+     "pt": {
+      "x": -2333.9673,
+      "y": 1044.8026
+     },
+     "esqPt": {
+      "x": -2333.9673,
+      "y": 1044.8026
+     },
+     "dirPt": {
+      "x": -2333.9673,
+      "y": 1044.8026
+     },
+     "mm": {
+      "x": 613.0000369444446,
+      "y": 887.5000594444443
+     },
+     "esqMm": {
+      "x": 613.0000369444446,
+      "y": 887.5000594444443
+     },
+     "dirMm": {
+      "x": 613.0000369444446,
+      "y": 887.5000594444443
+     }
+    }
+   ]
+  },
+  {
+   "indice": 2,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 323,
+   "inicio": {
+    "x": 284,
+    "y": 756
+   },
+   "fim": {
+    "x": 607,
+    "y": 756
+   },
+   "arestas": [
+    4
+   ],
+   "faces": [
+    0,
+    1
+   ],
+   "pares": [
+    {
+     "a": 0,
+     "b": 1,
+     "reta": false,
+     "desvioMm": 245,
+     "arestas": 3,
+     "paths": [
+      0,
+      2,
+      4
+     ]
+    }
+   ],
+   "status": "rigida",
+   "motivo": "3 linhas estruturais entre as faces 0ÔÇô1 (contorno n├úo reto); sem eixo ├║nico",
+   "parPrincipal": "0:1",
+   "linhaEstrutural": 2,
+   "estrutural": {
+    "id": 2,
+    "comprimentoMm": 323,
+    "comprimentoOriginalMm": 323,
+    "faces": [
+     0,
+     1
+    ],
+    "paths": [
+     2
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 2,
+      "segmentoB": 3,
+      "caminhos": [
+       2,
+       3
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 281.00007652777776,
+       "y": 757.6682593055555
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.87
+     },
+     {
+      "segmentoA": 2,
+      "segmentoB": 4,
+      "caminhos": [
+       2,
+       4
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 607.0000277777779,
+       "y": 756.0000613888889
+      },
+      "anguloGraus": 90,
+      "gapMm": 0
+     }
+    ]
+   },
+   "eixo": null,
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3266.5657,
+      "y": 672.0467
+     },
+     "esqPt": {
+      "x": -3266.5657,
+      "y": 672.0467
+     },
+     "dirPt": {
+      "x": -3266.5657,
+      "y": 672.0467
+     },
+     "mm": {
+      "x": 284.0000458333334,
+      "y": 756.0000613888889
+     },
+     "esqMm": {
+      "x": 284.0000458333334,
+      "y": 756.0000613888889
+     },
+     "dirMm": {
+      "x": 284.0000458333334,
+      "y": 756.0000613888889
+     }
+    },
+    {
+     "pt": {
+      "x": -2350.9752,
+      "y": 672.0467
+     },
+     "esqPt": {
+      "x": -2350.9752,
+      "y": 672.0467
+     },
+     "dirPt": {
+      "x": -2350.9752,
+      "y": 672.0467
+     },
+     "mm": {
+      "x": 607.0000277777779,
+      "y": 756.0000613888889
+     },
+     "esqMm": {
+      "x": 607.0000277777779,
+      "y": 756.0000613888889
+     },
+     "dirMm": {
+      "x": 607.0000277777779,
+      "y": 756.0000613888889
+     }
+    }
+   ]
+  },
+  {
+   "indice": 3,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 128.16,
+   "inicio": {
+    "x": 278,
+    "y": 887.5
+   },
+   "fim": {
+    "x": 278,
+    "y": 759.34
+   },
+   "arestas": [
+    5,
+    6
+   ],
+   "faces": [
+    1,
+    3
+   ],
+   "pares": [
+    {
+     "a": 1,
+     "b": 3,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      3
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L3 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "1:3",
+   "linhaEstrutural": 3,
+   "estrutural": {
+    "id": 3,
+    "comprimentoMm": 128.16,
+    "comprimentoOriginalMm": 128.16,
+    "faces": [
+     1,
+     3
+    ],
+    "paths": [
+     3
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": []
+   },
+   "eixo": {
+    "p1": {
+     "x": 278.0000366666666,
+     "y": 887.5000594444443
+    },
+    "p2": {
+     "x": 278.00010722222214,
+     "y": 759.3364572222222
+    },
+    "comprimentoMm": 128.16
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3283.5736,
+      "y": 1044.8026
+     },
+     "esqPt": {
+      "x": -3283.5736,
+      "y": 1044.8026
+     },
+     "dirPt": {
+      "x": -3283.5736,
+      "y": 1044.8026
+     },
+     "mm": {
+      "x": 278.0000366666666,
+      "y": 887.5000594444443
+     },
+     "esqMm": {
+      "x": 278.0000366666666,
+      "y": 887.5000594444443
+     },
+     "dirMm": {
+      "x": 278.0000366666666,
+      "y": 887.5000594444443
+     }
+    },
+    {
+     "pt": {
+      "x": -3283.5734,
+      "y": 681.5042
+     },
+     "esqPt": {
+      "x": -3283.5734,
+      "y": 681.5042
+     },
+     "dirPt": {
+      "x": -3283.5734,
+      "y": 681.5042
+     },
+     "mm": {
+      "x": 278.00010722222214,
+      "y": 759.3364572222222
+     },
+     "esqMm": {
+      "x": 278.00010722222214,
+      "y": 759.3364572222222
+     },
+     "dirMm": {
+      "x": 278.00010722222214,
+      "y": 759.3364572222222
+     }
+    }
+   ]
+  },
+  {
+   "indice": 4,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 245,
+   "inicio": {
+    "x": 607,
+    "y": 756
+   },
+   "fim": {
+    "x": 607,
+    "y": 511
+   },
+   "arestas": [
+    7
+   ],
+   "faces": [
+    0,
+    1
+   ],
+   "pares": [
+    {
+     "a": 0,
+     "b": 1,
+     "reta": false,
+     "desvioMm": 245,
+     "arestas": 3,
+     "paths": [
+      0,
+      2,
+      4
+     ]
+    }
+   ],
+   "status": "rigida",
+   "motivo": "3 linhas estruturais entre as faces 0ÔÇô1 (contorno n├úo reto); sem eixo ├║nico",
+   "parPrincipal": "0:1",
+   "linhaEstrutural": 4,
+   "estrutural": {
+    "id": 4,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 245,
+    "faces": [
+     0,
+     1
+    ],
+    "paths": [
+     4
+    ],
+    "conexoes": [],
+    "extensoes": [
+     {
+      "de": {
+       "x": 607.0000630555555,
+       "y": 511.0000575
+      },
+      "ponto": {
+       "x": 607.0000633435395,
+       "y": 509.00004258919057
+      },
+      "alvoClasse": "cut",
+      "alvoId": 127,
+      "alvoCaminho": 105,
+      "gapMm": 2,
+      "anguloGraus": 71.57,
+      "motivo": "ponta a 2 mm de corte; extens├úo virtual"
+     }
+    ],
+    "rejeicoes": [
+     {
+      "segmentoA": 4,
+      "segmentoB": 19,
+      "caminhos": [
+       4,
+       19
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 607.0000454166667,
+       "y": 510.00005597222224
+      },
+      "anguloGraus": 90,
+      "gapMm": 2
+     }
+    ]
+   },
+   "eixo": null,
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2350.9752,
+      "y": 672.0467
+     },
+     "esqPt": {
+      "x": -2350.9752,
+      "y": 672.0467
+     },
+     "dirPt": {
+      "x": -2350.9752,
+      "y": 672.0467
+     },
+     "mm": {
+      "x": 607.0000277777779,
+      "y": 756.0000613888889
+     },
+     "esqMm": {
+      "x": 607.0000277777779,
+      "y": 756.0000613888889
+     },
+     "dirMm": {
+      "x": 607.0000277777779,
+      "y": 756.0000613888889
+     }
+    },
+    {
+     "pt": {
+      "x": -2350.9751,
+      "y": -22.4415
+     },
+     "esqPt": {
+      "x": -2350.9751,
+      "y": -22.4415
+     },
+     "dirPt": {
+      "x": -2350.9751,
+      "y": -22.4415
+     },
+     "mm": {
+      "x": 607.0000630555555,
+      "y": 511.0000575
+     },
+     "esqMm": {
+      "x": 607.0000630555555,
+      "y": 511.0000575
+     },
+     "dirMm": {
+      "x": 607.0000630555555,
+      "y": 511.0000575
+     }
+    }
+   ]
+  },
+  {
+   "indice": 5,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 60,
+   "inicio": {
+    "x": 616,
+    "y": 224.5
+   },
+   "fim": {
+    "x": 616,
+    "y": 284.5
+   },
+   "arestas": [
+    8
+   ],
+   "faces": [
+    4,
+    5
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 5,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 3,
+     "paths": [
+      5,
+      6,
+      7
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L5 cont├¡nua; eixo ├║nico ┬À 2 conex├úo(├Áes) virtual(is)",
+   "parPrincipal": "4:5",
+   "linhaEstrutural": 5,
+   "estrutural": {
+    "id": 5,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 125,
+    "faces": [
+     4,
+     5
+    ],
+    "paths": [
+     5,
+     6,
+     7
+    ],
+    "conexoes": [
+     {
+      "segmentoA": 5,
+      "segmentoB": 6,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 616.0000591666667,
+       "y": 314.5000483333334
+      },
+      "pA": {
+       "x": 616.0000591666667,
+       "y": 284.50003777777783
+      },
+      "pB": {
+       "x": 616.0000591666667,
+       "y": 344.50005888888893
+      }
+     },
+     {
+      "segmentoA": 5,
+      "segmentoB": 7,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 616.0000768055556,
+       "y": 194.5000590277778
+      },
+      "pA": {
+       "x": 616.0000591666667,
+       "y": 224.50005194444446
+      },
+      "pB": {
+       "x": 616.0000944444445,
+       "y": 164.50006611111115
+      }
+     }
+    ],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 6,
+      "segmentoB": 20,
+      "caminhos": [
+       6,
+       20
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 614.5000127777779,
+       "y": 376.5000372222222
+      },
+      "projecaoMm": 3,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 6,
+      "segmentoB": 21,
+      "caminhos": [
+       6,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 614.5000127777779,
+       "y": 376.5000372222222
+      },
+      "anguloGraus": 90,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 7,
+      "segmentoB": 10,
+      "caminhos": [
+       7,
+       10
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 613.0000545833334,
+       "y": 132.50001722222225
+      },
+      "projecaoMm": 6,
+      "gapMm": 6.08
+     },
+     {
+      "segmentoA": 7,
+      "segmentoB": 12,
+      "caminhos": [
+       7,
+       12
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 613.0000545833334,
+       "y": 132.50001722222225
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.08
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 615.9999886111112,
+     "y": 377.00002916666665
+    },
+    "p2": {
+     "x": 616.0000944444445,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2325.4633,
+      "y": -834.5675
+     },
+     "esqPt": {
+      "x": -2325.4633,
+      "y": -834.5675
+     },
+     "dirPt": {
+      "x": -2325.4633,
+      "y": -834.5675
+     },
+     "mm": {
+      "x": 616.0000591666667,
+      "y": 224.50005194444446
+     },
+     "esqMm": {
+      "x": 616.0000591666667,
+      "y": 224.50005194444446
+     },
+     "dirMm": {
+      "x": 616.0000591666667,
+      "y": 224.50005194444446
+     }
+    },
+    {
+     "pt": {
+      "x": -2325.4633,
+      "y": -664.4888
+     },
+     "esqPt": {
+      "x": -2325.4633,
+      "y": -664.4888
+     },
+     "dirPt": {
+      "x": -2325.4633,
+      "y": -664.4888
+     },
+     "mm": {
+      "x": 616.0000591666667,
+      "y": 284.50003777777783
+     },
+     "esqMm": {
+      "x": 616.0000591666667,
+      "y": 284.50003777777783
+     },
+     "dirMm": {
+      "x": 616.0000591666667,
+      "y": 284.50003777777783
+     }
+    }
+   ]
+  },
+  {
+   "indice": 6,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 32.5,
+   "inicio": {
+    "x": 616,
+    "y": 344.5
+   },
+   "fim": {
+    "x": 616,
+    "y": 377
+   },
+   "arestas": [
+    9
+   ],
+   "faces": [
+    4,
+    5
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 5,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 3,
+     "paths": [
+      5,
+      6,
+      7
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L5 cont├¡nua; eixo ├║nico ┬À 2 conex├úo(├Áes) virtual(is)",
+   "parPrincipal": "4:5",
+   "linhaEstrutural": 5,
+   "estrutural": {
+    "id": 5,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 125,
+    "faces": [
+     4,
+     5
+    ],
+    "paths": [
+     5,
+     6,
+     7
+    ],
+    "conexoes": [
+     {
+      "segmentoA": 5,
+      "segmentoB": 6,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 616.0000591666667,
+       "y": 314.5000483333334
+      },
+      "pA": {
+       "x": 616.0000591666667,
+       "y": 284.50003777777783
+      },
+      "pB": {
+       "x": 616.0000591666667,
+       "y": 344.50005888888893
+      }
+     },
+     {
+      "segmentoA": 5,
+      "segmentoB": 7,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 616.0000768055556,
+       "y": 194.5000590277778
+      },
+      "pA": {
+       "x": 616.0000591666667,
+       "y": 224.50005194444446
+      },
+      "pB": {
+       "x": 616.0000944444445,
+       "y": 164.50006611111115
+      }
+     }
+    ],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 6,
+      "segmentoB": 20,
+      "caminhos": [
+       6,
+       20
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 614.5000127777779,
+       "y": 376.5000372222222
+      },
+      "projecaoMm": 3,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 6,
+      "segmentoB": 21,
+      "caminhos": [
+       6,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 614.5000127777779,
+       "y": 376.5000372222222
+      },
+      "anguloGraus": 90,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 7,
+      "segmentoB": 10,
+      "caminhos": [
+       7,
+       10
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 613.0000545833334,
+       "y": 132.50001722222225
+      },
+      "projecaoMm": 6,
+      "gapMm": 6.08
+     },
+     {
+      "segmentoA": 7,
+      "segmentoB": 12,
+      "caminhos": [
+       7,
+       12
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 613.0000545833334,
+       "y": 132.50001722222225
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.08
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 615.9999886111112,
+     "y": 377.00002916666665
+    },
+    "p2": {
+     "x": 616.0000944444445,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2325.4633,
+      "y": -494.41
+     },
+     "esqPt": {
+      "x": -2325.4633,
+      "y": -494.41
+     },
+     "dirPt": {
+      "x": -2325.4633,
+      "y": -494.41
+     },
+     "mm": {
+      "x": 616.0000591666667,
+      "y": 344.50005888888893
+     },
+     "esqMm": {
+      "x": 616.0000591666667,
+      "y": 344.50005888888893
+     },
+     "dirMm": {
+      "x": 616.0000591666667,
+      "y": 344.50005888888893
+     }
+    },
+    {
+     "pt": {
+      "x": -2325.4635,
+      "y": -402.2841
+     },
+     "esqPt": {
+      "x": -2325.4635,
+      "y": -402.2841
+     },
+     "dirPt": {
+      "x": -2325.4635,
+      "y": -402.2841
+     },
+     "mm": {
+      "x": 615.9999886111112,
+      "y": 377.00002916666665
+     },
+     "esqMm": {
+      "x": 615.9999886111112,
+      "y": 377.00002916666665
+     },
+     "dirMm": {
+      "x": 615.9999886111112,
+      "y": 377.00002916666665
+     }
+    }
+   ]
+  },
+  {
+   "indice": 7,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 32.5,
+   "inicio": {
+    "x": 616,
+    "y": 132
+   },
+   "fim": {
+    "x": 616,
+    "y": 164.5
+   },
+   "arestas": [
+    10
+   ],
+   "faces": [
+    4,
+    5
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 5,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 3,
+     "paths": [
+      5,
+      6,
+      7
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L5 cont├¡nua; eixo ├║nico ┬À 2 conex├úo(├Áes) virtual(is)",
+   "parPrincipal": "4:5",
+   "linhaEstrutural": 5,
+   "estrutural": {
+    "id": 5,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 125,
+    "faces": [
+     4,
+     5
+    ],
+    "paths": [
+     5,
+     6,
+     7
+    ],
+    "conexoes": [
+     {
+      "segmentoA": 5,
+      "segmentoB": 6,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 616.0000591666667,
+       "y": 314.5000483333334
+      },
+      "pA": {
+       "x": 616.0000591666667,
+       "y": 284.50003777777783
+      },
+      "pB": {
+       "x": 616.0000591666667,
+       "y": 344.50005888888893
+      }
+     },
+     {
+      "segmentoA": 5,
+      "segmentoB": 7,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 616.0000768055556,
+       "y": 194.5000590277778
+      },
+      "pA": {
+       "x": 616.0000591666667,
+       "y": 224.50005194444446
+      },
+      "pB": {
+       "x": 616.0000944444445,
+       "y": 164.50006611111115
+      }
+     }
+    ],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 6,
+      "segmentoB": 20,
+      "caminhos": [
+       6,
+       20
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 614.5000127777779,
+       "y": 376.5000372222222
+      },
+      "projecaoMm": 3,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 6,
+      "segmentoB": 21,
+      "caminhos": [
+       6,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 614.5000127777779,
+       "y": 376.5000372222222
+      },
+      "anguloGraus": 90,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 7,
+      "segmentoB": 10,
+      "caminhos": [
+       7,
+       10
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 613.0000545833334,
+       "y": 132.50001722222225
+      },
+      "projecaoMm": 6,
+      "gapMm": 6.08
+     },
+     {
+      "segmentoA": 7,
+      "segmentoB": 12,
+      "caminhos": [
+       7,
+       12
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 613.0000545833334,
+       "y": 132.50001722222225
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.08
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 615.9999886111112,
+     "y": 377.00002916666665
+    },
+    "p2": {
+     "x": 616.0000944444445,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2325.4632,
+      "y": -1096.7722
+     },
+     "esqPt": {
+      "x": -2325.4632,
+      "y": -1096.7722
+     },
+     "dirPt": {
+      "x": -2325.4632,
+      "y": -1096.7722
+     },
+     "mm": {
+      "x": 616.0000944444445,
+      "y": 132.00006055555554
+     },
+     "esqMm": {
+      "x": 616.0000944444445,
+      "y": 132.00006055555554
+     },
+     "dirMm": {
+      "x": 616.0000944444445,
+      "y": 132.00006055555554
+     }
+    },
+    {
+     "pt": {
+      "x": -2325.4632,
+      "y": -1004.6462
+     },
+     "esqPt": {
+      "x": -2325.4632,
+      "y": -1004.6462
+     },
+     "dirPt": {
+      "x": -2325.4632,
+      "y": -1004.6462
+     },
+     "mm": {
+      "x": 616.0000944444445,
+      "y": 164.50006611111115
+     },
+     "esqMm": {
+      "x": 616.0000944444445,
+      "y": 164.50006611111115
+     },
+     "dirMm": {
+      "x": 616.0000944444445,
+      "y": 164.50006611111115
+     }
+    }
+   ]
+  },
+  {
+   "indice": 8,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 240,
+   "inicio": {
+    "x": 757,
+    "y": 134.5
+   },
+   "fim": {
+    "x": 757,
+    "y": 374.5
+   },
+   "arestas": [
+    11
+   ],
+   "faces": [
+    6,
+    7
+   ],
+   "pares": [
+    {
+     "a": 6,
+     "b": 7,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      8
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L6 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "6:7",
+   "linhaEstrutural": 6,
+   "estrutural": {
+    "id": 6,
+    "comprimentoMm": 240,
+    "comprimentoOriginalMm": 240,
+    "faces": [
+     6,
+     7
+    ],
+    "paths": [
+     8
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": []
+   },
+   "eixo": {
+    "p1": {
+     "x": 757.0000805555555,
+     "y": 134.50009083333333
+    },
+    "p2": {
+     "x": 757.0000452777779,
+     "y": 374.5000694444444
+    },
+    "comprimentoMm": 240
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -1925.7782,
+      "y": -1089.6855
+     },
+     "esqPt": {
+      "x": -1925.7782,
+      "y": -1089.6855
+     },
+     "dirPt": {
+      "x": -1925.7782,
+      "y": -1089.6855
+     },
+     "mm": {
+      "x": 757.0000805555555,
+      "y": 134.50009083333333
+     },
+     "esqMm": {
+      "x": 757.0000805555555,
+      "y": 134.50009083333333
+     },
+     "dirMm": {
+      "x": 757.0000805555555,
+      "y": 134.50009083333333
+     }
+    },
+    {
+     "pt": {
+      "x": -1925.7783,
+      "y": -409.3706
+     },
+     "esqPt": {
+      "x": -1925.7783,
+      "y": -409.3706
+     },
+     "dirPt": {
+      "x": -1925.7783,
+      "y": -409.3706
+     },
+     "mm": {
+      "x": 757.0000452777779,
+      "y": 374.5000694444444
+     },
+     "esqMm": {
+      "x": 757.0000452777779,
+      "y": 374.5000694444444
+     },
+     "dirMm": {
+      "x": 757.0000452777779,
+      "y": 374.5000694444444
+     }
+    }
+   ]
+  },
+  {
+   "indice": 9,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 245,
+   "inicio": {
+    "x": 749,
+    "y": 377
+   },
+   "fim": {
+    "x": 749,
+    "y": 132
+   },
+   "arestas": [
+    12
+   ],
+   "faces": [
+    5,
+    6
+   ],
+   "pares": [
+    {
+     "a": 5,
+     "b": 6,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      9
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L7 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "5:6",
+   "linhaEstrutural": 7,
+   "estrutural": {
+    "id": 7,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 245,
+    "faces": [
+     5,
+     6
+    ],
+    "paths": [
+     9
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": []
+   },
+   "eixo": {
+    "p1": {
+     "x": 749.0000330555556,
+     "y": 377.00006444444443
+    },
+    "p2": {
+     "x": 749.0001036111111,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -1948.4555,
+      "y": -402.284
+     },
+     "esqPt": {
+      "x": -1948.4555,
+      "y": -402.284
+     },
+     "dirPt": {
+      "x": -1948.4555,
+      "y": -402.284
+     },
+     "mm": {
+      "x": 749.0000330555556,
+      "y": 377.00006444444443
+     },
+     "esqMm": {
+      "x": 749.0000330555556,
+      "y": 377.00006444444443
+     },
+     "dirMm": {
+      "x": 749.0000330555556,
+      "y": 377.00006444444443
+     }
+    },
+    {
+     "pt": {
+      "x": -1948.4553,
+      "y": -1096.7722
+     },
+     "esqPt": {
+      "x": -1948.4553,
+      "y": -1096.7722
+     },
+     "dirPt": {
+      "x": -1948.4553,
+      "y": -1096.7722
+     },
+     "mm": {
+      "x": 749.0001036111111,
+      "y": 132.00006055555554
+     },
+     "esqMm": {
+      "x": 749.0001036111111,
+      "y": 132.00006055555554
+     },
+     "dirMm": {
+      "x": 749.0001036111111,
+      "y": 132.00006055555554
+     }
+    }
+   ]
+  },
+  {
+   "indice": 10,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 131,
+   "inicio": {
+    "x": 610,
+    "y": 2
+   },
+   "fim": {
+    "x": 610,
+    "y": 133
+   },
+   "arestas": [
+    13,
+    14
+   ],
+   "faces": [
+    8
+   ],
+   "pares": [],
+   "status": "sem-par",
+   "motivo": "o vinco toca s├│ uma face (borda livre do material); n├úo h├í segunda face para dobrar ┬À sem extens├úo v├ílida",
+   "parPrincipal": null,
+   "linhaEstrutural": 8,
+   "estrutural": {
+    "id": 8,
+    "comprimentoMm": 131,
+    "comprimentoOriginalMm": 131,
+    "faces": [
+     8
+    ],
+    "paths": [
+     10
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 10,
+      "segmentoB": 12,
+      "caminhos": [
+       10,
+       12
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 610.0000147222222,
+       "y": 132.99997388888897
+      },
+      "anguloGraus": 90,
+      "gapMm": 0
+     }
+    ]
+   },
+   "eixo": null,
+   "montada": false,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2342.4713,
+      "y": -1465.2763
+     },
+     "esqPt": {
+      "x": -2342.4713,
+      "y": -1465.2763
+     },
+     "dirPt": {
+      "x": -2342.4713,
+      "y": -1465.2763
+     },
+     "mm": {
+      "x": 610.0000147222222,
+      "y": 2.000003055555567
+     },
+     "esqMm": {
+      "x": 610.0000147222222,
+      "y": 2.000003055555567
+     },
+     "dirMm": {
+      "x": 610.0000147222222,
+      "y": 2.000003055555567
+     }
+    },
+    {
+     "pt": {
+      "x": -2342.4713,
+      "y": -1093.9378
+     },
+     "esqPt": {
+      "x": -2342.4713,
+      "y": -1093.9378
+     },
+     "dirPt": {
+      "x": -2342.4713,
+      "y": -1093.9378
+     },
+     "mm": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     },
+     "esqMm": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     },
+     "dirMm": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     }
+    }
+   ]
+  },
+  {
+   "indice": 11,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 131,
+   "inicio": {
+    "x": 281,
+    "y": 133
+   },
+   "fim": {
+    "x": 281,
+    "y": 2
+   },
+   "arestas": [
+    15
+   ],
+   "faces": [
+    8
+   ],
+   "pares": [],
+   "status": "sem-par",
+   "motivo": "o vinco toca s├│ uma face (borda livre do material); n├úo h├í segunda face para dobrar ┬À sem extens├úo v├ílida",
+   "parPrincipal": null,
+   "linhaEstrutural": 9,
+   "estrutural": {
+    "id": 9,
+    "comprimentoMm": 131,
+    "comprimentoOriginalMm": 131,
+    "faces": [
+     8
+    ],
+    "paths": [
+     11
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 11,
+      "segmentoB": 12,
+      "caminhos": [
+       11,
+       12
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 281.00005888888904,
+       "y": 133.00011500000005
+      },
+      "anguloGraus": 90,
+      "gapMm": 0
+     },
+     {
+      "segmentoA": 11,
+      "segmentoB": 15,
+      "caminhos": [
+       11,
+       15
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 278.0000366666668,
+       "y": 132.5000877777778
+      },
+      "projecaoMm": 6,
+      "gapMm": 6.08
+     }
+    ]
+   },
+   "eixo": null,
+   "montada": false,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3275.0696,
+      "y": -1093.9374
+     },
+     "esqPt": {
+      "x": -3275.0696,
+      "y": -1093.9374
+     },
+     "dirPt": {
+      "x": -3275.0696,
+      "y": -1093.9374
+     },
+     "mm": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     },
+     "esqMm": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     },
+     "dirMm": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     }
+    },
+    {
+     "pt": {
+      "x": -3275.0698,
+      "y": -1465.276
+     },
+     "esqPt": {
+      "x": -3275.0698,
+      "y": -1465.276
+     },
+     "dirPt": {
+      "x": -3275.0698,
+      "y": -1465.276
+     },
+     "mm": {
+      "x": 280.99998833333325,
+      "y": 2.000108888888917
+     },
+     "esqMm": {
+      "x": 280.99998833333325,
+      "y": 2.000108888888917
+     },
+     "dirMm": {
+      "x": 280.99998833333325,
+      "y": 2.000108888888917
+     }
+    }
+   ]
+  },
+  {
+   "indice": 12,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 329,
+   "inicio": {
+    "x": 610,
+    "y": 133
+   },
+   "fim": {
+    "x": 281,
+    "y": 133
+   },
+   "arestas": [
+    16
+   ],
+   "faces": [
+    4,
+    8
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 8,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      12
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L10 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "4:8",
+   "linhaEstrutural": 10,
+   "estrutural": {
+    "id": 10,
+    "comprimentoMm": 329,
+    "comprimentoOriginalMm": 329,
+    "faces": [
+     4,
+     8
+    ],
+    "paths": [
+     12
+    ],
+    "conexoes": [],
+    "extensoes": [
+     {
+      "de": {
+       "x": 610.0000147222222,
+       "y": 132.99997388888897
+      },
+      "ponto": {
+       "x": 616.0000944444445,
+       "y": 132.99997131539953
+      },
+      "alvoClasse": "crease",
+      "alvoId": 7,
+      "alvoCaminho": 7,
+      "gapMm": 6,
+      "anguloGraus": 90,
+      "motivo": "ponta a 6 mm de outro vinco; extens├úo virtual"
+     },
+     {
+      "de": {
+       "x": 281.00005888888904,
+       "y": 133.00011500000005
+      },
+      "ponto": {
+       "x": 275.00001444444456,
+       "y": 133.00011757347437
+      },
+      "alvoClasse": "crease",
+      "alvoId": 15,
+      "alvoCaminho": 15,
+      "gapMm": 6,
+      "anguloGraus": 90,
+      "motivo": "ponta a 6 mm de outro vinco; extens├úo virtual"
+     }
+    ],
+    "rejeicoes": [
+     {
+      "segmentoA": 12,
+      "segmentoB": 15,
+      "caminhos": [
+       12,
+       15
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 278.0000366666668,
+       "y": 132.5000877777778
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.08
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 610.0000147222222,
+     "y": 132.99997388888897
+    },
+    "p2": {
+     "x": 281.00005888888904,
+     "y": 133.00011500000005
+    },
+    "comprimentoMm": 329
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2342.4713,
+      "y": -1093.9378
+     },
+     "esqPt": {
+      "x": -2342.4713,
+      "y": -1093.9378
+     },
+     "dirPt": {
+      "x": -2342.4713,
+      "y": -1093.9378
+     },
+     "mm": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     },
+     "esqMm": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     },
+     "dirMm": {
+      "x": 610.0000147222222,
+      "y": 132.99997388888897
+     }
+    },
+    {
+     "pt": {
+      "x": -3275.0696,
+      "y": -1093.9374
+     },
+     "esqPt": {
+      "x": -3275.0696,
+      "y": -1093.9374
+     },
+     "dirPt": {
+      "x": -3275.0696,
+      "y": -1093.9374
+     },
+     "mm": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     },
+     "esqMm": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     },
+     "dirMm": {
+      "x": 281.00005888888904,
+      "y": 133.00011500000005
+     }
+    }
+   ]
+  },
+  {
+   "indice": 13,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 60,
+   "inicio": {
+    "x": 275,
+    "y": 224.5
+   },
+   "fim": {
+    "x": 275,
+    "y": 284.5
+   },
+   "arestas": [
+    17
+   ],
+   "faces": [
+    4,
+    9
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 9,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 3,
+     "paths": [
+      13,
+      14,
+      15
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L11 cont├¡nua; eixo ├║nico ┬À 2 conex├úo(├Áes) virtual(is)",
+   "parPrincipal": "4:9",
+   "linhaEstrutural": 11,
+   "estrutural": {
+    "id": 11,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 125,
+    "faces": [
+     4,
+     9
+    ],
+    "paths": [
+     13,
+     14,
+     15
+    ],
+    "conexoes": [
+     {
+      "segmentoA": 13,
+      "segmentoB": 14,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 275.00004972222223,
+       "y": 314.5000483333334
+      },
+      "pA": {
+       "x": 275.00004972222223,
+       "y": 284.50003777777783
+      },
+      "pB": {
+       "x": 275.00004972222223,
+       "y": 344.50005888888893
+      }
+     },
+     {
+      "segmentoA": 13,
+      "segmentoB": 15,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 275.0000320833334,
+       "y": 194.5000590277778
+      },
+      "pA": {
+       "x": 275.00004972222223,
+       "y": 224.50005194444446
+      },
+      "pB": {
+       "x": 275.00001444444456,
+       "y": 164.50006611111115
+      }
+     }
+    ],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 14,
+      "segmentoB": 18,
+      "caminhos": [
+       14,
+       18
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 276.50006083333335,
+       "y": 376.5000372222222
+      },
+      "projecaoMm": 3,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 14,
+      "segmentoB": 21,
+      "caminhos": [
+       14,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 276.50006083333335,
+       "y": 376.5000372222222
+      },
+      "anguloGraus": 90,
+      "gapMm": 3.16
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 275.0000850000001,
+     "y": 377.00002916666665
+    },
+    "p2": {
+     "x": 275.00001444444456,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3292.0775,
+      "y": -834.5675
+     },
+     "esqPt": {
+      "x": -3292.0775,
+      "y": -834.5675
+     },
+     "dirPt": {
+      "x": -3292.0775,
+      "y": -834.5675
+     },
+     "mm": {
+      "x": 275.00004972222223,
+      "y": 224.50005194444446
+     },
+     "esqMm": {
+      "x": 275.00004972222223,
+      "y": 224.50005194444446
+     },
+     "dirMm": {
+      "x": 275.00004972222223,
+      "y": 224.50005194444446
+     }
+    },
+    {
+     "pt": {
+      "x": -3292.0775,
+      "y": -664.4888
+     },
+     "esqPt": {
+      "x": -3292.0775,
+      "y": -664.4888
+     },
+     "dirPt": {
+      "x": -3292.0775,
+      "y": -664.4888
+     },
+     "mm": {
+      "x": 275.00004972222223,
+      "y": 284.50003777777783
+     },
+     "esqMm": {
+      "x": 275.00004972222223,
+      "y": 284.50003777777783
+     },
+     "dirMm": {
+      "x": 275.00004972222223,
+      "y": 284.50003777777783
+     }
+    }
+   ]
+  },
+  {
+   "indice": 14,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 32.5,
+   "inicio": {
+    "x": 275,
+    "y": 344.5
+   },
+   "fim": {
+    "x": 275,
+    "y": 377
+   },
+   "arestas": [
+    18
+   ],
+   "faces": [
+    4,
+    9
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 9,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 3,
+     "paths": [
+      13,
+      14,
+      15
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L11 cont├¡nua; eixo ├║nico ┬À 2 conex├úo(├Áes) virtual(is)",
+   "parPrincipal": "4:9",
+   "linhaEstrutural": 11,
+   "estrutural": {
+    "id": 11,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 125,
+    "faces": [
+     4,
+     9
+    ],
+    "paths": [
+     13,
+     14,
+     15
+    ],
+    "conexoes": [
+     {
+      "segmentoA": 13,
+      "segmentoB": 14,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 275.00004972222223,
+       "y": 314.5000483333334
+      },
+      "pA": {
+       "x": 275.00004972222223,
+       "y": 284.50003777777783
+      },
+      "pB": {
+       "x": 275.00004972222223,
+       "y": 344.50005888888893
+      }
+     },
+     {
+      "segmentoA": 13,
+      "segmentoB": 15,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 275.0000320833334,
+       "y": 194.5000590277778
+      },
+      "pA": {
+       "x": 275.00004972222223,
+       "y": 224.50005194444446
+      },
+      "pB": {
+       "x": 275.00001444444456,
+       "y": 164.50006611111115
+      }
+     }
+    ],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 14,
+      "segmentoB": 18,
+      "caminhos": [
+       14,
+       18
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 276.50006083333335,
+       "y": 376.5000372222222
+      },
+      "projecaoMm": 3,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 14,
+      "segmentoB": 21,
+      "caminhos": [
+       14,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 276.50006083333335,
+       "y": 376.5000372222222
+      },
+      "anguloGraus": 90,
+      "gapMm": 3.16
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 275.0000850000001,
+     "y": 377.00002916666665
+    },
+    "p2": {
+     "x": 275.00001444444456,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3292.0775,
+      "y": -494.41
+     },
+     "esqPt": {
+      "x": -3292.0775,
+      "y": -494.41
+     },
+     "dirPt": {
+      "x": -3292.0775,
+      "y": -494.41
+     },
+     "mm": {
+      "x": 275.00004972222223,
+      "y": 344.50005888888893
+     },
+     "esqMm": {
+      "x": 275.00004972222223,
+      "y": 344.50005888888893
+     },
+     "dirMm": {
+      "x": 275.00004972222223,
+      "y": 344.50005888888893
+     }
+    },
+    {
+     "pt": {
+      "x": -3292.0774,
+      "y": -402.2841
+     },
+     "esqPt": {
+      "x": -3292.0774,
+      "y": -402.2841
+     },
+     "dirPt": {
+      "x": -3292.0774,
+      "y": -402.2841
+     },
+     "mm": {
+      "x": 275.0000850000001,
+      "y": 377.00002916666665
+     },
+     "esqMm": {
+      "x": 275.0000850000001,
+      "y": 377.00002916666665
+     },
+     "dirMm": {
+      "x": 275.0000850000001,
+      "y": 377.00002916666665
+     }
+    }
+   ]
+  },
+  {
+   "indice": 15,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 32.5,
+   "inicio": {
+    "x": 275,
+    "y": 132
+   },
+   "fim": {
+    "x": 275,
+    "y": 164.5
+   },
+   "arestas": [
+    19
+   ],
+   "faces": [
+    4,
+    9
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 9,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 3,
+     "paths": [
+      13,
+      14,
+      15
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L11 cont├¡nua; eixo ├║nico ┬À 2 conex├úo(├Áes) virtual(is)",
+   "parPrincipal": "4:9",
+   "linhaEstrutural": 11,
+   "estrutural": {
+    "id": 11,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 125,
+    "faces": [
+     4,
+     9
+    ],
+    "paths": [
+     13,
+     14,
+     15
+    ],
+    "conexoes": [
+     {
+      "segmentoA": 13,
+      "segmentoB": 14,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 275.00004972222223,
+       "y": 314.5000483333334
+      },
+      "pA": {
+       "x": 275.00004972222223,
+       "y": 284.50003777777783
+      },
+      "pB": {
+       "x": 275.00004972222223,
+       "y": 344.50005888888893
+      }
+     },
+     {
+      "segmentoA": 13,
+      "segmentoB": 15,
+      "gapMm": 60,
+      "anguloGraus": 0,
+      "projecaoMm": 0,
+      "tipo": "recorte",
+      "ponto": {
+       "x": 275.0000320833334,
+       "y": 194.5000590277778
+      },
+      "pA": {
+       "x": 275.00004972222223,
+       "y": 224.50005194444446
+      },
+      "pB": {
+       "x": 275.00001444444456,
+       "y": 164.50006611111115
+      }
+     }
+    ],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 14,
+      "segmentoB": 18,
+      "caminhos": [
+       14,
+       18
+      ],
+      "motivo": "desalinhado",
+      "ponto": {
+       "x": 276.50006083333335,
+       "y": 376.5000372222222
+      },
+      "projecaoMm": 3,
+      "gapMm": 3.16
+     },
+     {
+      "segmentoA": 14,
+      "segmentoB": 21,
+      "caminhos": [
+       14,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 276.50006083333335,
+       "y": 376.5000372222222
+      },
+      "anguloGraus": 90,
+      "gapMm": 3.16
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 275.0000850000001,
+     "y": 377.00002916666665
+    },
+    "p2": {
+     "x": 275.00001444444456,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3292.0776,
+      "y": -1096.7722
+     },
+     "esqPt": {
+      "x": -3292.0776,
+      "y": -1096.7722
+     },
+     "dirPt": {
+      "x": -3292.0776,
+      "y": -1096.7722
+     },
+     "mm": {
+      "x": 275.00001444444456,
+      "y": 132.00006055555554
+     },
+     "esqMm": {
+      "x": 275.00001444444456,
+      "y": 132.00006055555554
+     },
+     "dirMm": {
+      "x": 275.00001444444456,
+      "y": 132.00006055555554
+     }
+    },
+    {
+     "pt": {
+      "x": -3292.0776,
+      "y": -1004.6462
+     },
+     "esqPt": {
+      "x": -3292.0776,
+      "y": -1004.6462
+     },
+     "dirPt": {
+      "x": -3292.0776,
+      "y": -1004.6462
+     },
+     "mm": {
+      "x": 275.00001444444456,
+      "y": 164.50006611111115
+     },
+     "esqMm": {
+      "x": 275.00001444444456,
+      "y": 164.50006611111115
+     },
+     "dirMm": {
+      "x": 275.00001444444456,
+      "y": 164.50006611111115
+     }
+    }
+   ]
+  },
+  {
+   "indice": 16,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 240,
+   "inicio": {
+    "x": 134,
+    "y": 134.5
+   },
+   "fim": {
+    "x": 134,
+    "y": 374.5
+   },
+   "arestas": [
+    20
+   ],
+   "faces": [
+    10,
+    11
+   ],
+   "pares": [
+    {
+     "a": 10,
+     "b": 11,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      16
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L12 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "10:11",
+   "linhaEstrutural": 12,
+   "estrutural": {
+    "id": 12,
+    "comprimentoMm": 240,
+    "comprimentoOriginalMm": 240,
+    "faces": [
+     10,
+     11
+    ],
+    "paths": [
+     16
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": []
+   },
+   "eixo": {
+    "p1": {
+     "x": 134.00002833333338,
+     "y": 134.50009083333333
+    },
+    "p2": {
+     "x": 134.00006361111127,
+     "y": 374.5000694444444
+    },
+    "comprimentoMm": 240
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3691.7626,
+      "y": -1089.6855
+     },
+     "esqPt": {
+      "x": -3691.7626,
+      "y": -1089.6855
+     },
+     "dirPt": {
+      "x": -3691.7626,
+      "y": -1089.6855
+     },
+     "mm": {
+      "x": 134.00002833333338,
+      "y": 134.50009083333333
+     },
+     "esqMm": {
+      "x": 134.00002833333338,
+      "y": 134.50009083333333
+     },
+     "dirMm": {
+      "x": 134.00002833333338,
+      "y": 134.50009083333333
+     }
+    },
+    {
+     "pt": {
+      "x": -3691.7625,
+      "y": -409.3706
+     },
+     "esqPt": {
+      "x": -3691.7625,
+      "y": -409.3706
+     },
+     "dirPt": {
+      "x": -3691.7625,
+      "y": -409.3706
+     },
+     "mm": {
+      "x": 134.00006361111127,
+      "y": 374.5000694444444
+     },
+     "esqMm": {
+      "x": 134.00006361111127,
+      "y": 374.5000694444444
+     },
+     "dirMm": {
+      "x": 134.00006361111127,
+      "y": 374.5000694444444
+     }
+    }
+   ]
+  },
+  {
+   "indice": 17,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 245,
+   "inicio": {
+    "x": 142,
+    "y": 377
+   },
+   "fim": {
+    "x": 142,
+    "y": 132
+   },
+   "arestas": [
+    21
+   ],
+   "faces": [
+    9,
+    11
+   ],
+   "pares": [
+    {
+     "a": 9,
+     "b": 11,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      17
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L13 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "9:11",
+   "linhaEstrutural": 13,
+   "estrutural": {
+    "id": 13,
+    "comprimentoMm": 245,
+    "comprimentoOriginalMm": 245,
+    "faces": [
+     9,
+     11
+    ],
+    "paths": [
+     17
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": []
+   },
+   "eixo": {
+    "p1": {
+     "x": 142.0000758333333,
+     "y": 377.00006444444443
+    },
+    "p2": {
+     "x": 142.00000527777775,
+     "y": 132.00006055555554
+    },
+    "comprimentoMm": 245
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3669.0853,
+      "y": -402.284
+     },
+     "esqPt": {
+      "x": -3669.0853,
+      "y": -402.284
+     },
+     "dirPt": {
+      "x": -3669.0853,
+      "y": -402.284
+     },
+     "mm": {
+      "x": 142.0000758333333,
+      "y": 377.00006444444443
+     },
+     "esqMm": {
+      "x": 142.0000758333333,
+      "y": 377.00006444444443
+     },
+     "dirMm": {
+      "x": 142.0000758333333,
+      "y": 377.00006444444443
+     }
+    },
+    {
+     "pt": {
+      "x": -3669.0855,
+      "y": -1096.7722
+     },
+     "esqPt": {
+      "x": -3669.0855,
+      "y": -1096.7722
+     },
+     "dirPt": {
+      "x": -3669.0855,
+      "y": -1096.7722
+     },
+     "mm": {
+      "x": 142.00000527777775,
+      "y": 132.00006055555554
+     },
+     "esqMm": {
+      "x": 142.00000527777775,
+      "y": 132.00006055555554
+     },
+     "dirMm": {
+      "x": 142.00000527777775,
+      "y": 132.00006055555554
+     }
+    }
+   ]
+  },
+  {
+   "indice": 18,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 131,
+   "inicio": {
+    "x": 278,
+    "y": 507
+   },
+   "fim": {
+    "x": 278,
+    "y": 376
+   },
+   "arestas": [
+    22,
+    23
+   ],
+   "faces": [
+    12
+   ],
+   "pares": [],
+   "status": "sem-par",
+   "motivo": "o vinco toca s├│ uma face (borda livre do material); n├úo h├í segunda face para dobrar ┬À ponta estendida 4.456 mm at├® corte",
+   "parPrincipal": null,
+   "linhaEstrutural": 14,
+   "estrutural": {
+    "id": 14,
+    "comprimentoMm": 131,
+    "comprimentoOriginalMm": 131,
+    "faces": [
+     12
+    ],
+    "paths": [
+     18
+    ],
+    "conexoes": [],
+    "extensoes": [
+     {
+      "de": {
+       "x": 278.0000366666666,
+       "y": 507.0000513888889
+      },
+      "ponto": {
+       "x": 278.0000366666666,
+       "y": 511.45632945650107
+      },
+      "alvoClasse": "cut",
+      "alvoId": 28,
+      "alvoCaminho": 27,
+      "gapMm": 4.456,
+      "anguloGraus": 85.65,
+      "motivo": "ponta a 4.46 mm de corte; extens├úo virtual"
+     }
+    ],
+    "rejeicoes": [
+     {
+      "segmentoA": 18,
+      "segmentoB": 19,
+      "caminhos": [
+       18,
+       19
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 281.00004125,
+       "y": 508.0000529166667
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.32
+     },
+     {
+      "segmentoA": 18,
+      "segmentoB": 21,
+      "caminhos": [
+       18,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 278.0000366666666,
+       "y": 376.00004527777776
+      },
+      "anguloGraus": 90,
+      "gapMm": 0
+     }
+    ]
+   },
+   "eixo": null,
+   "montada": false,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3283.5736,
+      "y": -33.7801
+     },
+     "esqPt": {
+      "x": -3283.5736,
+      "y": -33.7801
+     },
+     "dirPt": {
+      "x": -3283.5736,
+      "y": -33.7801
+     },
+     "mm": {
+      "x": 278.0000366666666,
+      "y": 507.0000513888889
+     },
+     "esqMm": {
+      "x": 278.0000366666666,
+      "y": 507.0000513888889
+     },
+     "dirMm": {
+      "x": 278.0000366666666,
+      "y": 507.0000513888889
+     }
+    },
+    {
+     "pt": {
+      "x": -3283.5736,
+      "y": -405.1187
+     },
+     "esqPt": {
+      "x": -3283.5736,
+      "y": -405.1187
+     },
+     "dirPt": {
+      "x": -3283.5736,
+      "y": -405.1187
+     },
+     "mm": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     },
+     "esqMm": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     },
+     "dirMm": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     }
+    }
+   ]
+  },
+  {
+   "indice": 19,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 323,
+   "inicio": {
+    "x": 607,
+    "y": 509
+   },
+   "fim": {
+    "x": 284,
+    "y": 509
+   },
+   "arestas": [
+    24
+   ],
+   "faces": [
+    0,
+    12
+   ],
+   "pares": [
+    {
+     "a": 0,
+     "b": 12,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      19
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L15 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "0:12",
+   "linhaEstrutural": 15,
+   "estrutural": {
+    "id": 15,
+    "comprimentoMm": 323,
+    "comprimentoOriginalMm": 323,
+    "faces": [
+     0,
+     12
+    ],
+    "paths": [
+     19
+    ],
+    "conexoes": [],
+    "extensoes": [],
+    "rejeicoes": [
+     {
+      "segmentoA": 19,
+      "segmentoB": 20,
+      "caminhos": [
+       19,
+       20
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 610.0000323611112,
+       "y": 508.0000529166667
+      },
+      "anguloGraus": 90,
+      "gapMm": 6.32
+     }
+    ]
+   },
+   "eixo": {
+    "p1": {
+     "x": 607.0000277777779,
+     "y": 509.00005444444446
+    },
+    "p2": {
+     "x": 284.0000458333334,
+     "y": 509.00005444444446
+    },
+    "comprimentoMm": 323
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2350.9752,
+      "y": -28.1108
+     },
+     "esqPt": {
+      "x": -2350.9752,
+      "y": -28.1108
+     },
+     "dirPt": {
+      "x": -2350.9752,
+      "y": -28.1108
+     },
+     "mm": {
+      "x": 607.0000277777779,
+      "y": 509.00005444444446
+     },
+     "esqMm": {
+      "x": 607.0000277777779,
+      "y": 509.00005444444446
+     },
+     "dirMm": {
+      "x": 607.0000277777779,
+      "y": 509.00005444444446
+     }
+    },
+    {
+     "pt": {
+      "x": -3266.5657,
+      "y": -28.1108
+     },
+     "esqPt": {
+      "x": -3266.5657,
+      "y": -28.1108
+     },
+     "dirPt": {
+      "x": -3266.5657,
+      "y": -28.1108
+     },
+     "mm": {
+      "x": 284.0000458333334,
+      "y": 509.00005444444446
+     },
+     "esqMm": {
+      "x": 284.0000458333334,
+      "y": 509.00005444444446
+     },
+     "dirMm": {
+      "x": 284.0000458333334,
+      "y": 509.00005444444446
+     }
+    }
+   ]
+  },
+  {
+   "indice": 20,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 131,
+   "inicio": {
+    "x": 613,
+    "y": 376
+   },
+   "fim": {
+    "x": 613,
+    "y": 507
+   },
+   "arestas": [
+    25,
+    26
+   ],
+   "faces": [
+    12
+   ],
+   "pares": [],
+   "status": "sem-par",
+   "motivo": "o vinco toca s├│ uma face (borda livre do material); n├úo h├í segunda face para dobrar ┬À ponta estendida 4.456 mm at├® corte",
+   "parPrincipal": null,
+   "linhaEstrutural": 16,
+   "estrutural": {
+    "id": 16,
+    "comprimentoMm": 131,
+    "comprimentoOriginalMm": 131,
+    "faces": [
+     12
+    ],
+    "paths": [
+     20
+    ],
+    "conexoes": [],
+    "extensoes": [
+     {
+      "de": {
+       "x": 613.0000369444446,
+       "y": 507.0000513888889
+      },
+      "ponto": {
+       "x": 613.0000369444446,
+       "y": 511.45632945650107
+      },
+      "alvoClasse": "cut",
+      "alvoId": 55,
+      "alvoCaminho": 41,
+      "gapMm": 4.456,
+      "anguloGraus": 85.65,
+      "motivo": "ponta a 4.46 mm de corte; extens├úo virtual"
+     }
+    ],
+    "rejeicoes": [
+     {
+      "segmentoA": 20,
+      "segmentoB": 21,
+      "caminhos": [
+       20,
+       21
+      ],
+      "motivo": "angular",
+      "ponto": {
+       "x": 613.0000369444446,
+       "y": 376.00004527777776
+      },
+      "anguloGraus": 90,
+      "gapMm": 0
+     }
+    ]
+   },
+   "eixo": null,
+   "montada": false,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -2333.9673,
+      "y": -405.1187
+     },
+     "esqPt": {
+      "x": -2333.9673,
+      "y": -405.1187
+     },
+     "dirPt": {
+      "x": -2333.9673,
+      "y": -405.1187
+     },
+     "mm": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     },
+     "esqMm": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     },
+     "dirMm": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     }
+    },
+    {
+     "pt": {
+      "x": -2333.9673,
+      "y": -33.7801
+     },
+     "esqPt": {
+      "x": -2333.9673,
+      "y": -33.7801
+     },
+     "dirPt": {
+      "x": -2333.9673,
+      "y": -33.7801
+     },
+     "mm": {
+      "x": 613.0000369444446,
+      "y": 507.0000513888889
+     },
+     "esqMm": {
+      "x": 613.0000369444446,
+      "y": 507.0000513888889
+     },
+     "dirMm": {
+      "x": 613.0000369444446,
+      "y": 507.0000513888889
+     }
+    }
+   ]
+  },
+  {
+   "indice": 21,
+   "spot": "Crease",
+   "camada": "Faca",
+   "pai": "GroupItem",
+   "fechado": false,
+   "nPontos": 2,
+   "segmentos": 1,
+   "curvo": false,
+   "comprimentoMm": 335,
+   "inicio": {
+    "x": 278,
+    "y": 376
+   },
+   "fim": {
+    "x": 613,
+    "y": 376
+   },
+   "arestas": [
+    27,
+    28,
+    29
+   ],
+   "faces": [
+    4,
+    12
+   ],
+   "pares": [
+    {
+     "a": 4,
+     "b": 12,
+     "reta": true,
+     "desvioMm": 0,
+     "arestas": 1,
+     "paths": [
+      21
+     ]
+    }
+   ],
+   "status": "dobra",
+   "motivo": "linha estrutural L17 cont├¡nua; eixo ├║nico",
+   "parPrincipal": "4:12",
+   "linhaEstrutural": 17,
+   "estrutural": {
+    "id": 17,
+    "comprimentoMm": 335,
+    "comprimentoOriginalMm": 335,
+    "faces": [
+     4,
+     12
+    ],
+    "paths": [
+     21
+    ],
+    "conexoes": [],
+    "extensoes": [
+     {
+      "de": {
+       "x": 278.0000366666666,
+       "y": 376.00004527777776
+      },
+      "ponto": {
+       "x": 275.0000839145465,
+       "y": 376.00004527777776
+      },
+      "alvoClasse": "crease",
+      "alvoId": 14,
+      "alvoCaminho": 14,
+      "gapMm": 3,
+      "anguloGraus": 90,
+      "motivo": "ponta a 3 mm de outro vinco; extens├úo virtual"
+     },
+     {
+      "de": {
+       "x": 613.0000369444446,
+       "y": 376.00004527777776
+      },
+      "ponto": {
+       "x": 615.9999907820184,
+       "y": 376.00004527777776
+      },
+      "alvoClasse": "crease",
+      "alvoId": 6,
+      "alvoCaminho": 6,
+      "gapMm": 3,
+      "anguloGraus": 90,
+      "motivo": "ponta a 3 mm de outro vinco; extens├úo virtual"
+     }
+    ],
+    "rejeicoes": []
+   },
+   "eixo": {
+    "p1": {
+     "x": 278.0000366666666,
+     "y": 376.00004527777776
+    },
+    "p2": {
+     "x": 613.0000369444446,
+     "y": 376.00004527777776
+    },
+    "comprimentoMm": 335
+   },
+   "montada": true,
+   "sinal": 0,
+   "pontos": [
+    {
+     "pt": {
+      "x": -3283.5736,
+      "y": -405.1187
+     },
+     "esqPt": {
+      "x": -3283.5736,
+      "y": -405.1187
+     },
+     "dirPt": {
+      "x": -3283.5736,
+      "y": -405.1187
+     },
+     "mm": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     },
+     "esqMm": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     },
+     "dirMm": {
+      "x": 278.0000366666666,
+      "y": 376.00004527777776
+     }
+    },
+    {
+     "pt": {
+      "x": -2333.9673,
+      "y": -405.1187
+     },
+     "esqPt": {
+      "x": -2333.9673,
+      "y": -405.1187
+     },
+     "dirPt": {
+      "x": -2333.9673,
+      "y": -405.1187
+     },
+     "mm": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     },
+     "esqMm": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     },
+     "dirMm": {
+      "x": 613.0000369444446,
+      "y": 376.00004527777776
+     }
+    }
+   ]
+  }
+ ]
+}

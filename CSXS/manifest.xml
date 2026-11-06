@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="5.0"
+                   ExtensionBundleId="com.mazurky.faca3d"
+                   ExtensionBundleVersion="0.7.6"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Author><![CDATA[Mazurky]]></Author>
+    <Abstract><![CDATA[3D Faca - visualizacao 3D de facas de embalagem]]></Abstract>
+    <ExtensionList>
+        <Extension Id="com.mazurky.faca3d.panel" Version="0.7.6" />
+    </ExtensionList>
+    <ExecutionEnvironment>
+        <HostList>
+            <Host Name="ILST" Version="[29.0,99.9]"/>
+        </HostList>
+        <LocaleList>
+            <Locale Code="All" />
+        </LocaleList>
+        <RequiredRuntimeList>
+            <RequiredRuntime Name="CSXS" Version="5.0" />
+        </RequiredRuntimeList>
+    </ExecutionEnvironment>
+    <DispatchInfoList>
+        <Extension Id="com.mazurky.faca3d.panel">
+            <DispatchInfo>
+                <Resources>
+                    <MainPath>./faca3d.html</MainPath>
+                    <ScriptPath>./jsx/host.jsx</ScriptPath>
+                    <CEFCommandLine>
+                        <Parameter>--disable-http-cache</Parameter>
+                        <Parameter>--disable-application-cache</Parameter>
+                    </CEFCommandLine>
+                </Resources>
+                <Lifecycle>
+                    <AutoVisible>true</AutoVisible>
+                </Lifecycle>
+                <UI>
+                    <Type>Panel</Type>
+                    <Menu>3D Faca</Menu>
+                    <Geometry>
+                        <Size>
+                            <Height>820</Height>
+                            <Width>1100</Width>
+                        </Size>
+                    </Geometry>
+                    <Icons>
+                        <Icon Type="Normal">./icons/icon-48.png</Icon>
+                        <Icon Type="RollOver">./icons/icon-48.png</Icon>
+                    </Icons>
+                </UI>
+            </DispatchInfo>
+        </Extension>
+    </DispatchInfoList>
+</ExtensionManifest>

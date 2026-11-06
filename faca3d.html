@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>3D Faca</title>
+  <link rel="stylesheet" href="css/faca3d.css" />
+</head>
+<body>
+  <div id="faca3dApp" class="faca3d-app">
+    <header class="faca3d-header">
+      <h1 class="faca3d-title">3D Faca</h1>
+      <span class="faca3d-phase">Dobragem 3D</span>
+      <span id="faca3dDoc" class="faca3d-doc">—</span>
+    </header>
+
+    <main class="faca3d-main faca3d-main-single">
+      <section class="faca3d-stage">
+        <div class="faca3d-toolbar">
+          <div class="faca3d-toolbar-group">
+            <button id="faca3dBtnDobrar" class="faca3d-btn faca3d-btn-primary">Dobrar</button>
+            <button id="faca3dBtnDesdobrar" class="faca3d-btn">Desdobrar</button>
+            <button id="faca3dBtnReset" class="faca3d-btn faca3d-btn-secondary" title="Retorna a embalagem planificada (0°)">Reset</button>
+            <button id="faca3dBtnLer" class="faca3d-btn faca3d-btn-secondary">Ler novamente</button>
+          </div>
+          <div class="faca3d-toolbar-group">
+            <div class="faca3d-fold">
+              <span class="faca3d-fold-label">Ângulo</span>
+              <input id="faca3dAngulo" type="range" min="0" max="180" step="1" value="90" />
+              <span id="faca3dAnguloValor" class="faca3d-angle">90°</span>
+            </div>
+            <div class="faca3d-art">
+              <label class="faca3d-fold-label" for="faca3dFaceLista">Face</label>
+              <select id="faca3dFaceLista" class="faca3d-select faca3d-face-select" title="Escolha a face na lista; Ctrl+escolha soma/remove, Shift+escolha só soma">
+                <option value="">todas as dobras</option>
+              </select>
+              <span id="faca3dFaceAtual" class="faca3d-face-nome" title="Clique numa face; Ctrl+clique (ou Shift+clique) soma várias faces">todas as dobras</span>
+              <button id="faca3dBtnSentido" class="faca3d-btn small" title="Inverter o sentido das faces selecionadas" disabled>Sentido +</button>
+            </div>
+          </div>
+          <div class="faca3d-toolbar-group">
+            <div class="faca3d-view">
+              <label class="faca3d-fold-label" for="faca3dVista">Vista</label>
+              <select id="faca3dVista" class="faca3d-select">
+                <option value="perspectiva_direita">Perspectiva frente-direita</option>
+                <option value="perspectiva_esquerda">Perspectiva frente-esquerda</option>
+                <option value="frente">Frente (face 8)</option>
+                <option value="topo">Topo</option>
+                <option value="baixo">Plano 0° (arte externa)</option>
+                <option value="lado_direito">Lado direito</option>
+                <option value="lado_esquerdo">Lado esquerdo</option>
+                <option value="interior">Interior (dentro da caixa)</option>
+              </select>
+            </div>
+            <div class="faca3d-artes">
+              <label class="faca3d-fold-label" for="faca3dArteModo">Arte</label>
+              <select id="faca3dArteModo" class="faca3d-select faca3d-arte-select" title="Mostrar a arte externa nas faces externas e a interna nas faces internas">
+                <option value="ambas">Externa + interna</option>
+                <option value="externa">Somente externa</option>
+                <option value="interna">Somente interna</option>
+                <option value="nenhuma">Sem arte (estrutura)</option>
+              </select>
+              <label class="faca3d-toggle" title="Espelhar a arte interna (imprimir o verso como a folha é virada)">
+                <input id="faca3dEspelharInterna" type="checkbox" />
+                Espelhar interna
+              </label>
+              <button id="faca3dBtnArtes" class="faca3d-btn small" title="Reler as artes do documento">Atualizar artes</button>
+            </div>
+            <div class="faca3d-toolbar-actions">
+              <button id="faca3dBtnDiag" class="faca3d-btn small">Diagnóstico</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="faca3dNotaArtes" class="faca3d-nota-artes"></div>
+
+        <div id="faca3dViewer3D" class="faca3d-viewer faca3d-viewer3d">
+          <div class="faca3d-empty">
+            <div class="faca3d-empty-title">Nenhuma faca montada</div>
+            <div class="faca3d-empty-text">
+              Abra a faca no Illustrator. A montagem começa automaticamente.
+            </div>
+          </div>
+        </div>
+
+        <div class="faca3d-stage-foot">
+          <span id="faca3dInfo3D">Aguardando leitura da faca.</span>
+        </div>
+        <div id="faca3dNota3D" class="faca3d-note"></div>
+
+        <div id="faca3dDiag" class="faca3d-diag" hidden>
+          <div class="faca3d-diag-head">
+            <strong>Diagnóstico de vincos</strong>
+            <span id="faca3dDiagResumo"></span>
+            <button id="faca3dDiagFechar" class="faca3d-btn small">Fechar</button>
+          </div>
+          <div class="faca3d-diag-legend">
+            <span><i class="faca3d-diag-line is-dobra"></i>Dobra</span>
+            <span><i class="faca3d-diag-line is-rigida"></i>Rígido</span>
+            <span><i class="faca3d-diag-line is-sempar"></i>Sem par de faces</span>
+            <span><i class="faca3d-diag-line is-multipla"></i>Múltiplas faces</span>
+            <span><i class="faca3d-diag-line is-conexao"></i>Conexão virtual</span>
+            <span><i class="faca3d-diag-line is-extensao"></i>Extensão</span>
+            <span><i class="faca3d-diag-line is-subdivisao"></i>Subdivisão</span>
+            <span><i class="faca3d-diag-x">×</i>Rejeitada</span>
+            <span><i class="faca3d-diag-eixo"></i>Eixo / sentido</span>
+          </div>
+          <div id="faca3dDiagCanvas" class="faca3d-diag-canvas"></div>
+          <div id="faca3dDiagInfo" class="faca3d-diag-info">Clique em um vinco para ver o motivo.</div>
+        </div>
+      </section>
+    </main>
+
+    <footer id="faca3dStatus" class="faca3d-status">
+      <span id="faca3dStatusText">Pronto.</span>
+    </footer>
+  </div>
+  <script src="js/CSInterface.js"></script>
+  <script src="js/faca3d.js"></script>
+</body>
+</html>

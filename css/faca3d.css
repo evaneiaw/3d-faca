@@ -1,0 +1,907 @@
+/* FACA 3D — estilos do módulo. Todas as classes usam o prefixo faca3d-. */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.faca3d-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg, #fafafa);
+  color: var(--text, #2c2c2c);
+  font-family: "Adobe Clean", "Segoe UI", Arial, sans-serif;
+  font-size: 12px;
+}
+
+.faca3d-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--panel-bg, #fff);
+  border-bottom: 1px solid var(--border, #e1e1e1);
+  flex: 0 0 auto;
+}
+
+.faca3d-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  margin: 0;
+}
+
+.faca3d-phase {
+  font-size: 10px;
+  color: var(--accent, #1473e6);
+  background: rgba(20, 115, 230, 0.08);
+  border: 1px solid rgba(20, 115, 230, 0.22);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.faca3d-close {
+  margin-left: 0;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 4px;
+  background: var(--panel-bg, #fff);
+  color: var(--text-muted, #707070);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.faca3d-home {
+  margin-left: auto;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 4px;
+  background: var(--panel-bg, #fff);
+  color: var(--text-muted, #707070);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.faca3d-home:hover {
+  border-color: var(--accent, #1473e6);
+  color: var(--accent, #1473e6);
+}
+
+.faca3d-close:hover {
+  color: var(--err, #d7373f);
+  border-color: var(--err, #d7373f);
+}
+
+.faca3d-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 10px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.faca3d-stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel-bg, #fff);
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.faca3d-viewer {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f4f5f7;
+}
+
+.faca3d-empty {
+  text-align: center;
+  padding: 24px;
+  max-width: 360px;
+}
+
+.faca3d-empty-icon {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 12px;
+  border: 1.5px dashed #b9bec7;
+  border-radius: 8px;
+  position: relative;
+  transform: rotate(-8deg);
+}
+
+.faca3d-empty-icon::after {
+  content: "";
+  position: absolute;
+  inset: 12px 10px;
+  border: 1.5px solid #c9ced6;
+  border-radius: 3px;
+}
+
+.faca3d-empty-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b6270;
+  margin-bottom: 4px;
+}
+
+.faca3d-empty-text {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #828a97;
+}
+
+.faca3d-empty-text strong {
+  color: #5b6270;
+}
+
+.faca3d-empty.is-read .faca3d-empty-icon {
+  border-color: var(--ok, #12805c);
+}
+
+.faca3d-empty.is-read .faca3d-empty-icon::after {
+  border-color: var(--ok, #12805c);
+}
+
+.faca3d-empty.is-error .faca3d-empty-title {
+  color: var(--err, #d7373f);
+}
+
+.faca3d-stage-foot {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-top: 1px solid var(--border, #e1e1e1);
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+  background: var(--panel-bg, #fff);
+}
+
+.faca3d-side {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 2px;
+}
+
+.faca3d-card {
+  background: var(--panel-bg, #fff);
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.faca3d-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.faca3d-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.faca3d-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.faca3d-row span {
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-row strong {
+  font-weight: 600;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+
+.faca3d-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.faca3d-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #707070);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.faca3d-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.faca3d-btn-row {
+  display: flex;
+  gap: 6px;
+}
+
+.faca3d-btn {
+  flex: 0 0 auto;
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 4px;
+  background: var(--panel-bg, #fff);
+  color: var(--text, #2c2c2c);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.faca3d-btn:hover:not(:disabled) {
+  border-color: var(--accent, #1473e6);
+  color: var(--accent, #1473e6);
+}
+
+.faca3d-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.faca3d-btn.small {
+  flex: 0 0 auto;
+  font-size: 10px;
+  padding: 4px 8px;
+}
+
+.faca3d-btn-primary {
+  background: var(--accent, #1473e6);
+  border-color: var(--accent, #1473e6);
+  color: #fff;
+}
+
+.faca3d-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover, #0d66d0);
+  color: #fff;
+}
+
+.faca3d-btn-secondary {
+  background: var(--panel-bg, #fff);
+  color: var(--text-muted, #707070);
+  border-style: dashed;
+}
+
+.faca3d-btn-secondary:hover:not(:disabled) {
+  color: var(--text, #2c2c2c);
+  border-color: var(--text-muted, #707070);
+  border-style: solid;
+}
+
+.faca3d-hint {
+  margin: 8px 0 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-muted {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-subtitle {
+  margin: 10px 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #707070);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.faca3d-spots {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 148px;
+  overflow-y: auto;
+}
+
+.faca3d-spot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 3px 4px;
+  border-radius: 3px;
+  background: #f7f8fa;
+}
+
+.faca3d-swatch {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  border-radius: 2px;
+}
+
+.faca3d-spot-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.faca3d-spot-count {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-types {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+}
+
+.faca3d-type-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-type-row strong {
+  color: var(--text, #2c2c2c);
+  font-weight: 600;
+}
+
+.faca3d-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.faca3d-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.faca3d-field span {
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-input {
+  width: 100%;
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text, #2c2c2c);
+  background: var(--panel-bg, #fff);
+}
+
+.faca3d-input:focus {
+  outline: none;
+  border-color: var(--accent, #1473e6);
+}
+
+.faca3d-pre {
+  margin: 8px 0 0;
+  padding: 8px;
+  max-height: 190px;
+  overflow: auto;
+  background: #f7f8fa;
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 9.5px;
+  line-height: 1.45;
+  color: #3c4452;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.faca3d-status {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 12px;
+  background: var(--panel-bg, #fff);
+  border-top: 1px solid var(--border, #e1e1e1);
+  font-size: 11px;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-status.faca3d-ok {
+  color: var(--ok, #12805c);
+}
+
+.faca3d-status.faca3d-err {
+  color: var(--err, #d7373f);
+}
+
+.faca3d-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border, #e1e1e1);
+  border-top-color: var(--accent, #1473e6);
+  border-radius: 50%;
+  animation: faca3d-spin 0.8s linear infinite;
+}
+
+@keyframes faca3d-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.faca3d-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border, #e1e1e1);
+  background: var(--panel-bg, #fff);
+}
+
+.faca3d-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.faca3d-toolbar-group + .faca3d-toolbar-group {
+  padding-left: 8px;
+  border-left: 1px solid var(--border, #e1e1e1);
+}
+
+.faca3d-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.faca3d-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+  white-space: nowrap;
+}
+
+.faca3d-legend-line {
+  width: 18px;
+  height: 0;
+  border-top: 2px solid currentColor;
+  display: inline-block;
+}
+
+.faca3d-legend-line.is-cut {
+  color: #d7373f;
+}
+
+.faca3d-legend-line.is-crease {
+  color: #1473e6;
+  border-top-style: dashed;
+}
+
+.faca3d-legend-box {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border: 1px solid transparent;
+}
+
+.faca3d-legend-box.is-face {
+  background: rgba(20, 115, 230, 0.12);
+  border-color: rgba(20, 115, 230, 0.35);
+}
+
+.faca3d-legend-box.is-open {
+  background: rgba(240, 138, 42, 0.22);
+  border-color: rgba(240, 138, 42, 0.55);
+}
+
+.faca3d-legend-ring {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  border: 2px solid #e07b18;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.faca3d-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.faca3d-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border, #e1e1e1);
+}
+
+.faca3d-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.faca3d-toggle input {
+  margin: 0;
+}
+
+.faca3d-btn.icon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 23px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.faca3d-zoom {
+  min-width: 42px;
+  text-align: right;
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+  font-variant-numeric: tabular-nums;
+}
+
+.faca3d-viewer {
+  position: relative;
+  overflow: hidden;
+}
+
+.faca3d-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.faca3d-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.faca3d-viewer > .faca3d-empty {
+  pointer-events: none;
+}
+
+/* --- layout 3D (tela principal) --------------------------------------- */
+
+.faca3d-main-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.faca3d-doc {
+  font-size: 11px;
+  color: var(--text-muted, #707070);
+  margin-left: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.faca3d-fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.faca3d-fold-label {
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.faca3d-fold input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 120px;
+  accent-color: var(--accent, #1473e6);
+}
+
+.faca3d-art {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.faca3d-face-nome {
+  font-size: 11px;
+  color: var(--text, #2c2c2c);
+  background: rgba(20, 115, 230, 0.08);
+  border: 1px solid rgba(20, 115, 230, 0.25);
+  border-radius: 4px;
+  padding: 3px 6px;
+  white-space: nowrap;
+  min-width: 92px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.faca3d-face-select {
+  flex: 0 1 150px;
+  min-width: 110px;
+  max-width: 150px;
+}
+
+.faca3d-artes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 300px;
+  min-width: 240px;
+}
+
+.faca3d-arte-select {
+  flex: 0 1 140px;
+  min-width: 110px;
+  max-width: 150px;
+}
+
+.faca3d-nota-artes {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-muted, #707070);
+  background: var(--panel-bg, #fff);
+  border-bottom: 1px solid var(--border, #e1e1e1);
+}
+
+.faca3d-nota-artes:empty {
+  display: none;
+}
+
+.faca3d-view {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 150px;
+  min-width: 110px;
+}
+
+.faca3d-select {
+  flex: 1 1 auto;
+  min-width: 120px;
+  max-width: 200px;
+  font-family: inherit;
+  font-size: 10px;
+  padding: 3px 5px;
+  border: 1px solid var(--border, #e1e1e1);
+  border-radius: 4px;
+  background: var(--panel-bg, #fff);
+  color: var(--text, #2c2c2c);
+}
+
+.faca3d-angle {
+  min-width: 36px;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text, #2c2c2c);
+}
+
+.faca3d-viewer3d {
+  min-height: 0;
+}
+
+.faca3d-canvas3d {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.faca3d-canvas3d.is-dragging {
+  cursor: grabbing;
+}
+
+.faca3d-canvas3d.is-panning {
+  cursor: move;
+}
+
+.faca3d-note {
+  flex: 0 0 auto;
+  padding: 0 10px 8px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--text-muted, #707070);
+  background: var(--panel-bg, #fff);
+}
+
+.faca3d-note:empty {
+  display: none;
+}
+
+/* --- diagnóstico de vincos -------------------------------------------- */
+
+.faca3d-stage {
+  position: relative;
+}
+
+.faca3d-diag {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel-bg, #fff);
+}
+
+.faca3d-diag[hidden] {
+  display: none !important;
+}
+
+.faca3d-diag-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border, #e1e1e1);
+  font-size: 12px;
+}
+
+.faca3d-diag-head strong {
+  font-size: 12px;
+}
+
+.faca3d-diag-head span {
+  flex: 1 1 auto;
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-diag-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border, #e1e1e1);
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+}
+
+.faca3d-diag-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.faca3d-diag-line {
+  width: 18px;
+  height: 0;
+  border-top: 2px solid currentColor;
+  display: inline-block;
+}
+
+.faca3d-diag-line.is-dobra { color: #1473e6; }
+.faca3d-diag-line.is-rigida { color: #e07b18; border-top-style: dashed; }
+.faca3d-diag-line.is-sempar { color: #d7373f; border-top-style: dotted; }
+.faca3d-diag-line.is-multipla { color: #8b3fd0; border-top-style: dotted; }
+.faca3d-diag-line.is-conexao { color: #12805c; }
+.faca3d-diag-line.is-extensao { color: #12805c; border-top-style: dotted; }
+.faca3d-diag-line.is-subdivisao { color: #0f766e; border-top-style: dashed; }
+
+.faca3d-diag-x {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  color: #d7373f;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 12px;
+  text-align: center;
+}
+
+.faca3d-diag-eixo {
+  width: 18px;
+  height: 0;
+  display: inline-block;
+  border-top: 1px dashed #111827;
+}
+
+.faca3d-diag-canvas {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #f7f8fa;
+}
+
+.faca3d-diag-canvas-el {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+.faca3d-diag-info {
+  flex: 0 0 auto;
+  height: 78px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border, #e1e1e1);
+  font-size: 10px;
+  line-height: 1.45;
+  color: #3c4452;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  .faca3d-main {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .faca3d-side {
+    overflow: visible;
+  }
+
+  .faca3d-viewer {
+    min-height: 340px;
+  }
+}
