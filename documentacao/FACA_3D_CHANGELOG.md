@@ -667,3 +667,12 @@ Direção/perfil inferidos; 4 contatos de ~1 mm; 4 recortes sem vinco; ArtiosCAD
 - Caminhos de armazenamento migrados para %APPDATA%\\FACA3D.
 - Logs migrados para %APPDATA%\\FACA3D\\logs.
 - Criado README.md independente.
+
+
+## Redesign visual (0.8.0)
+
+- Sistema profissional de botoes: estados hover/pressed/focus/disabled/selected/loading.
+- Paleta coerente via variaveis CSS, tipografia Adobe Clean, cantos arredondados, sombras discretas.
+- Icones SVG inline nos botoes principais (Dobrar, Desdobrar, Reset, Ler, Diagnostico, Confirmar, Cancelar).
+- Inputs/selects alinhados ao mesmo acabamento.
+- Responsividade aprimorada para painel CEP estreito.

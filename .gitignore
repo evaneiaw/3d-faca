@@ -24,3 +24,6 @@ yarn-error.log*
 *.tmp
 *.temp
 cep_cache/
+
+# Backups locais (não publicar)
+_backups/

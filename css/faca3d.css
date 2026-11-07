@@ -959,3 +959,334 @@ body {
     min-height: 340px;
   }
 }
+/* ============================================================
+   FACA 3D - REDESIGN VISUAL DOS BOTOES (sistema profissional)
+   ============================================================ */
+
+:root {
+  --bg: #f3f4f6;
+  --panel-bg: #ffffff;
+  --border: #d9dde3;
+  --border-strong: #bfc5ce;
+  --text: #1f2328;
+  --text-muted: #5b6270;
+  --accent: #0969da;
+  --accent-hover: #0860ca;
+  --accent-soft: rgba(9, 105, 218, 0.10);
+  --ok: #1a7f37;
+  --err: #cf222e;
+  --warn: #9a6700;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.06);
+  --shadow-md: 0 2px 6px rgba(31, 35, 40, 0.10);
+  --focus-ring: 0 0 0 3px rgba(9, 105, 218, 0.25);
+  --font-ui: "Adobe Clean", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.faca3d-app {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.faca3d-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel-bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 7px 14px;
+  min-height: 32px;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.12s ease, border-color 0.12s ease,
+              color 0.12s ease, box-shadow 0.12s ease, transform 0.06s ease;
+}
+
+.faca3d-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-md);
+}
+
+.faca3d-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.faca3d-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--accent);
+}
+
+.faca3d-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.faca3d-btn.small {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  min-height: 26px;
+  border-radius: var(--radius-sm);
+}
+
+.faca3d-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.faca3d-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #ffffff;
+}
+
+.faca3d-btn-primary:active:not(:disabled) {
+  background: #0757b5;
+}
+
+.faca3d-btn-secondary {
+  background: var(--panel-bg);
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+  border-style: solid;
+}
+
+.faca3d-btn-secondary:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-muted);
+  background: #f6f8fa;
+}
+
+.faca3d-btn-danger {
+  background: #ffffff;
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.faca3d-btn-danger:hover:not(:disabled) {
+  background: rgba(207, 34, 46, 0.08);
+  color: var(--err);
+}
+
+.faca3d-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.faca3d-btn-ghost:hover:not(:disabled) {
+  background: rgba(31, 35, 40, 0.06);
+  color: var(--text);
+  border-color: transparent;
+}
+
+.faca3d-btn.is-selected,
+.faca3d-btn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.faca3d-btn.is-loading {
+  pointer-events: none;
+  color: transparent;
+  position: relative;
+}
+
+.faca3d-btn.is-loading::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: faca3d-spin 0.8s linear infinite;
+}
+
+.faca3d-btn.icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  min-height: 32px;
+  font-size: 14px;
+}
+
+.faca3d-btn.icon.small {
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+}
+
+.faca3d-close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 16px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+
+.faca3d-close:hover {
+  color: var(--err);
+  border-color: var(--err);
+  background: rgba(207, 34, 46, 0.06);
+}
+
+.faca3d-home {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.faca3d-home:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Inputs / selects alinhados ao mesmo acabamento */
+.faca3d-input,
+.faca3d-select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 6px 8px;
+  min-height: 30px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.faca3d-input:focus,
+.faca3d-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+/* Status bar */
+.faca3d-status {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--panel-bg);
+  border-top: 1px solid var(--border);
+}
+
+/* Toolbar */
+.faca3d-toolbar {
+  padding: 8px 12px;
+  gap: 10px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.faca3d-toolbar-group {
+  gap: 8px;
+}
+
+.faca3d-toolbar-group + .faca3d-toolbar-group {
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+/* Header */
+.faca3d-header {
+  padding: 10px 14px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.faca3d-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.faca3d-phase {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(9, 105, 218, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+}
+
+/* Cards */
+.faca3d-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.faca3d-stage {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+/* Range slider */
+.faca3d-fold input[type="range"] {
+  accent-color: var(--accent);
+}
+
+/* Toggle */
+.faca3d-toggle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Empty state */
+.faca3d-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.faca3d-empty-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Diagnostico head buttons spacing */
+.faca3d-diag-head .faca3d-btn {
+  min-height: 28px;
+}
+
+/* Responsive: ensure buttons wrap cleanly */
+@media (max-width: 900px) {
+  .faca3d-toolbar {
+    flex-wrap: wrap;
+  }
+  .faca3d-btn {
+    white-space: normal;
+  }
+}
