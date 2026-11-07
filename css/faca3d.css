@@ -1290,3 +1290,105 @@ body {
     white-space: normal;
   }
 }
+/* ============================================================
+   FACA 3D - CORRECAO DE DISPOSICAO DOS CONTROLES (erro.png)
+   ============================================================ */
+
+.faca3d-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  overflow: visible;
+}
+
+.faca3d-toolbar-group,
+.faca3d-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 240px;
+  padding: 2px 0;
+  border-left: none;
+  overflow: visible;
+}
+
+.faca3d-toolbar-group + .faca3d-toolbar-group,
+.faca3d-toolbar-group + .faca3d-toolbar-actions {
+  padding-left: 0;
+  border-left: none;
+}
+
+/* grupos internos: sem largura minima forçada */
+.faca3d-fold,
+.faca3d-art,
+.faca3d-artes,
+.faca3d-view,
+.faca3d-dobra-salva {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 180px;
+}
+
+.faca3d-fold input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 80px;
+  max-width: 100%;
+}
+
+.faca3d-face-select,
+.faca3d-arte-select,
+.faca3d-select {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 110px;
+}
+
+.faca3d-face-nome {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.faca3d-btn {
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.faca3d-btn.small {
+  white-space: nowrap;
+}
+
+/* painel estreito: grupos ocupam a largura toda e empilham */
+@media (max-width: 420px) {
+  .faca3d-toolbar-group,
+  .faca3d-toolbar-actions,
+  .faca3d-fold,
+  .faca3d-art,
+  .faca3d-artes,
+  .faca3d-view,
+  .faca3d-dobra-salva {
+    flex: 1 1 100%;
+  }
+  .faca3d-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
