@@ -308,7 +308,14 @@
     if (estado.carregandoArtes) return estado.carregandoArtes;
     estado.carregandoArtes = lerArtesDoDocumento()
       .then(function (dados) {
+        registrarLog("faca3d", "artes: doc=" + dados.doc + " temp=" + dados.temp + " artboards=" + (dados.artboards ? dados.artboards.length : 0));
+        if (dados.artboards) {
+          for (var _ai = 0; _ai < dados.artboards.length; _ai++) {
+            registrarLog("faca3d", "artes: ab[" + _ai + "]=" + dados.artboards[_ai].indice + " nome=\"" + dados.artboards[_ai].nome + "\"");
+          }
+        }
         var papeis = F.view.artes.decidir(dados.artboards);
+        registrarLog("faca3d", "artes: externa=" + (papeis.externa ? (papeis.externa.indice + " " + papeis.externa.nome) : "null") + " interna=" + (papeis.interna ? (papeis.interna.indice + " " + papeis.interna.nome) : "null"));
         estado.artesInfo = { dados: dados, papeis: papeis };
         var offset = estado.offsetArte ||
           (dados.faca ? { x: dados.faca.left, y: dados.faca.bottom } : { x: 0, y: 0 });
@@ -322,6 +329,7 @@
         return chamarArte("faca3dExportarArte", [indices.join(","), pastaArte(dados), 2200]).then(
           function (resposta) {
             var saida = lerLinhas(resposta);
+            registrarLog("faca3d", "artes: export resposta=" + String(resposta).replace(/\\n/g, " | ").slice(0, 400));
             var arquivos = {};
             var lista = saida.listas.ARQUIVO || [];
             for (var i = 0; i < lista.length; i++) {
@@ -330,15 +338,25 @@
                 largura: Number(lista[i][2] || 0),
                 altura: Number(lista[i][3] || 0)
               };
+              registrarLog("faca3d", "artes: arquivo idx=" + lista[i][0] + " caminho=" + arquivos[Number(lista[i][0])].caminho + " " + arquivos[Number(lista[i][0])].largura + "x" + arquivos[Number(lista[i][0])].altura);
+            }
+            if (saida.listas.ERRO) {
+              for (var _ei = 0; _ei < saida.listas.ERRO.length; _ei++) {
+                registrarLog("faca3d", "artes: ERRO export=" + saida.listas.ERRO[_ei].join(" "));
+              }
             }
             var mapa = {};
             var pedidos = [];
             function pedir(item, chave) {
               if (!item) return null;
               var arq = arquivos[item.indice];
-              if (!arq) return null;
+              if (!arq) {
+                registrarLog("faca3d", "artes: sem arquivo exportado para " + chave + " idx=" + item.indice);
+                return null;
+              }
               pedidos.push(
                 F.view.artes.carregarTextura(arq.caminho, {}).then(function (t) {
+                  registrarLog("faca3d", "artes: textura carregada " + chave + " " + t.largura + "x" + t.altura + " caminho=" + arq.caminho);
                   mapa[chave] = {
                     texture: t.texture,
                     rect: item.rect,
@@ -348,6 +366,9 @@
                     largura: t.largura,
                     altura: t.altura
                   };
+                }).catch(function (e) {
+                  registrarLog("faca3d", "artes: FALHA textura " + chave + ": " + (e && e.message ? e.message : e));
+                  throw e;
                 })
               );
               return null;
@@ -362,6 +383,7 @@
         );
       })
       .catch(function (e) {
+        registrarLog("faca3d", "artes: ERRO geral: " + (e && e.message ? e.message : e));
         estado.artesInfo = null;
         aplicarArtes(null, [
           "Não foi possível montar a arte: " + (e && e.message ? e.message : e)

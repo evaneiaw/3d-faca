@@ -162,7 +162,9 @@
     return "file:///" + encodeURI(p).replace(/#/g, "%23").replace(/\?/g, "%3F");
   }
 
-  /* Carrega o PNG exportado e devolve uma textura pronta (fundo de papel). */
+  /* Carrega o PNG exportado e devolve uma textura pronta (fundo de papel).
+   * Usa Image diretamente (src = file:///...), evitando fetch() que e bloqueado
+   * pelo Chromium do CEP para arquivos locais. */
   function carregarTextura(caminho, opcoes) {
     var opt = opcoes || {};
     return new Promise(function (resolve, reject) {
@@ -171,40 +173,32 @@
         reject(new Error("Caminho de arte vazio."));
         return;
       }
-      fetch(url, { cache: "no-store" })
-        .then(function (r) {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.blob();
-        })
-        .then(function (blob) {
-          var objUrl = URL.createObjectURL(blob);
-          var img = new Image();
-          img.onload = function () {
-            try {
-              var canvas = document.createElement("canvas");
-              canvas.width = img.naturalWidth;
-              canvas.height = img.naturalHeight;
-              var ctx = canvas.getContext("2d");
-              ctx.fillStyle = opt.papel || COR_PAPEL;
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0);
-              var textura = new THREE.CanvasTexture(canvas);
-              textura.anisotropy = opt.anisotropia || 4;
-              textura.needsUpdate = true;
-              URL.revokeObjectURL(objUrl);
-              resolve({ texture: textura, largura: canvas.width, altura: canvas.height });
-            } catch (e) {
-              URL.revokeObjectURL(objUrl);
-              reject(e);
-            }
-          };
-          img.onerror = function () {
-            URL.revokeObjectURL(objUrl);
-            reject(new Error("Falha ao decodificar a arte: " + caminho));
-          };
-          img.src = objUrl;
-        })
-        .catch(reject);
+      var img = new Image();
+      img.onload = function () {
+        try {
+          if (!img.naturalWidth || !img.naturalHeight) {
+            reject(new Error("Arte com dimensao zero: " + caminho));
+            return;
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          var ctx = canvas.getContext("2d");
+          ctx.fillStyle = opt.papel || COR_PAPEL;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          var textura = new THREE.CanvasTexture(canvas);
+          textura.anisotropy = opt.anisotropia || 4;
+          textura.needsUpdate = true;
+          resolve({ texture: textura, largura: canvas.width, altura: canvas.height });
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = function () {
+        reject(new Error("Falha ao carregar a arte: " + caminho + " (url=" + url + ")"));
+      };
+      img.src = url;
     });
   }
 

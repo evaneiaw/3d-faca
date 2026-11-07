@@ -75,3 +75,11 @@
 4. **ArtiosCAD não disponível** para comparação.
 5. **Arte real (pixel/imagem) ainda não testada** — a arte do arquivo de teste é um rótulo único (`Frente`/`Verso`).
 6. Planificado (0°): mantém a orientação física de cada face (decisão registrada); algumas faces mostram o lado interno para cima.
+
+
+## Correcao de arte (0.8.0)
+
+- Causa provavel: carregarTextura usava fetch() em URLs file:///, bloqueado pelo Chromium do CEP. Substituido por carregamento direto via Image.src.
+- Adicionado --allow-file-access-from-files ao manifest.
+- Instrumentacao de log em js/faca3d.js (artboards, arquivos exportados, texturas, erros).
+- Validacao real pendente: abrir painel no Illustrator e verificar arte externa/interna em 0 e 90 graus.
