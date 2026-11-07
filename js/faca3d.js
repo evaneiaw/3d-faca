@@ -208,6 +208,7 @@
 
   function lerArtesDoDocumento() {
     return chamarArte("faca3dArtes", []).then(function (resposta) {
+      registrarLog("faca3d", "artes: raw faca3dArtes=" + String(resposta).replace(/\\n/g, " | ").slice(0, 500));
       var dados = lerLinhas(resposta);
       var lista = dados.listas.ARTBOARD || [];
       var artboards = [];
