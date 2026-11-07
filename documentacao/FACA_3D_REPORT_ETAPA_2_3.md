@@ -16,9 +16,9 @@ Converter o grafo de contornos em uma **representação topológica única e ind
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `convertidos/faca3d/js/core/face-detector.js` | meias-arestas, faces e adjacências |
-| `convertidos/faca3d/js/core/topology.js` | consolidação e resumo |
-| `convertidos/faca3d/js/core/geometry-engine.js` | orquestração, tempos e `resumoTexto` |
+| `js/core/face-detector.js` | meias-arestas, faces e adjacências |
+| `js/core/topology.js` | consolidação e resumo |
+| `js/core/geometry-engine.js` | orquestração, tempos e `resumoTexto` |
 
 ## 3. Algoritmo de faces
 

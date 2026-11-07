@@ -6,7 +6,7 @@
 - D2: Começar com transporte textual pela ponte CEP. Medir limites antes de escolher outra solução.
 - D3: Montanha e vale deverão ser configuráveis individualmente. Não presumir que todas as dobras possuem a mesma direção.
 - D4: Espessura configurável pelo usuário, com valor inicial de 0,5 mm.
-- D5: Documentação obrigatória em `convertidos/faca3d/documentacao/`.
+- D5: Documentação obrigatória em `documentacao/`.
 
 ## 2. REGRAS DE TESTE — ARQUIVO OFICIAL DE TESTE
 
@@ -21,7 +21,7 @@ O arquivo `faca teste.pdf` (C:\Users\user\Desktop\faca teste.pdf, 75.135 bytes, 
 
 ## 3. REFERÊNCIA DE TESTE
 
-Documento criado em `convertidos/faca3d/documentacao/REFERENCIA_TESTE.md` com todos os detalhes do arquivo oficial.
+Documento criado em `documentacao/REFERENCIA_TESTE.md` com todos os detalhes do arquivo oficial.
 
 ## 5. REGISTRO DO ARQUIVO OFICIAL DE TESTE
 
@@ -75,7 +75,7 @@ A afirmação "CDP porta 7777 não responde" estava **incorreta**:
 
 - `Get-NetTCPConnection -LocalPort 7777` → vazio (falso negativo);
 - `netstat -ano` → `127.0.0.1:7777 LISTENING 25796`;
-- `Invoke-WebRequest http://127.0.0.1:7777/json/list` → HTTP 200 com a página "Mazurky Tools";
+- `Invoke-WebRequest http://127.0.0.1:7777/json/list` → HTTP 200 com a página "FACA 3D";
 - log do painel → `DevTools listening on ws://127.0.0.1:7777/devtools/browser/...`.
 
 ### 7.3 Resultados
@@ -83,7 +83,7 @@ A afirmação "CDP porta 7777 não responde" estava **incorreta**:
 | Teste | Resultado |
 |---|---|
 | Janela do Illustrator | PID 3916, `h=0x804EE`, classe `illustrator` |
-| Painel CEP | PID 25796, `com.mazurky.tools.panel`, `windowid` 792558 |
+| Painel CEP | PID 25796, `com.FACA 3D.tools.panel`, `windowid` 792558 |
 | Grid | 19 ferramentas; `data-tool="faca3d"` |
 | Abrir FACA 3D | Montagem em 159 ms |
 | Diagnóstico (`faca teste.pdf`) | 106 caminhos, 106 abertos, Crease 22, Cut 84, 8 ms |
@@ -136,7 +136,7 @@ Com o WebGL comprovado no CEP e o ciclo completo validado, a **FASE 1 está conc
 
 - Somente `faca teste.pdf` como arquivo de teste; nunca modificá-lo.
 - Cada entrega é executada no painel CEP real (harness CDP) com screenshot.
-- Nenhuma ferramenta existente do MazurkyTools é alterada.
+- Nenhuma ferramenta existente do FACA3D é alterada.
 - Documentação registra resultados reais, não substitui a implementação.
 
 ## 9. FASE 3.0 — MONTAGEM 3D (prioridade: ver a faca dobrar)

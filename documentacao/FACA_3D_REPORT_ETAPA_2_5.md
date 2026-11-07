@@ -16,7 +16,7 @@ Entregar o **primeiro marco visível**: abrir o FACA 3D, clicar em **Ler faca** 
 
 ### 2.1 Novo renderizador 2D
 
-`convertidos/faca3d/js/view/canvas2d.js` — Canvas 2D nativo, sem dependências.
+`js/view/canvas2d.js` — Canvas 2D nativo, sem dependências.
 
 | Recurso | Implementação |
 |---|---|

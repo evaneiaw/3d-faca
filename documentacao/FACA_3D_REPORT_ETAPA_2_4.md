@@ -17,7 +17,7 @@ Repetir a validação oficial em ambiente real (painel CEP no Illustrator), cruz
 | Item | Valor |
 |---|---|
 | Illustrator | 30.8.2 (Adobe Illustrator 2026), PID 3916 |
-| Painel CEP | `com.mazurky.tools.panel` exposto em `http://127.0.0.1:7777` |
+| Painel CEP | `com.FACA 3D.tools.panel` exposto em `http://127.0.0.1:7777` |
 | Driver | `%TEMP%\opencode\cep_cdp.mjs` (Node puro, CDP) |
 | MCP | `illustrator_connection_status(probe:true)` → ready |
 | Documento | `faca teste.pdf`, **1 documento aberto** durante todo o teste |
@@ -115,7 +115,7 @@ O custo dominante é o transporte ExtendScript → painel; o processamento geom�
 - O motor é **somente leitura**: nenhum `Save`, `Save As`, `duplicate`, `remove` ou alteração de item.
 - O Illustrator chegou a ter **0 documentos** em determinado momento, mas isso decorreu de salvamento/fechamento pelo usuário (o `MELANCIA.pdf` foi salvo às 11:42:46, comprovando edição concorrente do usuário).
 - Durante uma medição de desempenho fora do escopo, o documento aberto pelo usuário (`MELANCIA.pdf`) foi processado por engano. **Esse resultado foi descartado e não é usado como evidência** em nenhum relatório; nenhum documento foi alterado. A validação oficial usa **somente** `faca teste.pdf`.
-- Nenhuma ferramenta existente do MazurkyTools foi modificada.
+- Nenhuma ferramenta existente do FACA3D foi modificada.
 
 ## 8. Integridade do arquivo oficial
 
@@ -131,7 +131,7 @@ O arquivo foi aberto e fechado **sem salvar**; nenhuma cópia, conversão ou mov
 
 | Suíte | Resultado |
 |---|---|
-| `convertidos/faca3d/testes/testes-geometria.mjs` | **58/58 aprovados, 0 falhas** |
+| `testes/testes-geometria.mjs` | **58/58 aprovados, 0 falhas** |
 | `node --check` em todos os módulos `.js` | OK |
 | `node --check` no `.jsx` (via cópia `.js`) | OK |
 

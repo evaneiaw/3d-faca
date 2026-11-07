@@ -16,10 +16,10 @@ Extrair a geometria real das linhas da faca — âncoras, handles Bézier, segme
 
 | Camada | Arquivo | Função |
 |---|---|---|
-| ExtendScript (extração bruta) | `convertidos/faca3d/jsx/faca3d.jsx` | `faca3dGeometria(escopo, inicio, fim)` |
+| ExtendScript (extração bruta) | `jsx/faca3d.jsx` | `faca3dGeometria(escopo, inicio, fim)` |
 | Protocolo | já existente (`F3D\|1\|...`) + tipo `GEO` | transporte textual versionado |
-| Parser | `convertidos/faca3d/js/core/path-parser.js` | decodifica, converte e associa |
-| Utilitários | `convertidos/faca3d/js/core/geometry-utils.js` | pt→mm, Bézier, interseções, bbox |
+| Parser | `js/core/path-parser.js` | decodifica, converte e associa |
+| Utilitários | `js/core/geometry-utils.js` | pt→mm, Bézier, interseções, bbox |
 
 O `jsx/host.jsx` **não foi alterado**: o painel chama a função pelo `chamar()` genérico do host, que já existe. Isso evita reiniciar o Illustrator (e fechar documentos do usuário).
 

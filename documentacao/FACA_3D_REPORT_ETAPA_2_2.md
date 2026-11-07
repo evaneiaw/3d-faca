@@ -14,7 +14,7 @@ Reconstruir contornos a partir dos segmentos, detectando extremidades coincident
 
 ## 2. Módulo
 
-`convertidos/faca3d/js/core/contour-builder.js`
+`js/core/contour-builder.js`
 
 Pipeline:
 

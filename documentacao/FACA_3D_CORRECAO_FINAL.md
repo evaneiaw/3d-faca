@@ -51,17 +51,17 @@ perspectiva e a caixa monta com a tampa subindo.
 
 ## Arquivos alterados
 
-- `convertidos/faca3d/js/view/three3d.js`
+- `js/view/three3d.js`
   - `pontuar` (sentido da dobra)
   - `ladoExterno`/`giroFace` (lado externo e profundidade da árvore)
   - `frenteNegativa`, `centroUv`, `orientarUv` (UV externa/interna)
   - `refInterna` (referência da 2ª artboard)
   - vista `baixo`
-- `convertidos/faca3d/js/faca3d.js`
+- `js/faca3d.js`
   - vista inicial `baixo`, troca para perspectiva no Dobrar e no Reset
-- `convertidos/faca3d/faca3d.html`
+- `faca3d.html`
   - opção "Plano 0° (arte externa)"
-- `convertidos/faca3d/js/view/artes.js`
+- `js/view/artes.js`
   - nomes das artboards mandam quando formam par claro
 - `js/main.js` (badge 0.11.6) e `index.html?v=32` (restauração do hub)
 - `CSXS/manifest.xml` (painel próprio "3D Faca")
@@ -80,7 +80,7 @@ Testes automatizados (todos passando):
 | seleção | 51/51 |
 
 Evidências reais no painel 3D com `faca teste.pdf`
-(`convertidos/faca3d/documentacao/evidencias/`):
+(`documentacao/evidencias/`):
 
 - `01_planificada_0.png` — planificada 0°, "Frente" legível
 - `02_inicio_fechamento.png` — início do fechamento, paredes subindo

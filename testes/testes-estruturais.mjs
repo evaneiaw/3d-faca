@@ -1,5 +1,5 @@
 /* FACA 3D — testes do Structural Line Resolver.
- * Executar: node convertidos/faca3d/testes/testes-estruturais.mjs
+ * Executar: node testes/testes-estruturais.mjs
  */
 
 globalThis.window = globalThis;

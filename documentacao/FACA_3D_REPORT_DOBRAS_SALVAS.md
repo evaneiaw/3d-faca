@@ -7,7 +7,7 @@ que voltem ao reler o documento ou depois de reiniciar o Illustrator.
 
 ## Onde fica
 
-`%APPDATA%\MazurkyTools\faca3d\dobras\<documento>-<chave>.json`
+`%APPDATA%\FACA3D\faca3d\dobras\<documento>-<chave>.json`
 
 - `<documento>`: nome do arquivo sanitizado.
 - `<chave>`: `engine.chaveDobra(res)` — hash (8 hex) da assinatura da geometria

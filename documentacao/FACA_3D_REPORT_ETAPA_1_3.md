@@ -29,7 +29,7 @@ Nenhuma ferramenta existente foi alterada. O PDF oficial não foi modificado (ha
 
 | Recurso | Situação no ambiente | Utilidade para o CEP |
 |---|---|---|
-| **Chrome DevTools Protocol (CEP)** | **Disponível** em `http://127.0.0.1:7777` (a extensão tem `.debug` com `com.mazurky.tools.panel` → ILST 7777 e `PlayerDebugMode=1`) | **Sim — solução adotada.** Acesso total ao DOM, JS e screenshot do painel |
+| **Chrome DevTools Protocol (CEP)** | **Disponível** em `http://127.0.0.1:7777` (a extensão tem `.debug` com `com.FACA 3D.tools.panel` → ILST 7777 e `PlayerDebugMode=1`) | **Sim — solução adotada.** Acesso total ao DOM, JS e screenshot do painel |
 | **Node.js 22 (embutido no ambiente)** | `fetch` e `WebSocket` globais | **Sim** — cliente CDP sem instalar dependências |
 | **Win32 P/Invoke (user32)** | Disponível (`SetCursorPos`, `mouse_event`, enumeração de janelas) | **Sim** — usado para clique físico real na aba do dock |
 | **Captura de tela GDI (System.Drawing)** | Disponível (`CopyFromScreen`) | **Sim** — evidência visual do painel dentro do Illustrator |
@@ -55,21 +55,21 @@ Nenhuma ferramenta existente foi alterada. O PDF oficial não foi modificado (ha
 | Título (durante o teste) | `faca teste.pdf @ 16,67 % (CMYK/Preview)` |
 | Versão | Adobe Illustrator **30.8.2** |
 
-### 3.2 Painel CEP (Mazurky Tools)
+### 3.2 Painel CEP (FACA 3D)
 
 | Item | Valor |
 |---|---|
-| Extensão | `com.mazurky.tools.panel` |
+| Extensão | `com.FACA 3D.tools.panel` |
 | Processo browser (dono da porta) | `CEPHtmlEngine.exe` — PID **25796** |
 | Processos renderer | PIDs **10312** e **24856** |
 | `windowid` interno | **792558** |
 | Argumento de debug | `--remote-debugging-port=7777` (presente nos renderers da extensão) |
 | Motor | Chrome/99.0.4844.84 — AdobeCEP/12.1.1 |
-| Página exposta | `file:///C:/Users/user/AppData/Roaming/Adobe/CEP/extensions/com.mazurky.tools/index.html` |
-| Título da página | `Mazurky Tools` |
+| Página exposta | `file:///C:/Users/user/AppData/Roaming/Adobe/CEP/extensions/com.FACA 3D.tools/index.html` |
+| Título da página | `FACA 3D` |
 | WebSocket | `ws://127.0.0.1:7777/devtools/page/0F0B4C7C0E321F7062A9B3AD876E879C` |
 
-O log `%TEMP%\CEPHtmlEngine12-ILST-30.8.2-com.mazurky.tools.panel.log` confirma:
+O log `%TEMP%\CEPHtmlEngine12-ILST-30.8.2-com.FACA 3D.tools.panel.log` confirma:
 
 ```
 DevTools listening on ws://127.0.0.1:7777/devtools/browser/91fbf4f7-f2e8-43e8-9842-b5a1f4b86513
@@ -89,7 +89,7 @@ A Etapa 1.2 afirmou que "a porta 7777 não está acessível". A investigação d
 |---|---|
 | `Get-NetTCPConnection -LocalPort 7777` | retornou vazio (**falso negativo**) |
 | `netstat -ano \| findstr :7777` | `TCP 127.0.0.1:7777 0.0.0.0:0 LISTENING 25796` |
-| `Invoke-WebRequest http://127.0.0.1:7777/json/list` | **HTTP 200**, com a página "Mazurky Tools" |
+| `Invoke-WebRequest http://127.0.0.1:7777/json/list` | **HTTP 200**, com a página "FACA 3D" |
 | `Invoke-WebRequest http://127.0.0.1:7777/json/version` | **HTTP 200**, Chrome/99.0.4844.84 |
 
 Ou seja: **o painel estava depurável desde 11:13:32** (momento em que foi carregado). O bloqueio nunca existiu; havia apenas um erro de verificação.
@@ -103,7 +103,7 @@ Ou seja: **o painel estava depurável desde 11:13:32** (momento em que foi carre
 `%TEMP%\opencode\cep_cdp.mjs` — driver CDP em Node puro (sem dependências):
 
 - lê `http://127.0.0.1:7777/json/list`;
-- conecta no `webSocketDebuggerUrl` da página "Mazurky Tools";
+- conecta no `webSocketDebuggerUrl` da página "FACA 3D";
 - executa `Runtime.evaluate` com `awaitPromise: true`, `returnByValue: true` e `userGesture: true`;
 - opcionalmente salva `Page.captureScreenshot` em PNG.
 
@@ -114,7 +114,7 @@ Uso: `node cep_cdp.mjs <script.js> [saida.png]`, onde `script.js` é o corpo de 
 | # | Ação | Método | Resultado |
 |---|---|---|---|
 | 1 | Identificar a janela do Illustrator | Win32 `EnumWindows` + `GetWindowText`/`GetClassName` | PID 3916, `h=0x804EE`, classe `illustrator` |
-| 2 | Identificar o painel CEP | `Get-CimInstance Win32_Process` + `/json/list` | PID 25796, extensão `com.mazurky.tools.panel`, página "Mazurky Tools" |
+| 2 | Identificar o painel CEP | `Get-CimInstance Win32_Process` + `/json/list` | PID 25796, extensão `com.FACA 3D.tools.panel`, página "FACA 3D" |
 | 3 | Acessar a interface do painel | CDP `Runtime.evaluate` | DOM completo do hub disponível |
 | 4 | Inventariar o grid | `document.querySelectorAll(".tool-btn")` | **19 botões**; `data-tool="faca3d"` = "19 · FACA 3D" |
 | 5 | Acionar FACA 3D | `btn.click()` (dispara o mesmo handler do usuário) | Ferramenta montada em **159 ms** |
@@ -213,7 +213,7 @@ Rodapé: `WebGL disponível neste painel (WebGL2).`
 
 ## 7. Evidências visuais
 
-Arquivos preservados em `convertidos/faca3d/documentacao/evidencias/`:
+Arquivos preservados em `documentacao/evidencias/`:
 
 | Arquivo | Conteúdo |
 |---|---|
@@ -265,8 +265,8 @@ As capturas do painel foram feitas por `Page.captureScreenshot` (render real do 
 
 Arquivos criados nesta etapa:
 
-- `convertidos/faca3d/documentacao/FACA_3D_REPORT_ETAPA_1_3.md` (este relatório)
-- `convertidos/faca3d/documentacao/evidencias/` (4 PNGs)
+- `documentacao/FACA_3D_REPORT_ETAPA_1_3.md` (este relatório)
+- `documentacao/evidencias/` (4 PNGs)
 
 Arquivos atualizados nesta etapa:
 

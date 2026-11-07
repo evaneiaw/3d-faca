@@ -34,9 +34,9 @@ A novidade é o **Structural Line Resolver**: 22 segmentos de vinco foram reorga
 
 Antes de qualquer alteração, os arquivos do motor 3D 0.4.0 foram copiados para:
 
-`convertidos/faca3d/documentacao/backup/0.4.0/`
+`documentacao/backup/0.4.0/`
 
-Com hashes em `VERSION-0.4.0.txt`. O PDF original não foi tocado (75.135 bytes, SHA-256 `03BC09CE…DEB41B`). Nenhuma outra ferramenta do MazurkyTools foi alterada.
+Com hashes em `VERSION-0.4.0.txt`. O PDF original não foi tocado (75.135 bytes, SHA-256 `03BC09CE…DEB41B`). Nenhuma outra ferramenta do FACA3D foi alterada.
 
 ## 3. Três representações separadas
 
@@ -161,11 +161,11 @@ A montagem **não mudou de resultado** porque os eixos estruturais coincidem com
 
 ### 8.1 Testes existentes (Fase 2)
 
-`node convertidos/faca3d/testes/testes-geometria.mjs` → **58/58**.
+`node testes/testes-geometria.mjs` → **58/58**.
 
 ### 8.2 Structural Line Resolver
 
-`node convertidos/faca3d/testes/testes-estruturais.mjs` → **28/28**, cobrindo:
+`node testes/testes-estruturais.mjs` → **28/28**, cobrindo:
 
 - vinco que termina antes de um corte;
 - vinco que termina próximo de outro vinco;
@@ -182,7 +182,7 @@ A montagem **não mudou de resultado** porque os eixos estruturais coincidem com
 
 ### 8.3 Hierarquia, eixos, sentido e ângulos (painel real)
 
-`convertidos/faca3d/testes/testes-3d-painel.js` via CDP → **26/26**:
+`testes/testes-3d-painel.js` via CDP → **26/26**:
 
 - 13 faces montadas, 11 dobradiças, 1 rígida;
 - 22 vincos: 15 dobram, 3 rígidos, 4 sem par;

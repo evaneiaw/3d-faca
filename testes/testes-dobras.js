@@ -4,7 +4,7 @@
  *   node %TEMP%\opencode\cep_cdp2.mjs testes\testes-dobras.js
  * Requer a ferramenta aberta e a faca lida.
  *
- * Grava um arquivo real em %APPDATA%\MazurkyTools\faca3d\dobras (chave do
+ * Grava um arquivo real em %APPDATA%\FACA3D\dobras (chave do
  * documento + geometria), restaura, relê a faca e confere a persistência.
  */
 function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

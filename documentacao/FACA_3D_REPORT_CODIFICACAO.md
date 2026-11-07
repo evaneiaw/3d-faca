@@ -1,6 +1,6 @@
 # FACA 3D — Correção de Codificação (UTF‑8 × Windows‑1252)
 
-**Escopo:** extensão Mazurky Tools como um todo (hub + ferramentas + FACA 3D).
+**Escopo:** extensão FACA 3D como um todo (hub + ferramentas + FACA 3D).
 **Data:** 2026-11-06 · **Versão:** FACA 3D 0.8.0 · painel v0.11.7
 **Tipo:** diagnóstico e correção de texto corrompido (mojibake). Nenhuma regra de negócio foi alterada.
 
@@ -37,7 +37,7 @@ Backup pré‑correção: `%TEMP%\opencode\main.js.bak`.
 - **host.jsx** já grava/lê seus arquivos com `f.encoding = "UTF-8"`.
 - **localStorage**, **evalScript** (ida e volta), **restauração/gravação do cache de FT** usam e devolvem UTF‑8 corretamente.
 - Comunicação CEP ↔ ExtendScript: teste ida‑e‑volta com as frases completas e com todo o alfabeto (`á à â ã é ê í ó ô õ ú ç Á Ã É Ó Õ Ú Ç`) — **sem perdas**.
-- **Nomes anteriores dos painéis/bundles** e `<Menu>` ("Mazurky Tools") não tinham mojibake.
+- **Nomes anteriores dos painéis/bundles** e `<Menu>` ("FACA 3D") não tinham mojibake.
 
 ## 4. Testex executados (Illustrator via harness CDP 7777)
 
@@ -67,15 +67,15 @@ Backup pré‑correção: `%TEMP%\opencode\main.js.bak`.
 ```
 js\main.js                              UTF‑8, crlf, 7312 linhas → corrigido
 CSS/HTML/JSX                            sem alteração
-convertidos\frenteverso\js\frenteverso.js   linha removida: csInterface.setWindowTitle(...)
-convertidos\caixa-maleta\js\caixa-maleta.js        (idem)
-convertidos\caixa-maleta-ft\js\caixa-maleta-ft.js  (idem)
+frenteverso\js\frenteverso.js   linha removida: csInterface.setWindowTitle(...)
+caixa-maleta\js\caixa-maleta.js        (idem)
+caixa-maleta-ft\js\caixa-maleta-ft.js  (idem)
 ```
 
 Os três `setWindowTitle(...)` foram removidos porque forçavam um nome antigo
-e não eram restaurados pelo hub; o painel passou a definir **"Mazurky Tools"**
+e não eram restaurados pelo hub; o painel passou a definir **"FACA 3D"**
 em `init()` e em `voltar()` (`definirTituloPainel`), sem alterar o ID interno da
-extensão, o `manifest.xml` (já correto: `<Menu>` já era `Mazurky Tools`) ou o
+extensão, o `manifest.xml` (já correto: `<Menu>` já era `FACA 3D`) ou o
 `.debug`.
 
 ## 7. Integridade dos documentos originais

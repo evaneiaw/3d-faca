@@ -9,10 +9,10 @@ Histórico cronológico das alterações do módulo FACA 3D. Não remover entrad
 **Tipo:** documentação / arquitetura (sem código de produto).
 
 ### Arquivos criados
-- `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` — objetivo, arquitetura, estrutura de arquivos, fases, dependências, decisões, critérios de conclusão.
-- `convertidos/faca3d/documentacao/FACA_3D_STATUS.md` — etapa atual, implementado, pendente, testes, riscos, próxima etapa.
-- `convertidos/faca3d/documentacao/FACA_3D_CHANGELOG.md` — este arquivo.
-- `convertidos/faca3d/documentacao/FACA_3D_REPORT.md` — relatório técnico da FASE 0.
+- `documentacao/FACA_3D_PLAN.md` — objetivo, arquitetura, estrutura de arquivos, fases, dependências, decisões, critérios de conclusão.
+- `documentacao/FACA_3D_STATUS.md` — etapa atual, implementado, pendente, testes, riscos, próxima etapa.
+- `documentacao/FACA_3D_CHANGELOG.md` — este arquivo.
+- `documentacao/FACA_3D_REPORT.md` — relatório técnico da FASE 0.
 
 ### Arquivos modificados
 Nenhum. O hub (`js/main.js`), o dispatcher (`jsx/host.jsx`), o manifesto e as ferramentas existentes permanecem intactos.
@@ -24,14 +24,14 @@ Nenhum. O hub (`js/main.js`), o dispatcher (`jsx/host.jsx`), o manifesto e as fe
 **Tipo:** implementação de infraestrutura + testes de backend.
 
 ### Arquivos criados
-- `convertidos/faca3d/faca3d.html` — interface do módulo (sem `<script>` estático; o hub remove).
-- `convertidos/faca3d/css/faca3d.css` — estilos com prefixo `faca3d-`, padrão visual do Mazurkytools.
-- `convertidos/faca3d/js/faca3d.js` — controlador único carregado pelo hub (`new Function`), inicialização, envio de diagnóstico, UI.
-- `convertidos/faca3d/js/core/loader.js` — carregador dinâmico de submódulos com cache-buster.
-- `convertidos/faca3d/js/core/protocol.js` — contrato textual versionado `F3D|1|...` entre JSX e JS.
-- `convertidos/faca3d/js/core/units.js` — conversão pt/mm, formatação de duração/bytes.
-- `convertidos/faca3d/js/view/renderer.js` — contrato do renderizador + diagnóstico de WebGL.
-- `convertidos/faca3d/jsx/faca3d.jsx` — backend ExtendScript: inventário do documento ativo, somente leitura.
+- `faca3d.html` — interface do módulo (sem `<script>` estático; o hub remove).
+- `css/faca3d.css` — estilos com prefixo `faca3d-`, padrão visual do FACA3D.
+- `js/faca3d.js` — controlador único carregado pelo hub (`new Function`), inicialização, envio de diagnóstico, UI.
+- `js/core/loader.js` — carregador dinâmico de submódulos com cache-buster.
+- `js/core/protocol.js` — contrato textual versionado `F3D|1|...` entre JSX e JS.
+- `js/core/units.js` — conversão pt/mm, formatação de duração/bytes.
+- `js/view/renderer.js` — contrato do renderizador + diagnóstico de WebGL.
+- `jsx/faca3d.jsx` — backend ExtendScript: inventário do documento ativo, somente leitura.
 
 ### Arquivos modificados
 - `js/main.js` — registro da chave `faca3d` (`dir: "faca3d"`, `nome: "FACA 3D"`, `version: "0.1.0"`, `divisor: true`) ao final do mapa; item 19 do grid. Bump do badge `v0.5.5` no `gridHTML()`.
@@ -60,7 +60,7 @@ Todos executados com Illustrator 30.8.2 real (via COM):
 ### Testes pendentes
 - Teste de WebGL dentro do painel (`renderer.probeWebGL()`).
 - Ciclo completo de abertura/fechamento da ferramenta no CEP.
-- Verificação do log central `mazurky.log`.
+- Verificação do log central `FACA 3D.log`.
 
 ---
 
@@ -128,13 +128,13 @@ Todos executados com Illustrator 30.8.2 real (via COM):
 3. A CDP (porta 7777) não está acessível.
 
 ### Arquivos criados nesta etapa
-- `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` — atualizado com plano de validação 1.2.
+- `documentacao/FACA_3D_PLAN.md` — atualizado com plano de validação 1.2.
 
 ### Arquivos criados na FASE 1.2 (relatório)
-- `convertidos/faca3d/documentacao/FACA_3D_REPORT_ETAPA_1_2.md` — relatório técnico da validação via MCP.
+- `documentacao/FACA_3D_REPORT_ETAPA_1_2.md` — relatório técnico da validação via MCP.
 
 ### Pendências operacionais após FASE 1.2
-- Execução manual no painel CEP: abrir Mazurky Tools → clicar FACA 3D → executar diagnóstico → testar WebGL → retorno ao grid → abrir outra ferramenta.
+- Execução manual no painel CEP: abrir FACA 3D → clicar FACA 3D → executar diagnóstico → testar WebGL → retorno ao grid → abrir outra ferramenta.
 - A FASE 2 só será autorizada após análise do relatório.
 - **Não iniciar a FASE 2 sem nova autorização do responsável de arquitetura.**
 
@@ -146,7 +146,7 @@ Todos executados com Illustrator 30.8.2 real (via COM):
 
 ### Resultado principal
 
-O bloqueio da FASE 1.2 não existia: o **Chrome DevTools Protocol** do painel estava ativo em `http://127.0.0.1:7777` (processo `CEPHtmlEngine.exe` PID 25796, extensão `com.mazurky.tools.panel`). O `Get-NetTCPConnection` retornava vazio (falso negativo) e o `fetch` do runtime de código não tinha `AbortSignal`/contexto de rede — daí a conclusão equivocada.
+O bloqueio da FASE 1.2 não existia: o **Chrome DevTools Protocol** do painel estava ativo em `http://127.0.0.1:7777` (processo `CEPHtmlEngine.exe` PID 25796, extensão `com.FACA 3D.tools.panel`). O `Get-NetTCPConnection` retornava vazio (falso negativo) e o `fetch` do runtime de código não tinha `AbortSignal`/contexto de rede — daí a conclusão equivocada.
 
 ### Recursos de automação inventariados
 
@@ -169,7 +169,7 @@ Driver criado em `%TEMP%\opencode\cep_cdp.mjs` (Node puro, sem dependências):
 | Passo | Resultado |
 |---|---|
 | Identificar o Illustrator | PID 3916, `h=0x804EE`, classe `illustrator` |
-| Identificar o painel | PID 25796, página "Mazurky Tools" |
+| Identificar o painel | PID 25796, página "FACA 3D" |
 | Inventariar o grid | 19 botões, `data-tool="faca3d"` |
 | Acionar FACA 3D | Montagem em **159 ms**, CSS 7.838 bytes |
 | Diagnóstico (`faca teste.pdf`) | 106 caminhos, 106 abertos, Crease 22, Cut 84, 8 ms |
@@ -195,11 +195,11 @@ Driver criado em `%TEMP%\opencode\cep_cdp.mjs` (Node puro, sem dependências):
 
 ### Arquivos criados
 
-- `convertidos/faca3d/documentacao/FACA_3D_REPORT_ETAPA_1_3.md` — relatório completo.
-- `convertidos/faca3d/documentacao/evidencias/etapa1_3_diagnostico.png`
-- `convertidos/faca3d/documentacao/evidencias/etapa1_3_painel_no_ilustrador.png`
-- `convertidos/faca3d/documentacao/evidencias/etapa1_3_webgl_no_painel.png`
-- `convertidos/faca3d/documentacao/evidencias/etapa1_3_retorno_grid.png`
+- `documentacao/FACA_3D_REPORT_ETAPA_1_3.md` — relatório completo.
+- `documentacao/evidencias/etapa1_3_diagnostico.png`
+- `documentacao/evidencias/etapa1_3_painel_no_ilustrador.png`
+- `documentacao/evidencias/etapa1_3_webgl_no_painel.png`
+- `documentacao/evidencias/etapa1_3_retorno_grid.png`
 
 ### Arquivos atualizados
 
@@ -252,7 +252,7 @@ Driver criado em `%TEMP%\opencode\cep_cdp.mjs` (Node puro, sem dependências):
 A prioridade passou a ser **funcionalidade visível e utilizável**. O marco obrigatório era ver a faca real desenhada no painel, não apenas números.
 
 ### Arquivos criados
-- `convertidos/faca3d/js/view/canvas2d.js` — renderizador Canvas 2D (Bézier original, zoom, pan, ajuste, camadas, faces e regiões não reconstruídas).
+- `js/view/canvas2d.js` — renderizador Canvas 2D (Bézier original, zoom, pan, ajuste, camadas, faces e regiões não reconstruídas).
 - `documentacao/FACA_3D_REPORT_ETAPA_2_5.md`.
 - `documentacao/evidencias/etapa2_5_visualizacao_2d.png`.
 - `documentacao/evidencias/etapa2_5_visualizacao_2d_zoom.png`.
@@ -643,7 +643,7 @@ Direção/perfil inferidos; 4 contatos de ~1 mm; 4 recortes sem vinco; ArtiosCAD
 
 - `js/main.js` sozinho estava com UTF‑8 reinterpretado como cp1252: `extensão`, `Resolução`, `Código de Barras`, `múltiplas`, `— hub`, `FACA ARD (→) VETOR`, `não inicializado`. Nenhum outro arquivo corrompido.
 - Reparo pontual (não conversão em massa). `<meta charset="utf-8">` já em todo o painel. Ida‑e‑volta CEP ↔ ExtendScript com todo o alfabeto, localStorage, cache de FT e 19 ferramentas verificados — sem perdas.
-- `setWindowTitle` removidos nas três ferramentas que o emitiam; o painel passou a definir **"Mazurky Tools"** no `init()` e em `voltar()`, sem tocar no `manifest.xml` (já correto).
+- `setWindowTitle` removidos nas três ferramentas que o emitiam; o painel passou a definir **"FACA 3D"** no `init()` e em `voltar()`, sem tocar no `manifest.xml` (já correto).
 
 ### Arte externa/interna (Etapa B)
 
@@ -657,3 +657,13 @@ Direção/perfil inferidos; 4 contatos de ~1 mm; 4 recortes sem vinco; ArtiosCAD
 **Versão:** FACA 3D 0.8.0 · painel v0.11.7 · `index.html?v=33` · manifesto 0.11.7.
 
 **Evidências:** `planificada.png`, `dobrada.png`, `dobrada_frente.png`, `interior_verso.png`; ver `FACA_3D_REPORT_ARTE_EXTERNA_INTERNA.md` e `FACA_3D_REPORT_CODIFICACAO.md`.
+
+
+## Independencia de identidade (0.8.0)
+
+- Removidas todas as referencias a Mazurky Tools.
+- Novo identificador CEP independente: com.faca3d (bundle) / com.faca3d.panel.
+- host.jsx simplificado para atender apenas o FACA 3D.
+- Caminhos de armazenamento migrados para %APPDATA%\\FACA3D.
+- Logs migrados para %APPDATA%\\FACA3D\\logs.
+- Criado README.md independente.

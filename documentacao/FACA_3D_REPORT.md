@@ -10,7 +10,7 @@ Histórico de relatórios por etapa. **Não substituir relatórios anteriores.**
 
 ### 1. Objetivo da etapa
 
-Executar a FASE 0: auditar a estrutura real do Mazurkytools, mapear a integração CEP, identificar pontos de extensão e recursos reaproveitáveis, propor a arquitetura de integração do FACA 3D e criar a documentação inicial. Sem implementar motor geométrico e sem alterar ferramentas existentes.
+Executar a FASE 0: auditar a estrutura real do FACA3D, mapear a integração CEP, identificar pontos de extensão e recursos reaproveitáveis, propor a arquitetura de integração do FACA 3D e criar a documentação inicial. Sem implementar motor geométrico e sem alterar ferramentas existentes.
 
 ### 2. Implementações realizadas
 
@@ -18,19 +18,19 @@ Nenhuma implementação de produto. Foram realizadas:
 
 1. Leitura integral do hub (`js/main.js`, 320 linhas), do `index.html`, do manifesto CEP e do dispatcher `jsx/host.jsx` (330 linhas).
 2. Leitura de ferramentas representativas: `simplefaca` (classificação por SpotColor), `removerlinhas` (leitura de paths/âncoras/alças e coleções do DOM), `centerline` (UI, seleção de documentos), `caixa-maleta` (carga dinâmica de pdf.js) e `gerarLayout-ft` (fallback de leitura de arquivo).
-3. Levantamento das 21 pastas em `convertidos/` e das 18 ferramentas registradas.
+3. Levantamento das 21 pastas em `` e das 18 ferramentas registradas.
 4. Confirmação, no código, das armadilhas de ExtendScript já documentadas no AGENTS.md.
 5. Proposta de arquitetura em camadas, contrato de dados, estrutura de arquivos, forma de integração do botão e riscos.
-6. Criação dos quatro documentos obrigatórios em `convertidos/faca3d/documentacao/`.
+6. Criação dos quatro documentos obrigatórios em `documentacao/`.
 
 ### 3. Arquivos criados
 
 | Arquivo | Função |
 |---|---|
-| `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` | Objetivo, arquitetura, estrutura de arquivos, fases, dependências, decisões, critérios de conclusão |
-| `convertidos/faca3d/documentacao/FACA_3D_STATUS.md` | Etapa atual, implementado, pendente, testes, riscos, próxima etapa |
-| `convertidos/faca3d/documentacao/FACA_3D_CHANGELOG.md` | Histórico cronológico da FASE 0 |
-| `convertidos/faca3d/documentacao/FACA_3D_REPORT.md` | Este relatório |
+| `documentacao/FACA_3D_PLAN.md` | Objetivo, arquitetura, estrutura de arquivos, fases, dependências, decisões, critérios de conclusão |
+| `documentacao/FACA_3D_STATUS.md` | Etapa atual, implementado, pendente, testes, riscos, próxima etapa |
+| `documentacao/FACA_3D_CHANGELOG.md` | Histórico cronológico da FASE 0 |
+| `documentacao/FACA_3D_REPORT.md` | Este relatório |
 
 ### 4. Arquivos modificados
 
@@ -40,12 +40,12 @@ Nenhum. Não foram tocados `js/main.js`, `jsx/host.jsx`, `CSXS/manifest.xml`, `i
 
 Nada do FACA 3D está implementado. O que já funciona no projeto e será reaproveitado:
 
-- **Hub único:** `index.html` → `js/main.js` → grid de botões. Ao clicar, `abrirFerramenta(key)` faz `fetch` de `<dir>.html`, `css/<dir>.css` e `js/<dir>.js` com `cache: "no-store"` e `?v=Date.now()`, remove as tags `<script>` do HTML, injeta o corpo e o CSS (`<style id="mazurkyToolStyle">`) e executa o JS com `new Function(js)()`.
+- **Hub único:** `index.html` → `js/main.js` → grid de botões. Ao clicar, `abrirFerramenta(key)` faz `fetch` de `<dir>.html`, `css/<dir>.css` e `js/<dir>.js` com `cache: "no-store"` e `?v=Date.now()`, remove as tags `<script>` do HTML, injeta o corpo e o CSS (`<style id="FACA3Dtyle">`) e executa o JS com `new Function(js)()`.
 - **Ponte com o Illustrator:** `sendToHost(fn, args)` monta `fn(args)` e chama `csInterface.evalScript`. No host, `chamar()` executa `$.evalFile` do `.jsx` da ferramenta aberta, chama a função pedida e **reinstala os wrappers** no `finally`.
 - **Seleção de ferramenta no host:** `carregarFerramenta(key, extRoot)` valida a existência do `.jsx` antes de abrir a aba.
-- **Log central:** `mazurkyLog()` grava em `%APPDATA%\MazurkyTools\logs\mazurky.log`; o hub registra erros de status.
+- **Log central:** `FACA 3DLog()` grava em `%APPDATA%\FACA3D\logs\FACA 3D.log`; o hub registra erros de status.
 - **Retorno ao grid:** `window.close` e `CSInterface.closeExtension` são interceptados; ferramentas usam `window.close()`.
-- **Persistência de configuração:** `localStorage["mazurky_<ferramenta>_config"]`.
+- **Persistência de configuração:** `localStorage["FACA 3D_<ferramenta>_config"]`.
 - **Carregamento de biblioteca externa:** `<script>` criado dinamicamente pelo JS da ferramenta funciona no CEP (padrão comprovado com pdf.js na Caixa Maleta), contornando a remoção das tags `<script>` estáticas.
 - **Redimensionamento do painel:** `window.resizeTo/moveTo` é usado hoje por ferramentas com preview (ex.: Remover Linhas), portanto é viável dar ao 3D uma área grande.
 
@@ -92,7 +92,7 @@ Todos os testes desta fase foram de **inspeção estática** e verificação de 
    não bloqueia o FACA 3D, mas deve ser reconciliado depois.
 8. **Documentação não tem local consolidado.** A pasta `doc/` da raiz é
    ignorada pelo git e excluída do instalador (recursos do CEP). Por isso a
-   documentação do módulo foi criada em `convertidos/faca3d/documentacao/`.
+   documentação do módulo foi criada em `documentacao/`.
 
 ### 8. Pendências
 
@@ -112,7 +112,7 @@ Todos os testes desta fase foram de **inspeção estática** e verificação de 
 - As alterações que aparecem no `git status` (`gerarLayout` removido,
   `lote/jsx/lote.jsx` e `js/main.js` modificados) **já existiam** antes desta
   execução e não foram tocadas por mim.
-- Reversão trivial: apagar `convertidos/faca3d/`.
+- Reversão trivial: apagar ``.
 
 ### 10. Próxima etapa sugerida
 
@@ -134,10 +134,10 @@ Aguardando autorização.
 
 ### 11. Documentação
 
-- `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` (criado)
-- `convertidos/faca3d/documentacao/FACA_3D_STATUS.md` (criado)
-- `convertidos/faca3d/documentacao/FACA_3D_CHANGELOG.md` (criado)
-- `convertidos/faca3d/documentacao/FACA_3D_REPORT.md` (criado, este relatório)
+- `documentacao/FACA_3D_PLAN.md` (criado)
+- `documentacao/FACA_3D_STATUS.md` (criado)
+- `documentacao/FACA_3D_CHANGELOG.md` (criado)
+- `documentacao/FACA_3D_REPORT.md` (criado, este relatório)
 
 ---
 
@@ -147,13 +147,13 @@ Aguardando autorização.
 
 ### 1. Objetivo da etapa
 
-Criar o botão FACA 3D no Mazurkytools e estabelecer toda a infraestrutura inicial de integração com o Illustrator. Ao clicar no botão, a ferramenta deve abrir sua própria interface, comunicar-se com o Illustrator e retornar informações reais do documento ativo. FASE 1 autorizada, sem motor geométrico.
+Criar o botão FACA 3D no FACA3D e estabelecer toda a infraestrutura inicial de integração com o Illustrator. Ao clicar no botão, a ferramenta deve abrir sua própria interface, comunicar-se com o Illustrator e retornar informações reais do documento ativo. FASE 1 autorizada, sem motor geométrico.
 
 ### 2. Implementações realizadas
 
-**Integração no Mazurkytools (3 arquivos modificados, aditivos):**
+**Integração no FACA3D (3 arquivos modificados, aditivos):**
 
-- `js/main.js`: nova entrada `faca3d: { dir: "faca3d", nome: "FACA 3D", version: "0.1.0", divisor: true }` ao final de `MAZURKY_TOOLS` — vira item 19 do grid, com divisor visual separando o grupo novo. Badge do hub subiu de `v0.5.4` para `v0.5.5`.
+- `js/main.js`: nova entrada `faca3d: { dir: "faca3d", nome: "FACA 3D", version: "0.1.0", divisor: true }` ao final de `FACA 3D_TOOLS` — vira item 19 do grid, com divisor visual separando o grupo novo. Badge do hub subiu de `v0.5.4` para `v0.5.5`.
 - `jsx/host.jsx`: nova chave `faca3d: "faca3d"` no mapa de ferramentas e wrapper `faca3dDiagnostico = function () { return chamar("faca3dDiagnostico", arguments); }` em `instalarWrappers()`.
 - `CSXS/manifest.xml`: `ExtensionBundleVersion` e `ExtensionList Version` de `0.5.4` para `0.5.5`.
 - `index.html`: `js/main.js?v=18` → `v=19`.
@@ -162,31 +162,31 @@ Criar o botão FACA 3D no Mazurkytools e estabelecer toda a infraestrutura inici
 
 | Arquivo | Função |
 |---|---|
-| `convertidos/faca3d/faca3d.html` | Interface: header, área de visualização (vazia até Fase 4), card de documento, inventário, cores especiais, configurações, compatibilidade gráfica, status. Sem tags `<script>` estáticas (o hub remove). |
-| `convertidos/faca3d/css/faca3d.css` | Estilos com prefixo `faca3d-`, padrão visual do Mazurkytools (header, cards, botões, status, grid de visualização). |
-| `convertidos/faca3d/js/faca3d.js` | Controlador único carregado pelo hub. Namespace `window.Faca3D`, carregamento de submódulos, decodificação do protocolo, UI (preenchimento de documento/inventário/spots/tipos), configurações em `localStorage`, diagnóstico e teste de WebGL. |
-| `convertidos/faca3d/js/core/loader.js` | Carregador dinâmico de submódulos via `<script>` com cache-buster, evitando dependência de tags estáticas. |
-| `convertidos/faca3d/js/core/protocol.js` | Contrato textual versionado `F3D|1|TIPO` com escape de `\|=\n\r`, decodificação com validação de versão/tipo, tratamento de erros (`VAZIO`, `FORMATO`, `VERSAO`, `LINHA`). |
-| `convertidos/faca3d/js/core/units.js` | Conversão pt/mm, formatação de mm/duração/bytes. |
-| `convertidos/faca3d/js/view/renderer.js` | Contrato do renderizador + diagnóstico de WebGL (`probeWebGL()`, `formatarRelatorio()`). |
-| `convertidos/faca3d/jsx/faca3d.jsx` | Backend ExtendScript: inventário do documento ativo, somente leitura, protocolo textual. |
+| `faca3d.html` | Interface: header, área de visualização (vazia até Fase 4), card de documento, inventário, cores especiais, configurações, compatibilidade gráfica, status. Sem tags `<script>` estáticas (o hub remove). |
+| `css/faca3d.css` | Estilos com prefixo `faca3d-`, padrão visual do FACA3D (header, cards, botões, status, grid de visualização). |
+| `js/faca3d.js` | Controlador único carregado pelo hub. Namespace `window.Faca3D`, carregamento de submódulos, decodificação do protocolo, UI (preenchimento de documento/inventário/spots/tipos), configurações em `localStorage`, diagnóstico e teste de WebGL. |
+| `js/core/loader.js` | Carregador dinâmico de submódulos via `<script>` com cache-buster, evitando dependência de tags estáticas. |
+| `js/core/protocol.js` | Contrato textual versionado `F3D|1|TIPO` com escape de `\|=\n\r`, decodificação com validação de versão/tipo, tratamento de erros (`VAZIO`, `FORMATO`, `VERSAO`, `LINHA`). |
+| `js/core/units.js` | Conversão pt/mm, formatação de mm/duração/bytes. |
+| `js/view/renderer.js` | Contrato do renderizador + diagnóstico de WebGL (`probeWebGL()`, `formatarRelatorio()`). |
+| `jsx/faca3d.jsx` | Backend ExtendScript: inventário do documento ativo, somente leitura, protocolo textual. |
 
 ### 3. Arquivos criados
 
-- `convertidos/faca3d/faca3d.html`
-- `convertidos/faca3d/css/faca3d.css`
-- `convertidos/faca3d/js/faca3d.js`
-- `convertidos/faca3d/js/core/loader.js`
-- `convertidos/faca3d/js/core/protocol.js`
-- `convertidos/faca3d/js/core/units.js`
-- `convertidos/faca3d/js/view/renderer.js`
-- `convertidos/faca3d/jsx/faca3d.jsx`
+- `faca3d.html`
+- `css/faca3d.css`
+- `js/faca3d.js`
+- `js/core/loader.js`
+- `js/core/protocol.js`
+- `js/core/units.js`
+- `js/view/renderer.js`
+- `jsx/faca3d.jsx`
 
 ### 4. Arquivos modificados
 
 | Arquivo | Alteração | Justificativa |
 |---|---|---|
-| `js/main.js` | Nova entrada em `MAZURKY_TOOLS` + badge `v0.5.5` | Registro do botão FACA 3D como item 19 |
+| `js/main.js` | Nova entrada em `FACA 3D_TOOLS` + badge `v0.5.5` | Registro do botão FACA 3D como item 19 |
 | `index.html` | `?v=18` → `?v=19` | Cache-buster do hub |
 | `jsx/host.jsx` | Nova chave no mapa + wrapper `faca3dDiagnostico` | Ponte com o backend da nova ferramenta |
 | `CSXS/manifest.xml` | `ExtensionBundleVersion` e `ExtensionList` para `0.5.5` | Convenção do projeto (3 lugares) |
@@ -260,16 +260,16 @@ O teste de WebGL **não foi executado no CEP real**. O código está pronto em `
 ### 11. Integridade das ferramentas existentes
 
 - Nenhum arquivo de ferramenta existente foi alterado.
-- `git status` mostra apenas as alterações autorizadas: `js/main.js`, `index.html`, `jsx/host.jsx`, `CSXS/manifest.xml` e os novos arquivos em `convertidos/faca3d/`.
+- `git status` mostra apenas as alterações autorizadas: `js/main.js`, `index.html`, `jsx/host.jsx`, `CSXS/manifest.xml` e os novos arquivos em ``.
 - As alterações preexistentes do usuário (`gerarLayout` removido, `lote/jsx/lote.jsx` e `js/main.js` modificados) **já existiam** e não foram tocadas.
-- Reversão trivial: apagar `convertidos/faca3d/` e reverter os 4 arquivos modificados.
+- Reversão trivial: apagar `` e reverter os 4 arquivos modificados.
 
 ### 12. Documentação atualizada
 
-- `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` — atualizado para refletir a conclusão da FASE 1.
-- `convertidos/faca3d/documentacao/FACA_3D_STATUS.md` — atualizado com etapa atual, implementações, testes e pendências.
-- `convertidos/faca3d/documentacao/FACA_3D_CHANGELOG.md` — nova entrada da FASE 1 com arquivos criados/modificados, testes e problemas.
-- `convertidos/faca3d/documentacao/FACA_3D_REPORT.md` — este relatório.
+- `documentacao/FACA_3D_PLAN.md` — atualizado para refletir a conclusão da FASE 1.
+- `documentacao/FACA_3D_STATUS.md` — atualizado com etapa atual, implementações, testes e pendências.
+- `documentacao/FACA_3D_CHANGELOG.md` — nova entrada da FASE 1 com arquivos criados/modificados, testes e problemas.
+- `documentacao/FACA_3D_REPORT.md` — este relatório.
 
 ---
 
@@ -309,16 +309,16 @@ Validar a operação do painel CEP do FACA 3D e registrar o arquivo oficial de t
 
 ### 3. Arquivos criados
 
-- `convertidos/faca3d/documentacao/REFERENCIA_TESTE.md` — registro do arquivo oficial de teste.
+- `documentacao/REFERENCIA_TESTE.md` — registro do arquivo oficial de teste.
 
 ### 4. Arquivos modificados
 
 | Arquivo | Alteração | Justificativa |
 |---|---|---|
-| `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` | Registrado o caminho do arquivo oficial de teste | Documentar referência de teste |
-| `convertidos/faca3d/documentacao/FACA_3D_STATUS.md` | Atualizado com resultados dos testes do PDF | Registrar estado da validação |
-| `convertidos/faca3d/documentacao/FACA_3D_CHANGELOG.md` | Nova entrada da FASE 1.1 | Histórico cronológico |
-| `convertidos/faca3d/documentacao/FACA_3D_REPORT.md` | Este relatório | Registro técnico |
+| `documentacao/FACA_3D_PLAN.md` | Registrado o caminho do arquivo oficial de teste | Documentar referência de teste |
+| `documentacao/FACA_3D_STATUS.md` | Atualizado com resultados dos testes do PDF | Registrar estado da validação |
+| `documentacao/FACA_3D_CHANGELOG.md` | Nova entrada da FASE 1.1 | Histórico cronológico |
+| `documentacao/FACA_3D_REPORT.md` | Este relatório | Registro técnico |
 
 ### 5. Funcionamento comprovado
 
@@ -348,7 +348,7 @@ O teste de WebGL está implementado em `renderer.js` (`probeWebGL()` + `formatar
 
 **Instruções para teste manual:**
 1. Abrir o Adobe Illustrator 2026.
-2. Abrir o painel CEP "Mazurky Tools" (Window > Extensions > Mazurky Tools).
+2. Abrir o painel CEP "FACA 3D" (Window > Extensions > FACA 3D).
 3. Clicar no botão "FACA 3D" (item 19 do grid).
 4. Clicar em "Testar WebGL".
 5. O resultado será exibido na área de compatibilidade gráfica do módulo.
@@ -378,16 +378,16 @@ O teste de WebGL está implementado em `renderer.js` (`probeWebGL()` + `formatar
 ### 11. Integridade das ferramentas existentes
 
 - Nenhum arquivo de ferramenta existente foi alterado.
-- Apenas alterações autorizadas foram feitas (`js/main.js`, `index.html`, `jsx/host.jsx`, `CSXS/manifest.xml` e novos arquivos em `convertidos/faca3d/`).
-- Reversão trivial: apagar `convertidos/faca3d/` e reverter os 4 arquivos modificados.
+- Apenas alterações autorizadas foram feitas (`js/main.js`, `index.html`, `jsx/host.jsx`, `CSXS/manifest.xml` e novos arquivos em ``).
+- Reversão trivial: apagar `` e reverter os 4 arquivos modificados.
 
 ### 12. Documentação atualizada
 
-- `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` — atualizado com registro do arquivo oficial de teste.
-- `convertidos/faca3d/documentacao/FACA_3D_STATUS.md` — atualizado com resultados dos testes do PDF e pendências.
-- `convertidos/faca3d/documentacao/FACA_3D_CHANGELOG.md` — nova entrada da FASE 1.1.
-- `convertidos/faca3d/documentacao/FACA_3D_REPORT.md` — este relatório.
-- `convertidos/faca3d/documentacao/REFERENCIA_TESTE.md` — criado com detalhes do arquivo oficial de teste.
+- `documentacao/FACA_3D_PLAN.md` — atualizado com registro do arquivo oficial de teste.
+- `documentacao/FACA_3D_STATUS.md` — atualizado com resultados dos testes do PDF e pendências.
+- `documentacao/FACA_3D_CHANGELOG.md` — nova entrada da FASE 1.1.
+- `documentacao/FACA_3D_REPORT.md` — este relatório.
+- `documentacao/REFERENCIA_TESTE.md` — criado com detalhes do arquivo oficial de teste.
 
 ### 13. Situação final da FASE 1
 
@@ -431,9 +431,9 @@ Encontrar uma forma de controlar a interface real do Illustrator e do painel CEP
 - O bloqueio da Etapa 1.2 **não existia**: o CDP do painel estava ativo em `http://127.0.0.1:7777`.
   - `Get-NetTCPConnection -LocalPort 7777` retornava vazio (falso negativo).
   - `netstat -ano` mostra `127.0.0.1:7777 LISTENING 25796`.
-  - `Invoke-WebRequest /json/list` → HTTP 200 com a página "Mazurky Tools".
-- O log `CEPHtmlEngine12-ILST-30.8.2-com.mazurky.tools.panel.log` registra `DevTools listening on ws://127.0.0.1:7777/devtools/browser/...`.
-- Processo dono da porta: `CEPHtmlEngine.exe` **PID 25796** (extensão `com.mazurky.tools.panel`, `windowid` 792558, `--remote-debugging-port=7777`).
+  - `Invoke-WebRequest /json/list` → HTTP 200 com a página "FACA 3D".
+- O log `CEPHtmlEngine12-ILST-30.8.2-com.FACA 3D.tools.panel.log` registra `DevTools listening on ws://127.0.0.1:7777/devtools/browser/...`.
+- Processo dono da porta: `CEPHtmlEngine.exe` **PID 25796** (extensão `com.FACA 3D.tools.panel`, `windowid` 792558, `--remote-debugging-port=7777`).
 - Windows UI Automation **não** expõe o conteúdo CEP: o Illustrator devolve 0 descendentes na árvore UIA.
 - Python 3.12 existe, mas sem `pywinauto`/`comtypes`; **sem** AutoHotkey e **sem** WinAppDriver. Nada foi instalado.
 
@@ -444,7 +444,7 @@ Driver `%TEMP%\opencode\cep_cdp.mjs` (Node puro: `fetch` + `WebSocket` + `Runtim
 | # | Ação | Resultado |
 |---|---|---|
 | 1 | Identificar a janela do Illustrator | PID 3916, `h=0x804EE`, classe `illustrator` |
-| 2 | Identificar o painel CEP | PID 25796, página "Mazurky Tools" |
+| 2 | Identificar o painel CEP | PID 25796, página "FACA 3D" |
 | 3 | Acessar a interface | DOM do hub disponível via CDP |
 | 4 | Inventariar o grid | 19 botões; `data-tool="faca3d"` |
 | 5 | Acionar FACA 3D | Montagem em **159 ms**; CSS 7.838 bytes aplicado |
@@ -467,7 +467,7 @@ Driver `%TEMP%\opencode\cep_cdp.mjs` (Node puro: `fetch` + `WebSocket` + `Runtim
 
 ### 6. Evidências visuais
 
-Em `convertidos/faca3d/documentacao/evidencias/`:
+Em `documentacao/evidencias/`:
 
 - `etapa1_3_diagnostico.png` — inventário de `faca teste.pdf` no painel.
 - `etapa1_3_painel_no_ilustrador.png` — painel real dentro do Illustrator com FACA 3D.

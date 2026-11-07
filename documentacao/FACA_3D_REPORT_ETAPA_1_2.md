@@ -44,7 +44,7 @@ Recuperação realizada: o usuário reiniciou o Illustrator, que normalmente fal
 
 O painel CEP está visível no Illustrador, mas as ferramentas MCP não têm funções para:
 - Abrir/fechar painéis CEP
-- Acessar o grid do Mazurky Tools
+- Acessar o grid do FACA 3D
 - Cliar botões do CEP (`sendToHost`, `csInterface.evalScript`)
 
 ---
@@ -128,7 +128,7 @@ Motivo: o teste WebGL (`renderer.probeWebGL()` + `formatarRelatorio()`) requer o
 
 **Como testar manualmente:**
 1. Abrir o Adobe Illustrator 2026.
-2. Abrir o painel CEP "Mazurky Tools" (Window > Extensions > Mazurky Tools).
+2. Abrir o painel CEP "FACA 3D" (Window > Extensions > FACA 3D).
 3. Cliar no botão "FACA 3D".
 4. Cliar em "Testar WebGL".
 5. O resultado será exibido na área de compatibilidade gráfica.
@@ -176,12 +176,12 @@ O MCP reconhece o documento como `faca teste.pdf` mas não enumera itens (warnin
 
 | Arquivo | Alteração | Justificativa |
 |---|---|---|
-| `convertidos/faca3d/documentacao/FACA_3D_PLAN.md` | Atualizado com plano da FASE 1.2 | Registrar plano de validação |
-| `convertidos/faca3d/documentacao/REFERENCIA_TESTE.md` | Atualizado com histórico | Registrar evolução dos testes |
-| `convertidos/faca3d/documentacao/FACA_3D_STATUS.md` | Atualizado com resultados MCP | Registrar estado parcial |
-| `convertidos/faca3d/documentacao/FACA_3D_CHANGELOG.md` | Nova entrada FASE 1.2 | Histórico cronológico |
-| `convertidos/faca3d/documentacao/FACA_3D_REPORT.md` | Mesma — relatório FASE 1.1 | Não substituir relatórios anteriores |
-| `convertidos/faca3d/documentacao/FACA_3D_REPORT_ETAPA_1_2.md` | Criado | Relatório técnico FASE 1.2 |
+| `documentacao/FACA_3D_PLAN.md` | Atualizado com plano da FASE 1.2 | Registrar plano de validação |
+| `documentacao/REFERENCIA_TESTE.md` | Atualizado com histórico | Registrar evolução dos testes |
+| `documentacao/FACA_3D_STATUS.md` | Atualizado com resultados MCP | Registrar estado parcial |
+| `documentacao/FACA_3D_CHANGELOG.md` | Nova entrada FASE 1.2 | Histórico cronológico |
+| `documentacao/FACA_3D_REPORT.md` | Mesma — relatório FASE 1.1 | Não substituir relatórios anteriores |
+| `documentacao/FACA_3D_REPORT_ETAPA_1_2.md` | Criado | Relatório técnico FASE 1.2 |
 
 ---
 
@@ -202,7 +202,7 @@ A validação operacional completa do painel CEP (abrir botão, carregar HTML/CS
 
 **Aguardar execução manual no painel do Illustrator** para completar a validação operacional:
 
-1. Abrir o painel Mazurky Tools (Window > Extensions > Mazurky Tools).
+1. Abrir o painel FACA 3D (Window > Extensions > FACA 3D).
 2. Cliar no botão "FACA 3D" (item 19 do grid).
 3. Verificar o carregamento de HTML, CSS e JavaScript.
 4. Executar o diagnóstico.

@@ -35,7 +35,7 @@ O mesmo filtro vale para `f3dBoundsFaca` (usada só como fallback).
 Document (Illustrator)
   → faca3dArtes()          (ExtendScript puro; sem $.evalFile externo)
        — inventário: artboards (nome/rect), camadas (nome/visível/itens/técnica),
-         caixa da faca, diretório temporário (%TEMP%\MazurkyTools\faca3d_arte)
+         caixa da faca, diretório temporário (%TEMP%\FACA3D\faca3d_arte)
   → faca3dExportarArte()   exporta 1 PNG por artboard, 2200 px no lado maior
        — esconde as camadas técnicas **só durante a exportação**;
          restaura a visibilidade no `finally` (nada foi apagado ou reordenado)

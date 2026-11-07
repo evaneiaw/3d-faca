@@ -8,7 +8,7 @@
   var carregados = {};
 
   function normalizarBase(base) {
-    var b = String(base || "convertidos/faca3d/");
+    var b = String(base || "./");
     if (b.charAt(b.length - 1) !== "/") b += "/";
     return b;
   }

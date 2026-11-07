@@ -18,7 +18,7 @@ O 2D **não faz mais parte da interface**. O renderizador 2D continua no código
 
 | Elemento | Função |
 |---|---|
-| **← Ferramentas** | Volta ao grid do MazurkyTools (mesmo caminho do ×) |
+| **← Ferramentas** | Volta ao grid do FACA3D (mesmo caminho do ×) |
 | **Dobrar** | Anima a dobra de 0° até 90° |
 | **Ângulo** | Slider 0–180° com valor em graus |
 | **Reiniciar vista** | Volta à câmera inicial |

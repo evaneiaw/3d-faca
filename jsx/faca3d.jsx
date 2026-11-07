@@ -2,7 +2,7 @@
 // Apenas inventaria o documento ativo. Nao interpreta geometria, nao cria
 // faces, nao altera o documento.
 //
-// Protocolo textual (ver convertidos/faca3d/js/core/protocol.js):
+// Protocolo textual (ver js/core/protocol.js):
 //   F3D|1|DIAG
 //   CHAVE=valor
 //   END
@@ -987,11 +987,11 @@ function faca3dExportarArte(indicesCsv, pasta, alvoPx) {
  *
  * O painel guarda no disco os ângulos/sentidos que o usuário definiu à mão,
  * por faca (chave = documento + assinatura da geometria). Fica em
- * %APPDATA%\MazurkyTools\faca3d\dobras\<chave>.json — sobrevive a reiniciar
+ * %APPDATA%\FACA3D\dobras\<chave>.json - sobrevive a reiniciar
  * o Illustrator. O ExtendScript só grava/lê texto; o JSON é montado no painel.
  */
 function f3dPastaDobras() {
-    var pasta = String(Folder.userData.fsName) + "/MazurkyTools/faca3d/dobras";
+    var pasta = String(Folder.userData.fsName) + "/FACA3D/dobras";
     // Cria nível a nível: Folder.create() não garante os pais no ES3.
     var partes = pasta.split("/");
     var atual = partes[0];

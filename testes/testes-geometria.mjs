@@ -1,5 +1,5 @@
 /* FACA 3D — testes unitários dos algoritmos geométricos (Fase 2).
- * Executar: node convertidos/faca3d/testes/testes-geometria.mjs
+ * Executar: node testes/testes-geometria.mjs
  * Sem dependências externas.
  */
 

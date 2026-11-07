@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ExtensionManifest Version="5.0"
-                   ExtensionBundleId="com.mazurky.faca3d"
+                   ExtensionBundleId="com.faca3d"
                    ExtensionBundleVersion="0.8.0"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <Author><![CDATA[Mazurky]]></Author>
+    <Author><![CDATA[FACA 3D]]></Author>
     <Abstract><![CDATA[3D Faca - visualizacao 3D de facas de embalagem]]></Abstract>
     <ExtensionList>
-        <Extension Id="com.mazurky.faca3d.panel" Version="0.8.0" />
+        <Extension Id="com.faca3d.panel" Version="0.8.0" />
     </ExtensionList>
     <ExecutionEnvironment>
         <HostList>
@@ -20,7 +20,7 @@
         </RequiredRuntimeList>
     </ExecutionEnvironment>
     <DispatchInfoList>
-        <Extension Id="com.mazurky.faca3d.panel">
+        <Extension Id="com.faca3d.panel">
             <DispatchInfo>
                 <Resources>
                     <MainPath>./faca3d.html</MainPath>

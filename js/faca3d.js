@@ -17,7 +17,7 @@
    * nenhuma linha existente. 0 desliga (o padrão do motor). */
   var COSTURA_MM = 2.5;
   /* Funciona dos dois jeitos: injetado pelo hub (raiz da extensão) ou aberto
-   * como painel próprio (convertidos/faca3d/faca3d.html). */
+   * como painel próprio. */
   var BASE = (function () {
     var href = String(location.href).replace(/[?#].*$/, "");
     var corte = href.lastIndexOf("/");
@@ -95,7 +95,7 @@
       var args =
         JSON.stringify(String(origem || "faca3d")) + ", " +
         JSON.stringify(String(mensagem || ""));
-      csInterface.evalScript("mazurkyLog(" + args + ")", function () {});
+      csInterface.evalScript("faca3dLog(" + args + ")", function () {});
     } catch (e) {}
   }
 
@@ -262,7 +262,7 @@
       .replace(/[^a-zA-Z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "")
       .slice(-40);
-    return base + "/MazurkyTools/faca3d_arte/" + (chave || "doc");
+    return base + "/FACA3D/faca3d_arte/" + (chave || "doc");
   }
 
   function aplicarArtes(mapa, avisos, offset) {
@@ -1495,13 +1495,7 @@
       });
     }
 
-    try {
-      csInterface.addEventListener("com.mazurky.tools.activate", function (event) {
-        if (event && event.data && event.data !== "com.mazurky.tools.faca3d") {
-          window.close();
-        }
-      });
-    } catch (e) {}
+    // Painel independente: não reage a eventos de outras extensões.
 
     ligarEventos();
     // Rele o documento ativo quando ele mudar no Illustrator.
