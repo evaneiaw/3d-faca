@@ -661,7 +661,7 @@ Direção/perfil inferidos; 4 contatos de ~1 mm; 4 recortes sem vinco; ArtiosCAD
 
 ## Independencia de identidade (0.8.0)
 
-- Removidas todas as referencias a Mazurky Tools.
+- Removidas todas as referencias a extensao antiga.
 - Novo identificador CEP independente: com.faca3d (bundle) / com.faca3d.panel.
 - host.jsx simplificado para atender apenas o FACA 3D.
 - Caminhos de armazenamento migrados para %APPDATA%\\FACA3D.
