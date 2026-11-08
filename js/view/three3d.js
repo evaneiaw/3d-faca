@@ -255,7 +255,7 @@
       renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
-        alpha: true,
+        alpha: false,
         preserveDrawingBuffer: true
       });
     } catch (e) {
@@ -264,7 +264,7 @@
       erro.codigo = "SEM_WEBGL";
       throw erro;
     }
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0xf1f5f9, 1);
 
     var cena = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(42, 1, 1, 200000);
@@ -300,26 +300,30 @@
     luzFrontal.position.set(-0.5, -0.8, 0.6);
     cena.add(luzFrontal);
 
+    var COR_FRENTE = 0xfcfaf7;
+    var COR_VERSO = 0xf0e6d6;
+    var COR_LADO = 0xd4c5b0;
+
     var materialFace = new THREE.MeshStandardMaterial({
-      color: COR_PAPEL,
-      roughness: 0.92,
+      color: COR_FRENTE,
+      roughness: 0.90,
       metalness: 0.02,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
       flatShading: false,
       depthWrite: true,
       depthTest: true
     });
     var materialFaceInterno = new THREE.MeshStandardMaterial({
-      color: COR_PAPEL,
+      color: COR_VERSO,
       roughness: 0.92,
       metalness: 0.02,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
       flatShading: false,
       depthWrite: true,
       depthTest: true
     });
     var materialFaceLateral = new THREE.MeshStandardMaterial({
-      color: 0xdfdfdf,
+      color: COR_LADO,
       roughness: 0.95,
       metalness: 0.02,
       side: THREE.DoubleSide,
@@ -331,7 +335,7 @@
       color: 0xffcc85,
       roughness: 0.84,
       metalness: 0.02,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
       emissive: 0x6b3f00,
       emissiveIntensity: 0.55
     });
@@ -339,7 +343,7 @@
       color: 0xffcc85,
       roughness: 0.84,
       metalness: 0.02,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
       emissive: 0x6b3f00,
       emissiveIntensity: 0.55
     });
