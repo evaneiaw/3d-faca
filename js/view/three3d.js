@@ -800,38 +800,46 @@
           girarAgora
         );
 
-        // 1. Face Externa (Frente) +meioT
-        var posExt = new Float32Array(tri.pontos.length * 3);
-        for (j = 0; j < tri.pontos.length; j++) {
-          var vt = new THREE.Vector3(tri.pontos[j].x, tri.pontos[j].y, 0).applyMatrix4(matriz);
-          vt.addScaledVector(normal, meioT);
-          posExt[j * 3] = vt.x - estado.centro.x;
-          posExt[j * 3 + 1] = vt.y - estado.centro.y;
-          posExt[j * 3 + 2] = vt.z - estado.centro.z;
+        // Painel Sólido Fechado com THREE.ExtrudeGeometry (sem faces vazias ou abertas)
+        var baseContorno = tri.contorno || tri.pontos;
+        var shape = new THREE.Shape();
+        for (j = 0; j < baseContorno.length; j++) {
+          var pt = baseContorno[j];
+          if (j === 0) shape.moveTo(pt.x, pt.y);
+          else shape.lineTo(pt.x, pt.y);
         }
-        var indicesExt = [];
-        for (j = 0; j < tri.triangulos.length; j++) {
-          if (inverter) {
-            indicesExt.push(tri.triangulos[j][2], tri.triangulos[j][1], tri.triangulos[j][0]);
-          } else {
-            indicesExt.push(tri.triangulos[j][0], tri.triangulos[j][1], tri.triangulos[j][2]);
+        if (face.furos && face.furos.length) {
+          for (var f = 0; f < face.furos.length; f++) {
+            var fusoPts = face.furos[f];
+            if (fusoPts.length < 3) continue;
+            var holePath = new THREE.Path();
+            for (var k2 = 0; k2 < fusoPts.length; k2++) {
+              var fpt = fusoPts[k2];
+              if (k2 === 0) holePath.moveTo(fpt.x, fpt.y);
+              else holePath.lineTo(fpt.x, fpt.y);
+            }
+            shape.holes.push(holePath);
           }
         }
-        var geoExt = new THREE.BufferGeometry();
-        geoExt.setAttribute("position", new THREE.BufferAttribute(posExt, 3));
-        geoExt.setIndex(indicesExt);
-        geoExt.computeVertexNormals();
-        geoExt.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
 
-        var malhaExt = new THREE.Mesh(geoExt, materialFace);
-        var baseContorno = tri.contorno || tri.pontos;
-        var dadosFace = {
+        var extrudeSettings = {
+          steps: 1,
+          depth: tPt,
+          bevelEnabled: false
+        };
+        var geoExtruded = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geoExtruded.translate(0, 0, -tPt / 2);
+        geoExtruded.applyMatrix4(matriz);
+        geoExtruded.translate(-estado.centro.x, -estado.centro.y, -estado.centro.z);
+        geoExtruded.computeVertexNormals();
+
+        var malhaPainel = new THREE.Mesh(geoExtruded, [materialFaceLateral, materialFace]);
+        malhaPainel.userData = {
           face: id,
-          lado: "externo",
+          lado: "solido",
           pontoInterior: pontoInterno(tri, matriz),
           contorno: baseContorno.map(function (pt) {
             var vc = new THREE.Vector3(pt.x, pt.y, 0).applyMatrix4(matriz);
-            vc.addScaledVector(normal, meioT);
             return {
               x: vc.x - estado.centro.x,
               y: vc.y - estado.centro.y,
@@ -839,124 +847,8 @@
             };
           })
         };
-        malhaExt.userData = dadosFace;
-        grupo.add(malhaExt);
-        estado.malhas.push(malhaExt);
-
-        // 2. Face Interna (Verso) -meioT
-        var posInt = new Float32Array(tri.pontos.length * 3);
-        for (j = 0; j < tri.pontos.length; j++) {
-          var vt = new THREE.Vector3(tri.pontos[j].x, tri.pontos[j].y, 0).applyMatrix4(matriz);
-          vt.addScaledVector(normal, -meioT);
-          posInt[j * 3] = vt.x - estado.centro.x;
-          posInt[j * 3 + 1] = vt.y - estado.centro.y;
-          posInt[j * 3 + 2] = vt.z - estado.centro.z;
-        }
-        var indicesInt = [];
-        for (j = 0; j < tri.triangulos.length; j++) {
-          if (inverter) {
-            indicesInt.push(tri.triangulos[j][0], tri.triangulos[j][1], tri.triangulos[j][2]);
-          } else {
-            indicesInt.push(tri.triangulos[j][2], tri.triangulos[j][1], tri.triangulos[j][0]);
-          }
-        }
-        var geoInt = new THREE.BufferGeometry();
-        geoInt.setAttribute("position", new THREE.BufferAttribute(posInt, 3));
-        geoInt.setIndex(indicesInt);
-        geoInt.computeVertexNormals();
-        geoInt.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-
-        var malhaInt = new THREE.Mesh(geoInt, materialFaceInterno);
-        malhaInt.userData = {
-          face: id,
-          lado: "interno",
-          pontoInterior: dadosFace.pontoInterior,
-          contorno: baseContorno.map(function (pt) {
-            var vc = new THREE.Vector3(pt.x, pt.y, 0).applyMatrix4(matriz);
-            vc.addScaledVector(normal, -meioT);
-            return {
-              x: vc.x - estado.centro.x,
-              y: vc.y - estado.centro.y,
-              z: vc.z - estado.centro.z
-            };
-          })
-        };
-        grupo.add(malhaInt);
-        estado.malhasInternas.push(malhaInt);
-
-        // 3. Miolo Ondulado (Fluting) - preenchendo o espaço interno com onda sinusoidal
-        var posMiolo = new Float32Array(tri.pontos.length * 3);
-        for (j = 0; j < tri.pontos.length; j++) {
-          var ptJ = tri.pontos[j];
-          var vt = new THREE.Vector3(ptJ.x, ptJ.y, 0).applyMatrix4(matriz);
-          var onda = Math.sin((ptJ.x * 2 * Math.PI) / 14.17) * (meioT * 0.5);
-          vt.addScaledVector(normal, onda);
-          posMiolo[j * 3] = vt.x - estado.centro.x;
-          posMiolo[j * 3 + 1] = vt.y - estado.centro.y;
-          posMiolo[j * 3 + 2] = vt.z - estado.centro.z;
-        }
-        var geoMiolo = new THREE.BufferGeometry();
-        geoMiolo.setAttribute("position", new THREE.BufferAttribute(posMiolo, 3));
-        geoMiolo.setIndex(indicesExt);
-        geoMiolo.computeVertexNormals();
-        var malhaMiolo = new THREE.Mesh(geoMiolo, materialMiolo);
-        malhaMiolo.userData = { face: id, lado: "miolo" };
-        grupo.add(malhaMiolo);
-        estado.malhasInternas.push(malhaMiolo);
-
-        // 4. Bordas Laterais com Perfil de Papelão Ondulado (Edge Profile)
-        var sidePositions = [];
-        for (j = 0; j < baseContorno.length; j++) {
-          var ptA = baseContorno[j];
-          var ptB = baseContorno[(j + 1) % baseContorno.length];
-          var aW = new THREE.Vector3(ptA.x, ptA.y, 0).applyMatrix4(matriz);
-          var bW = new THREE.Vector3(ptB.x, ptB.y, 0).applyMatrix4(matriz);
-
-          var steps = 4;
-          for (var s = 0; s < steps; s++) {
-            var f1 = s / steps;
-            var f2 = (s + 1) / steps;
-            var pA = new THREE.Vector3().lerpVectors(aW, bW, f1);
-            var pB = new THREE.Vector3().lerpVectors(aW, bW, f2);
-
-            var waveA = Math.sin((pA.x * 2 * Math.PI) / 14.17) * (meioT * 0.5);
-            var waveB = Math.sin((pB.x * 2 * Math.PI) / 14.17) * (meioT * 0.5);
-
-            var aEx = pA.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-            var bEx = pB.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-            var aMi = pA.clone().addScaledVector(normal, waveA).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-            var bMi = pB.clone().addScaledVector(normal, waveB).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-            var aIn = pA.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-            var bIn = pB.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-
-            sidePositions.push(
-              aEx.x, aEx.y, aEx.z,
-              bEx.x, bEx.y, bEx.z,
-              bMi.x, bMi.y, bMi.z,
-
-              aEx.x, aEx.y, aEx.z,
-              bMi.x, bMi.y, bMi.z,
-              aMi.x, aMi.y, aMi.z,
-
-              aMi.x, aMi.y, aMi.z,
-              bMi.x, bMi.y, bMi.z,
-              bIn.x, bIn.y, bIn.z,
-
-              aMi.x, aMi.y, aMi.z,
-              bIn.x, bIn.y, bIn.z,
-              aIn.x, aIn.y, aIn.z
-            );
-          }
-        }
-        if (sidePositions.length > 0) {
-          var geoSide = new THREE.BufferGeometry();
-          geoSide.setAttribute("position", new THREE.BufferAttribute(new Float32Array(sidePositions), 3));
-          geoSide.computeVertexNormals();
-          var malhaSide = new THREE.Mesh(geoSide, materialFaceLateral);
-          malhaSide.userData = { face: id, lado: "lateral" };
-          grupo.add(malhaSide);
-          estado.malhasInternas.push(malhaSide);
-        }
+        grupo.add(malhaPainel);
+        estado.malhas.push(malhaPainel);
 
         for (j = 0; j < baseContorno.length; j++) {
           var a = new THREE.Vector3(baseContorno[j].x, baseContorno[j].y, 0).applyMatrix4(matriz);
@@ -1985,6 +1877,7 @@
         var t = Number(val);
         if (isFinite(t) && t >= 0) {
           estado.espessura = t;
+          recriarMalhas();
           renderizar();
         }
       },
