@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  var VERSAO = "0.8.2";
+  var VERSAO = "0.8.3-papelao-ondulado-20261108";
 
   /* Costura de micro-falhas do desenho (picotes nas bases das abas): a borda
    * de um painel fica com um vão pequeno e o painel deixa de ser face. Até
