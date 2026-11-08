@@ -302,7 +302,8 @@
 
     var COR_FRENTE = 0xfcfaf7;
     var COR_VERSO = 0xf0e6d6;
-    var COR_LADO = 0xd4c5b0;
+    var COR_LADO = 0xbf864e;
+    var COR_MIOLO = 0xd99b5b;
 
     var materialFace = new THREE.MeshStandardMaterial({
       color: COR_FRENTE,
@@ -324,6 +325,15 @@
     });
     var materialFaceLateral = new THREE.MeshStandardMaterial({
       color: COR_LADO,
+      roughness: 0.95,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      flatShading: false,
+      depthWrite: true,
+      depthTest: true
+    });
+    var materialMiolo = new THREE.MeshStandardMaterial({
+      color: COR_MIOLO,
       roughness: 0.95,
       metalness: 0.02,
       side: THREE.DoubleSide,
@@ -874,7 +884,27 @@
         grupo.add(malhaInt);
         estado.malhasInternas.push(malhaInt);
 
-        // 3. Paredes Laterais (Side Walls)
+        // 3. Miolo Ondulado (Fluting) - preenchendo o espaço interno com onda sinusoidal
+        var posMiolo = new Float32Array(tri.pontos.length * 3);
+        for (j = 0; j < tri.pontos.length; j++) {
+          var ptJ = tri.pontos[j];
+          var vt = new THREE.Vector3(ptJ.x, ptJ.y, 0).applyMatrix4(matriz);
+          var onda = Math.sin((ptJ.x * 2 * Math.PI) / 14.17) * (meioT * 0.5);
+          vt.addScaledVector(normal, onda);
+          posMiolo[j * 3] = vt.x - estado.centro.x;
+          posMiolo[j * 3 + 1] = vt.y - estado.centro.y;
+          posMiolo[j * 3 + 2] = vt.z - estado.centro.z;
+        }
+        var geoMiolo = new THREE.BufferGeometry();
+        geoMiolo.setAttribute("position", new THREE.BufferAttribute(posMiolo, 3));
+        geoMiolo.setIndex(indicesExt);
+        geoMiolo.computeVertexNormals();
+        var malhaMiolo = new THREE.Mesh(geoMiolo, materialMiolo);
+        malhaMiolo.userData = { face: id, lado: "miolo" };
+        grupo.add(malhaMiolo);
+        estado.malhasInternas.push(malhaMiolo);
+
+        // 4. Bordas Laterais com Perfil de Papelão Ondulado (Edge Profile)
         var sidePositions = [];
         for (j = 0; j < baseContorno.length; j++) {
           var ptA = baseContorno[j];
@@ -882,20 +912,41 @@
           var aW = new THREE.Vector3(ptA.x, ptA.y, 0).applyMatrix4(matriz);
           var bW = new THREE.Vector3(ptB.x, ptB.y, 0).applyMatrix4(matriz);
 
-          var aEx = aW.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-          var bEx = bW.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-          var aIn = aW.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
-          var bIn = bW.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+          var steps = 4;
+          for (var s = 0; s < steps; s++) {
+            var f1 = s / steps;
+            var f2 = (s + 1) / steps;
+            var pA = new THREE.Vector3().lerpVectors(aW, bW, f1);
+            var pB = new THREE.Vector3().lerpVectors(aW, bW, f2);
 
-          sidePositions.push(
-            aEx.x, aEx.y, aEx.z,
-            bEx.x, bEx.y, bEx.z,
-            bIn.x, bIn.y, bIn.z,
+            var waveA = Math.sin((pA.x * 2 * Math.PI) / 14.17) * (meioT * 0.5);
+            var waveB = Math.sin((pB.x * 2 * Math.PI) / 14.17) * (meioT * 0.5);
 
-            aEx.x, aEx.y, aEx.z,
-            bIn.x, bIn.y, bIn.z,
-            aIn.x, aIn.y, aIn.z
-          );
+            var aEx = pA.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+            var bEx = pB.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+            var aMi = pA.clone().addScaledVector(normal, waveA).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+            var bMi = pB.clone().addScaledVector(normal, waveB).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+            var aIn = pA.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+            var bIn = pB.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+
+            sidePositions.push(
+              aEx.x, aEx.y, aEx.z,
+              bEx.x, bEx.y, bEx.z,
+              bMi.x, bMi.y, bMi.z,
+
+              aEx.x, aEx.y, aEx.z,
+              bMi.x, bMi.y, bMi.z,
+              aMi.x, aMi.y, aMi.z,
+
+              aMi.x, aMi.y, aMi.z,
+              bMi.x, bMi.y, bMi.z,
+              bIn.x, bIn.y, bIn.z,
+
+              aMi.x, aMi.y, aMi.z,
+              bIn.x, bIn.y, bIn.z,
+              aIn.x, aIn.y, aIn.z
+            );
+          }
         }
         if (sidePositions.length > 0) {
           var geoSide = new THREE.BufferGeometry();
