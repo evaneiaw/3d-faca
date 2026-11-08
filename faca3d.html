@@ -8,8 +8,8 @@
 <body>
   <div id="faca3dApp" class="faca3d-app">
     <header class="faca3d-header">
-      <h1 class="faca3d-title">3D Faca</h1>
-      <span class="faca3d-phase">Dobragem 3D</span>
+      <h1 class="faca3d-title">3D Faca <span id="faca3dVersao" style="font-size: 12px; font-weight: normal; opacity: 0.85; margin-left: 8px;">v0.8.2-espessura-20261108-1025</span></h1>
+      <span class="faca3d-phase">Espessura Física (Estrutura)</span>
       <span id="faca3dDoc" class="faca3d-doc">—</span>
     </header>
 
@@ -56,19 +56,9 @@
                 <option value="interior">Interior (dentro da caixa)</option>
               </select>
             </div>
-            <div class="faca3d-artes">
-              <label class="faca3d-fold-label" for="faca3dArteModo">Arte</label>
-              <select id="faca3dArteModo" class="faca3d-select faca3d-arte-select" title="Mostrar a arte externa nas faces externas e a interna nas faces internas">
-                <option value="ambas">Externa + interna</option>
-                <option value="externa">Somente externa</option>
-                <option value="interna">Somente interna</option>
-                <option value="nenhuma">Sem arte (estrutura)</option>
-              </select>
-              <label class="faca3d-toggle" title="Espelhar a arte interna (imprimir o verso como a folha é virada)">
-                <input id="faca3dEspelharInterna" type="checkbox" />
-                Espelhar interna
-              </label>
-              <button id="faca3dBtnArtes" class="faca3d-btn small" title="Reler as artes do documento">Atualizar artes</button>
+            <div class="faca3d-espessura" style="display:flex; align-items:center; gap:6px;">
+              <label class="faca3d-fold-label" for="faca3dEspessura">Espessura (mm)</label>
+              <input id="faca3dEspessura" type="number" min="0" max="10" step="0.5" value="1.5" class="faca3d-input" style="width: 60px; padding: 2px 4px;" title="Espessura física do material em mm" />
             </div>
           </div>
           <div class="faca3d-toolbar-group">

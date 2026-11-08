@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  var VERSAO = "0.8.0";
+  var VERSAO = "0.8.2";
 
   /* Costura de micro-falhas do desenho (picotes nas bases das abas): a borda
    * de um painel fica com um vão pequeno e o painel deixa de ser face. Até
@@ -98,6 +98,9 @@
       csInterface.evalScript("faca3dLog(" + args + ")", function () {});
     } catch (e) {}
   }
+  // Expõe o log para os módulos de visualização (three3d) diagnosticarem o
+  // mapeamento de arte sem depender do console do CEP.
+  F.log = registrarLog;
 
   function sendToHost(funcName, args) {
     return new Promise(function (resolve, reject) {
@@ -142,7 +145,7 @@
       var script =
         "(function(){ try { carregarFerramenta(" + JSON.stringify("faca3d") + ", " +
         JSON.stringify(raizExt) + "); $.evalFile(arquivoFerramenta(" +
-        JSON.stringify("faca3d") + ", " + JSON.stringify(raizExt) + ")); return " +
+        JSON.stringify(raizExt) + ")); return " +
         nomeFn + "(" + argStr + "); } catch (e) { return " +
         JSON.stringify("F3D|1|ERRO\nCODIGO=JS\nMENSAGEM=") + " + (e && e.message ? e.message : e);" +
         " } finally { try { instalarWrappers(); } catch (e2) {} } })()";
@@ -183,7 +186,7 @@
       if (pos < 0) continue;
       var chave = linha.slice(0, pos);
       var valor = linha.slice(pos + 1);
-      if (chave === "ARTBOARD" || chave === "CAMADA" || chave === "ARQUIVO" || chave === "ERRO") {
+      if (chave === "ARTBOARD" || chave === "CAMADA" || chave === "ARQUIVO" || chave === "ERRO" || chave === "ARTE_CAMADA") {
         if (!listas[chave]) listas[chave] = [];
         listas[chave].push(valor.split("\t"));
       } else {
@@ -199,6 +202,31 @@
     return isFinite(n) ? n / 10000 : 0;
   }
 
+  /* Caixa do DESENHO (itens de arte) dentro da artboard, normalizada em
+   * [0,1] com v=0 na base — a mesma convencao da UV.
+   * Se a arte cobre a artboard inteira (ou nao ha medida), devolve null e o
+   * mapeamento continua usando o retangulo da artboard. */
+  function caixaConteudo(arq, rect) {
+    if (!arq || !arq.arte || !rect) return null;
+    var larg = rect.right - rect.left;
+    var alt = rect.top - rect.bottom;
+    if (!(larg > 0) || !(alt > 0)) return null;
+    var u0 = (arq.arte.left - rect.left) / larg;
+    var u1 = (arq.arte.right - rect.left) / larg;
+    var v0 = (arq.arte.bottom - rect.bottom) / alt;
+    var v1 = (arq.arte.top - rect.bottom) / alt;
+    if (u0 > u1) { var tu = u0; u0 = u1; u1 = tu; }
+    if (v0 > v1) { var tv = v0; v0 = v1; v1 = tv; }
+    if (u0 < 0) u0 = 0;
+    if (v0 < 0) v0 = 0;
+    if (u1 > 1) u1 = 1;
+    if (v1 > 1) v1 = 1;
+    if (!(u1 - u0 > 0.001) || !(v1 - v0 > 0.001)) return null;
+    // Ja cobre praticamente tudo: nao precisa esticar.
+    if (u0 < 0.02 && v0 < 0.02 && u1 > 0.98 && v1 > 0.98) return null;
+    return { u0: u0, v0: v0, u1: u1, v1: v1 };
+  }
+
   /* O ExtendScript devolve o artboard em pontos; os polígonos das faces vêm do
    * motor geométrico em milímetros. Converte o retângulo para mm. */
   function ptParaMm(v) {
@@ -208,7 +236,7 @@
 
   function lerArtesDoDocumento() {
     return chamarArte("faca3dArtes", []).then(function (resposta) {
-      registrarLog("faca3d", "artes: raw faca3dArtes=" + String(resposta).replace(/\\n/g, " | ").slice(0, 500));
+      registrarLog("faca3d", "artes: raw faca3dArtes=" + String(resposta).replace(/\r?\n/g, " | ").slice(0, 500));
       var dados = lerLinhas(resposta);
       var lista = dados.listas.ARTBOARD || [];
       var artboards = [];
@@ -235,6 +263,25 @@
           tecnica: listaCamadas[j][3] === "1"
         });
       }
+      var camadasArte = [];
+      var listaArte = dados.listas.ARTE_CAMADA || [];
+      for (var k = 0; k < listaArte.length; k++) {
+        var ca = listaArte[k];
+        camadasArte.push({
+          nome: desescapar(ca[1] || ""),
+          visivel: ca[2] === "1",
+          bloqueada: ca[3] === "1",
+          itens: Number(ca[4] || 0),
+          rect: ca.length >= 9 && ca[5] !== ""
+            ? {
+                left: ptParaMm(numero(ca[5])),
+                top: ptParaMm(numero(ca[6])),
+                right: ptParaMm(numero(ca[7])),
+                bottom: ptParaMm(numero(ca[8]))
+              }
+            : null
+        });
+      }
       var faca = null;
       if (dados.FACA) {
         var cf = String(dados.FACA).split("\t");
@@ -252,6 +299,8 @@
         temp: dados.TEMP || "",
         artboards: artboards,
         camadas: camadas,
+        camadasArte: camadasArte,
+        arteQtd: Number(dados.ARTE_QTD || 0),
         faca: faca
       };
     });
@@ -305,97 +354,7 @@
   }
 
   function carregarArtes() {
-    if (!estado.viewer3d) return Promise.resolve(null);
-    if (estado.carregandoArtes) return estado.carregandoArtes;
-    estado.carregandoArtes = lerArtesDoDocumento()
-      .then(function (dados) {
-        registrarLog("faca3d", "artes: doc=" + dados.doc + " temp=" + dados.temp + " artboards=" + (dados.artboards ? dados.artboards.length : 0));
-        if (dados.artboards) {
-          for (var _ai = 0; _ai < dados.artboards.length; _ai++) {
-            registrarLog("faca3d", "artes: ab[" + _ai + "]=" + dados.artboards[_ai].indice + " nome=\"" + dados.artboards[_ai].nome + "\"");
-          }
-        }
-        var papeis = F.view.artes.decidir(dados.artboards);
-        registrarLog("faca3d", "artes: externa=" + (papeis.externa ? (papeis.externa.indice + " " + papeis.externa.nome) : "null") + " interna=" + (papeis.interna ? (papeis.interna.indice + " " + papeis.interna.nome) : "null"));
-        estado.artesInfo = { dados: dados, papeis: papeis };
-        var offset = estado.offsetArte ||
-          (dados.faca ? { x: dados.faca.left, y: dados.faca.bottom } : { x: 0, y: 0 });
-        var indices = [];
-        if (papeis.externa) indices.push(papeis.externa.indice);
-        if (papeis.interna) indices.push(papeis.interna.indice);
-        if (!indices.length) {
-          aplicarArtes(null, papeis.avisos, offset);
-          return null;
-        }
-        return chamarArte("faca3dExportarArte", [indices.join(","), pastaArte(dados), 2200]).then(
-          function (resposta) {
-            var saida = lerLinhas(resposta);
-            registrarLog("faca3d", "artes: export resposta=" + String(resposta).replace(/\\n/g, " | ").slice(0, 400));
-            var arquivos = {};
-            var lista = saida.listas.ARQUIVO || [];
-            for (var i = 0; i < lista.length; i++) {
-              arquivos[Number(lista[i][0])] = {
-                caminho: desescapar(lista[i][1] || ""),
-                largura: Number(lista[i][2] || 0),
-                altura: Number(lista[i][3] || 0)
-              };
-              registrarLog("faca3d", "artes: arquivo idx=" + lista[i][0] + " caminho=" + arquivos[Number(lista[i][0])].caminho + " " + arquivos[Number(lista[i][0])].largura + "x" + arquivos[Number(lista[i][0])].altura);
-            }
-            if (saida.listas.ERRO) {
-              for (var _ei = 0; _ei < saida.listas.ERRO.length; _ei++) {
-                registrarLog("faca3d", "artes: ERRO export=" + saida.listas.ERRO[_ei].join(" "));
-              }
-            }
-            var mapa = {};
-            var pedidos = [];
-            function pedir(item, chave) {
-              if (!item) return null;
-              var arq = arquivos[item.indice];
-              if (!arq) {
-                registrarLog("faca3d", "artes: sem arquivo exportado para " + chave + " idx=" + item.indice);
-                return null;
-              }
-              pedidos.push(
-                F.view.artes.carregarTextura(arq.caminho, {}).then(function (t) {
-                  registrarLog("faca3d", "artes: textura carregada " + chave + " " + t.largura + "x" + t.altura + " caminho=" + arq.caminho);
-                  mapa[chave] = {
-                    texture: t.texture,
-                    rect: item.rect,
-                    nome: item.nome,
-                    indice: item.indice,
-                    caminho: arq.caminho,
-                    largura: t.largura,
-                    altura: t.altura
-                  };
-                }).catch(function (e) {
-                  registrarLog("faca3d", "artes: FALHA textura " + chave + ": " + (e && e.message ? e.message : e));
-                  throw e;
-                })
-              );
-              return null;
-            }
-            pedir(papeis.externa, "externa");
-            pedir(papeis.interna, "interna");
-            return Promise.all(pedidos).then(function () {
-              aplicarArtes(mapa, papeis.avisos, offset);
-              return mapa;
-            });
-          }
-        );
-      })
-      .catch(function (e) {
-        registrarLog("faca3d", "artes: ERRO geral: " + (e && e.message ? e.message : e));
-        estado.artesInfo = null;
-        aplicarArtes(null, [
-          "Não foi possível montar a arte: " + (e && e.message ? e.message : e)
-        ], estado.offsetArte);
-        return null;
-      })
-      .then(function (r) {
-        estado.carregandoArtes = null;
-        return r;
-      });
-    return estado.carregandoArtes;
+    return Promise.resolve(null);
   }
 
   function carregarScript(src, cb) {
@@ -1422,6 +1381,15 @@
         estado.viewer3d.definirAngulo(g);
       }
     });
+    var espInput = el("faca3dEspessura");
+    if (espInput) {
+      espInput.addEventListener("input", function () {
+        var v = parseFloat(this.value);
+        if (isFinite(v) && v >= 0 && estado.viewer3d && estado.viewer3d.definirEspessura) {
+          estado.viewer3d.definirEspessura(v);
+        }
+      });
+    }
     el("faca3dBtnReset").addEventListener("click", function () {
       estado.viewer3d && estado.viewer3d.limparSelecao();
       estado.faceSelecionada = null;
@@ -1529,6 +1497,19 @@
     try { setInterval(verificarDocumento, 5000); } catch (e) {}
     expandirPainel();
     definirAnguloNaTela(90);
+
+    try {
+      var vEl = document.getElementById("faca3dVersao");
+      if (vEl) {
+        var agora = new Date();
+        var ts = agora.getFullYear() +
+                 String(agora.getMonth() + 1).padStart(2, '0') +
+                 String(agora.getDate()).padStart(2, '0') + "-" +
+                 String(agora.getHours()).padStart(2, '0') +
+                 String(agora.getMinutes()).padStart(2, '0');
+        vEl.textContent = "v" + VERSAO + "-espessura-" + ts;
+      }
+    } catch (e) {}
 
     var extRoot = "";
     try {

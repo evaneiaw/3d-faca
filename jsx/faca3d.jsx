@@ -705,6 +705,89 @@ function f3dCamadaTecnica(nome) {
     return false;
 }
 
+// Camada ARTE (a arte grafica real da embalagem). Busca recursiva e sem
+// diferenciar maiusculas/acentos. Nao confundir com as camadas tecnicas.
+function f3dEhCamadaArte(nome) {
+    var n = f3dSemAcento(nome);
+    return n === "ARTE" || n === "ARTES" || n === "ART" ||
+        n === "ARTWORK" || n === "ARTE FINAL" ||
+        n === "IMPRESSAO" || n === "IMPRESSAO FINAL";
+}
+
+function f3dColetarCamadasArte(layers, lista) {
+    var n = f3dLen(layers);
+    for (var i = 1; i <= n; i++) {
+        var l = f3dGet(layers, i);
+        if (!l) continue;
+        if (f3dEhCamadaArte(f3dNomeCamada(l))) lista.push(l);
+        var subs = f3dProp(l, "layers");
+        if (f3dLen(subs)) f3dColetarCamadasArte(subs, lista);
+    }
+}
+
+function f3dColetarTodasCamadas(layers, lista) {
+    var n = f3dLen(layers);
+    for (var i = 1; i <= n; i++) {
+        var l = f3dGet(layers, i);
+        if (!l) continue;
+        lista.push(l);
+        var subs = f3dProp(l, "layers");
+        if (f3dLen(subs)) f3dColetarTodasCamadas(subs, lista);
+    }
+}
+
+function f3dContemObjeto(lista, obj) {
+    for (var i = 0; i < lista.length; i++) {
+        if (lista[i] === obj) return true;
+    }
+    return false;
+}
+
+// Uniao dos bounds (pt, 1/10000) dos objetos de uma camada, recursivo.
+function f3dBoundsCamada(layer) {
+    var caixa = null;
+    function unir(container) {
+        var itens = f3dProp(container, "pageItems");
+        var n = f3dLen(itens);
+        for (var i = 1; i <= n; i++) {
+            var item = f3dGet(itens, i);
+            if (!item) continue;
+            var b = null;
+            try {
+                b = item.geometricBounds;
+            } catch (e) {
+                b = null;
+            }
+            if (!b || b.length < 4) continue;
+            if (!caixa) {
+                caixa = [b[0], b[1], b[2], b[3]];
+            } else {
+                if (b[0] < caixa[0]) caixa[0] = b[0];
+                if (b[1] > caixa[1]) caixa[1] = b[1];
+                if (b[2] > caixa[2]) caixa[2] = b[2];
+                if (b[3] < caixa[3]) caixa[3] = b[3];
+            }
+        }
+        var subs = f3dProp(container, "layers");
+        var ns = f3dLen(subs);
+        for (var k = 1; k <= ns; k++) unir(f3dGet(subs, k));
+    }
+    unir(layer);
+    return caixa;
+}
+
+function f3dContarItensCamada(layer) {
+    var total = 0;
+    function contar(container) {
+        total += f3dLen(f3dProp(container, "pageItems"));
+        var subs = f3dProp(container, "layers");
+        var ns = f3dLen(subs);
+        for (var k = 1; k <= ns; k++) contar(f3dGet(subs, k));
+    }
+    contar(layer);
+    return total;
+}
+
 function f3dListarCamadasArte(layers, prefixo, out) {
     var n = f3dLen(layers);
     for (var i = 1; i <= n; i++) {
@@ -844,6 +927,34 @@ function f3dArtes() {
             );
         }
         f3dListarCamadasArte(doc.layers, "", out);
+        var camadasArte = [];
+        f3dColetarCamadasArte(doc.layers, camadasArte);
+        out.push("ARTE_QTD=" + camadasArte.length);
+        for (var a = 0; a < camadasArte.length; a++) {
+            var la = camadasArte[a];
+            var nomeA = "";
+            try {
+                nomeA = la.name;
+            } catch (eNA) {}
+            var visA = "1", lockA = "0";
+            try {
+                visA = la.visible ? "1" : "0";
+            } catch (eVA) {}
+            try {
+                lockA = la.locked ? "1" : "0";
+            } catch (eLA) {}
+            var bA = f3dBoundsCamada(la);
+            var itensA = f3dContarItensCamada(la);
+            var linhaA = "ARTE_CAMADA=" + a + "\t" + f3dEsc(nomeA) + "\t" + visA +
+                "\t" + lockA + "\t" + itensA;
+            if (bA) {
+                linhaA += "\t" + f3dGeoCoord(bA[0]) + "\t" + f3dGeoCoord(bA[1]) +
+                    "\t" + f3dGeoCoord(bA[2]) + "\t" + f3dGeoCoord(bA[3]);
+            } else {
+                linhaA += "\t\t\t\t";
+            }
+            out.push(linhaA);
+        }
         var caixaFaca = f3dBoundsFaca(doc);
         if (caixaFaca) {
             out.push(
@@ -861,6 +972,65 @@ function f3dArtes() {
             if (interacao !== null) app.userInteractionLevel = interacao;
         } catch (e1) {}
     }
+}
+
+// Caixa da ARTE (itens visiveis das camadas de arte) recortada pela artboard,
+// em pt (mesma unidade de geo, 1/10000). Serve para o painel mapear a UV pelo
+// DESENHO e nao pela artboard inteira: se a arte ocupa so parte da artboard,
+// o desenho e esticado sobre os paineis em vez de sobrar papel em volta.
+function f3dCaixaArteNaArtboard(camadas, rect) {
+    var caixa = null;
+    if (!rect) return null;
+    var al = Math.min(rect[0], rect[2]), ar = Math.max(rect[0], rect[2]);
+    var ab_ = Math.min(rect[1], rect[3]), at = Math.max(rect[1], rect[3]);
+    
+    // Converter de pt (raw) para unidades f3dGeoCoord se necessario
+    al = Number(al); ar = Number(ar); ab_ = Number(ab_); at = Number(at);
+
+    function unir(container) {
+        var items = f3dProp(container, "pageItems");
+        var n = f3dLen(items);
+        for (var i = 1; i <= n; i++) {
+            var it = f3dGet(items, i);
+            if (!it) continue;
+            var vis = true;
+            try {
+                vis = it.visible ? true : false;
+            } catch (eV) {}
+            if (!vis) continue;
+            var b = null;
+            try {
+                b = it.visibleBounds;
+            } catch (eB) {
+                b = null;
+            }
+            var temFilhos = f3dLen(f3dProp(it, "pageItems")) > 0;
+            if ((!b || b.length < 4) && temFilhos) {
+                unir(it);
+                continue;
+            }
+            if (!b || b.length < 4) continue;
+            var x0 = Math.max(Math.min(b[0], b[2]), al);
+            var x1 = Math.min(Math.max(b[0], b[2]), ar);
+            var y0 = Math.max(Math.min(b[1], b[3]), ab_);
+            var y1 = Math.min(Math.max(b[1], b[3]), at);
+            if (x1 <= x0 || y1 <= y0) continue;
+            if (!caixa) {
+                caixa = [x0, y1, x1, y0];
+            } else {
+                if (x0 < caixa[0]) caixa[0] = x0;
+                if (y1 > caixa[1]) caixa[1] = y1;
+                if (x1 > caixa[2]) caixa[2] = x1;
+                if (y0 < caixa[3]) caixa[3] = y0;
+            }
+        }
+        var subs = f3dProp(container, "layers");
+        var ns = f3dLen(subs);
+        for (var k = 1; k <= ns; k++) unir(f3dGet(subs, k));
+    }
+
+    for (var a = 0; a < camadas.length; a++) unir(camadas[a]);
+    return caixa;
 }
 
 // Exporta cada artboard pedido em PNG, SEM as camadas tecnicas.
@@ -887,17 +1057,55 @@ function f3dExportarArte(indicesCsv, pasta, alvoPx) {
             artboardAnterior = 0;
         }
 
-        f3dColetarCamadasTecnicas(doc.layers, ocultadas);
+        // Snapshot de visibilidade de TODAS as camadas (restaurado no finally).
+        var todasCamadas = [];
+        f3dColetarTodasCamadas(doc.layers, todasCamadas);
         var visibilidadeOriginal = [];
-        for (var t = 0; t < ocultadas.length; t++) {
+        for (var t = 0; t < todasCamadas.length; t++) {
             var antes = true;
             try {
-                antes = ocultadas[t].visible ? true : false;
+                antes = todasCamadas[t].visible ? true : false;
             } catch (eV) {}
             visibilidadeOriginal.push(antes);
-            try {
-                ocultadas[t].visible = false;
-            } catch (eOc) {}
+        }
+
+        // Se existir a camada ARTE, exporta SOMENTE ela (com seus ancestrais).
+        // Caso contrario, mantem o comportamento antigo: oculta as tecnicas.
+        var camadasArte = [];
+        f3dColetarCamadasArte(doc.layers, camadasArte);
+        var usarSomenteArte = camadasArte.length > 0;
+        var manterVisivel = [];
+        if (usarSomenteArte) {
+            for (var a = 0; a < camadasArte.length; a++) {
+                var atual = camadasArte[a];
+                while (atual) {
+                    if (!f3dContemObjeto(manterVisivel, atual)) manterVisivel.push(atual);
+                    var pai = null;
+                    try {
+                        pai = atual.parent;
+                    } catch (eP) {}
+                    if (!pai) break;
+                    var tnPai = "";
+                    try {
+                        tnPai = pai.typename;
+                    } catch (eTn) {}
+                    if (tnPai === "Document") break;
+                    atual = pai;
+                }
+            }
+        }
+
+        for (var c = 0; c < todasCamadas.length; c++) {
+            var cam = todasCamadas[c];
+            var manter = usarSomenteArte
+                ? f3dContemObjeto(manterVisivel, cam)
+                : !f3dCamadaTecnica(f3dNomeCamada(cam));
+            if (!manter) {
+                try {
+                    cam.visible = false;
+                } catch (eOc) {}
+                ocultadas.push(cam);
+            }
         }
 
         var dir = new Folder(String(pasta));
@@ -909,6 +1117,10 @@ function f3dExportarArte(indicesCsv, pasta, alvoPx) {
 
         var out = [];
         out.push(f3dCabecalho("ARTE"));
+        out.push("MODO=" + (usarSomenteArte ? "SOMENTE_ARTE" : "TECNICAS_OCULTAS"));
+        out.push("ARTE_CAMADAS=" + camadasArte.length);
+        out.push("CAMADAS_TOTAL=" + todasCamadas.length);
+        out.push("CAMADAS_OCULTAS=" + ocultadas.length);
         for (var i = 0; i < ids.length; i++) {
             var texto = f3dTrim(ids[i]);
             if (!texto) continue;
@@ -949,9 +1161,14 @@ function f3dExportarArte(indicesCsv, pasta, alvoPx) {
                 out.push("ERRO=" + idx + "\tnao gerou o PNG");
                 continue;
             }
+            var caixaArte = f3dCaixaArteNaArtboard(camadasArte, {0:f3dGeoCoord(r[0]), 1:f3dGeoCoord(r[1]), 2:f3dGeoCoord(r[2]), 3:f3dGeoCoord(r[3])});
             out.push(
                 "ARQUIVO=" + idx + "\t" + f3dEsc(arq.fsName) + "\t" +
-                Math.round((larg * escala) / 100) + "\t" + Math.round((alt * escala) / 100)
+                Math.round((larg * escala) / 100) + "\t" + Math.round((alt * escala) / 100) +
+                (caixaArte
+                    ? "\t" + f3dGeoCoord(caixaArte[0]) + "\t" + f3dGeoCoord(caixaArte[1]) +
+                      "\t" + f3dGeoCoord(caixaArte[2]) + "\t" + f3dGeoCoord(caixaArte[3])
+                    : "\t\t\t\t")
             );
         }
         out.push("END");
@@ -960,10 +1177,13 @@ function f3dExportarArte(indicesCsv, pasta, alvoPx) {
         var linha = e && e.line ? " (linha " + e.line + ")" : "";
         return f3dErro("EXCECAO", (e && e.message ? e.message : String(e)) + linha);
     } finally {
-        for (var k = 0; k < ocultadas.length; k++) {
-            try {
-                ocultadas[k].visible = visibilidadeOriginal[k];
-            } catch (eRes) {}
+        if (todasCamadas && visibilidadeOriginal &&
+            todasCamadas.length === visibilidadeOriginal.length) {
+            for (var k = 0; k < todasCamadas.length; k++) {
+                try {
+                    todasCamadas[k].visible = visibilidadeOriginal[k];
+                } catch (eRes) {}
+            }
         }
         try {
             if (doc) doc.artboards.setActiveArtboardIndex(artboardAnterior);

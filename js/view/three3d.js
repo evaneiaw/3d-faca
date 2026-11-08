@@ -304,21 +304,34 @@
       color: COR_PAPEL,
       roughness: 0.92,
       metalness: 0.02,
-      side: THREE.FrontSide,
-      flatShading: false
+      side: THREE.DoubleSide,
+      flatShading: false,
+      depthWrite: true,
+      depthTest: true
     });
     var materialFaceInterno = new THREE.MeshStandardMaterial({
       color: COR_PAPEL,
       roughness: 0.92,
       metalness: 0.02,
-      side: THREE.BackSide,
-      flatShading: false
+      side: THREE.DoubleSide,
+      flatShading: false,
+      depthWrite: true,
+      depthTest: true
+    });
+    var materialFaceLateral = new THREE.MeshStandardMaterial({
+      color: 0xdfdfdf,
+      roughness: 0.95,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      flatShading: false,
+      depthWrite: true,
+      depthTest: true
     });
     var materialSelecionada = new THREE.MeshStandardMaterial({
       color: 0xffcc85,
       roughness: 0.84,
       metalness: 0.02,
-      side: THREE.FrontSide,
+      side: THREE.DoubleSide,
       emissive: 0x6b3f00,
       emissiveIntensity: 0.55
     });
@@ -326,7 +339,7 @@
       color: 0xffcc85,
       roughness: 0.84,
       metalness: 0.02,
-      side: THREE.BackSide,
+      side: THREE.DoubleSide,
       emissive: 0x6b3f00,
       emissiveIntensity: 0.55
     });
@@ -378,6 +391,7 @@
       rotuloModo: null,
       malhas: [],
       malhasInternas: [],
+      espessura: 1.5,
       artes: { externa: null, interna: null },
       modoArte: "ambas",
       espelharInterna: false,
@@ -662,10 +676,17 @@
       estado.caixaMundo = { min: min, max: max };
       estado.dimensao = Math.max(max.x - min.x, max.y - min.y, max.z - min.z, 1);
 
-      // Qual lado da folha é o de fora? Com a caixa fechada (90°), compara a
-      // normal do polígono (ordem dos vértices) com a direção do centro para a
-      // face. Sem isso o material "externo" pode cair no lado de dentro.
-      if (!estado.ladoExterno) {
+      // Lado de fora da folha: a folha e UMA so, entao todas as faces precisam
+      // do mesmo lado. O criterio antigo decidia face por face comparando a
+      // normal com a direcao ate o centroide; com a folha plana (paraFora.z==0)
+      // ou face perto do centroide isso virava ruido numerico e o sinal saia
+      // aleatorio por painel. Painel com sinal errado e descartado pelo
+      // FrontSide: sobrava o fundo cinza do painel entre as faces.
+      //
+      // Recalculado a cada montagem de malhas (o voto depende da pose atual):
+      // com a folha plana vale a convencao +z; assim que ela dobra, o voto fica
+      // decisivo e o lado de fora passa a ser o de fora de verdade.
+      if (estado.montagem && estado.montagem.facesMontadas.length) {
         estado.ladoExterno = {};
         if (!estado.giroFace) estado.giroFace = {};
         var prof = {};
@@ -673,16 +694,18 @@
         for (var ip = 1; ip < ordemM.length; ip++) {
           prof[ordemM[ip].face] = (prof[ordemM[ip].pai] || 0) + 1;
         }
+        var somaFora = 0;
+        var facesValidas = [];
         for (i = 0; i < estado.montagem.facesMontadas.length; i++) {
           var idL = estado.montagem.facesMontadas[i];
           var faceL = mapa[idL];
           if (!faceL) continue;
           var triL = estado.poligonos[idL] || triangular(faceL);
           if (!triL || !triL.triangulos.length || triL.pontos.length < 3) continue;
+          facesValidas.push(idL);
+          estado.giroFace[idL] = (prof[idL] || 0) >= 2;
+
           var mL = matrizes[idL];
-          // Os índices da triangulação apontam para triL.pontos (contorno +
-          // furos). A normal usa esses vértices; o centroide usa só a borda
-          // externa, para o furo não puxar o centro para o lado errado.
           var vertL = [];
           for (j = 0; j < triL.pontos.length; j++) {
             vertL.push(new THREE.Vector3(triL.pontos[j].x, triL.pontos[j].y, 0).applyMatrix4(mL));
@@ -693,20 +716,31 @@
             cenL.add(new THREE.Vector3(contL[j].x, contL[j].y, 0).applyMatrix4(mL));
           }
           cenL.multiplyScalar(1 / contL.length);
+
           var tL = triL.triangulos[0];
-          var va = vertL[tL[0]];
-          var vb = vertL[tL[1]];
-          var vc = vertL[tL[2]];
-          var u1 = new THREE.Vector3().subVectors(vb, va);
-          var u2 = new THREE.Vector3().subVectors(vc, va);
-          var normal = new THREE.Vector3().crossVectors(u1, u2);
+          var normalL = new THREE.Vector3().crossVectors(
+            new THREE.Vector3().subVectors(vertL[tL[1]], vertL[tL[0]]),
+            new THREE.Vector3().subVectors(vertL[tL[2]], vertL[tL[0]])
+          );
+          // Normal sempre para o lado +z da folha plana (mesma convencao).
+          if (frenteNegativa(triL, false)) normalL.negate();
+
           var paraFora = new THREE.Vector3(
             cenL.x - estado.centro.x,
             cenL.y - estado.centro.y,
             cenL.z - estado.centro.z
           );
-          estado.ladoExterno[idL] = normal.dot(paraFora) >= 0 ? 1 : -1;
-          estado.giroFace[idL] = (prof[idL] || 0) >= 2;
+          // Peso: so vale quando a folha esta dobrada (paraFora.z != 0). Com a
+          // folha plana o voto nao informa nada e o padrao +z decide.
+          var peso = Math.abs(paraFora.z);
+          if (peso > 1e-9) somaFora += normalL.dot(paraFora) >= 0 ? peso : -peso;
+        }
+        var sinalGlobal = somaFora < 0 ? -1 : 1;
+        for (i = 0; i < facesValidas.length; i++) {
+          var idF = facesValidas[i];
+          var triF = estado.poligonos[idF] || triangular(mapa[idF]);
+          estado.ladoExterno[idF] =
+            (frenteNegativa(triF, false) ? -1 : 1) * sinalGlobal;
         }
       }
 
@@ -721,27 +755,24 @@
         if (!tri) continue;
         var matriz = matrizes[id];
 
-        var posicoes = new Float32Array(tri.pontos.length * 3);
-        for (j = 0; j < tri.pontos.length; j++) {
-          var vt = new THREE.Vector3(tri.pontos[j].x, tri.pontos[j].y, 0).applyMatrix4(matriz);
-          posicoes[j * 3] = vt.x - estado.centro.x;
-          posicoes[j * 3 + 1] = vt.y - estado.centro.y;
-          posicoes[j * 3 + 2] = vt.z - estado.centro.z;
-        }
-        var indices = [];
-        var inverter = (estado.ladoExterno && estado.ladoExterno[id] < 0) ? true : false;
-        for (j = 0; j < tri.triangulos.length; j++) {
-          if (inverter) {
-            indices.push(tri.triangulos[j][2], tri.triangulos[j][1], tri.triangulos[j][0]);
-          } else {
-            indices.push(tri.triangulos[j][0], tri.triangulos[j][1], tri.triangulos[j][2]);
-          }
-        }
-        var geo = new THREE.BufferGeometry();
-        geo.setAttribute("position", new THREE.BufferAttribute(posicoes, 3));
-        geo.setIndex(indices);
-        geo.computeVertexNormals();
+        var tMm = (estado.espessura !== undefined && isFinite(estado.espessura)) ? estado.espessura : 1.5;
+        var tPt = F.units && F.units.mmParaPt ? F.units.mmParaPt(tMm) : tMm * 2.834645669291339;
+        var meioT = tPt / 2;
 
+        var p0 = tri.pontos[tri.triangulos[0][0]];
+        var p1 = tri.pontos[tri.triangulos[0][1]];
+        var p2 = tri.pontos[tri.triangulos[0][2]];
+        var v0 = new THREE.Vector3(p0.x, p0.y, 0).applyMatrix4(matriz);
+        var v1 = new THREE.Vector3(p1.x, p1.y, 0).applyMatrix4(matriz);
+        var v2 = new THREE.Vector3(p2.x, p2.y, 0).applyMatrix4(matriz);
+        var cb = new THREE.Vector3().subVectors(v1, v0);
+        var ab = new THREE.Vector3().subVectors(v2, v0);
+        var normal = new THREE.Vector3().crossVectors(cb, ab).normalize();
+        if (normal.lengthSq() < 0.0001) {
+          normal.set(0, 0, 1);
+        }
+
+        var inverter = (estado.ladoExterno && estado.ladoExterno[id] < 0) ? true : false;
         var uv = uvDaFace(tri.pontos, estado.artes.externa);
         var girarAgora =
           estado.giroFace &&
@@ -754,9 +785,31 @@
           false,
           girarAgora
         );
-        geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
 
-        var malha = new THREE.Mesh(geo, materialFace);
+        // 1. Face Externa (Frente) +meioT
+        var posExt = new Float32Array(tri.pontos.length * 3);
+        for (j = 0; j < tri.pontos.length; j++) {
+          var vt = new THREE.Vector3(tri.pontos[j].x, tri.pontos[j].y, 0).applyMatrix4(matriz);
+          vt.addScaledVector(normal, meioT);
+          posExt[j * 3] = vt.x - estado.centro.x;
+          posExt[j * 3 + 1] = vt.y - estado.centro.y;
+          posExt[j * 3 + 2] = vt.z - estado.centro.z;
+        }
+        var indicesExt = [];
+        for (j = 0; j < tri.triangulos.length; j++) {
+          if (inverter) {
+            indicesExt.push(tri.triangulos[j][2], tri.triangulos[j][1], tri.triangulos[j][0]);
+          } else {
+            indicesExt.push(tri.triangulos[j][0], tri.triangulos[j][1], tri.triangulos[j][2]);
+          }
+        }
+        var geoExt = new THREE.BufferGeometry();
+        geoExt.setAttribute("position", new THREE.BufferAttribute(posExt, 3));
+        geoExt.setIndex(indicesExt);
+        geoExt.computeVertexNormals();
+        geoExt.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+
+        var malhaExt = new THREE.Mesh(geoExt, materialFace);
         var baseContorno = tri.contorno || tri.pontos;
         var dadosFace = {
           face: id,
@@ -764,6 +817,7 @@
           pontoInterior: pontoInterno(tri, matriz),
           contorno: baseContorno.map(function (pt) {
             var vc = new THREE.Vector3(pt.x, pt.y, 0).applyMatrix4(matriz);
+            vc.addScaledVector(normal, meioT);
             return {
               x: vc.x - estado.centro.x,
               y: vc.y - estado.centro.y,
@@ -771,46 +825,83 @@
             };
           })
         };
-        malha.userData = dadosFace;
-        grupo.add(malha);
-        estado.malhas.push(malha);
+        malhaExt.userData = dadosFace;
+        grupo.add(malhaExt);
+        estado.malhas.push(malhaExt);
 
-        // Face interna: mesma geometria, UV propria (artboard interno) e
-        // material BackSide, para a arte de dentro nao se misturar com a de fora.
-        var geoInterna = geo.clone();
-        // A 2ª artboard é a mesma folha vista por dentro: o conteúdo dela é
-        // deslocado junto com a artboard, então a referência de UV é o
-        // retângulo da 1ª artboard (mesma posição relativa do desenho).
-        var refInterna =
-          (estado.artes.externa && estado.artes.externa.rect) ||
-          (estado.artes.interna && estado.artes.interna.rect);
-        var uvInterna = uvDaFace(tri.pontos, { rect: refInterna });
-        // O lado interno é o oposto da frente: quando a frente aponta para +z,
-        // a arte interna é vista de -z e precisa do U espelhado.
-        var girarAgoraInt =
-          estado.giroFace &&
-          estado.giroFace[id] === true &&
-          (estado.angulos[id] || 0) > 45;
-        orientarUv(
-          uvInterna,
-          !frenteNegativa(tri, inverter),
-          false,
-          false,
-          girarAgoraInt
-        );
-        if (estado.espelharInterna) {
-          orientarUv(uvInterna, true, false);
+        // 2. Face Interna (Verso) -meioT
+        var posInt = new Float32Array(tri.pontos.length * 3);
+        for (j = 0; j < tri.pontos.length; j++) {
+          var vt = new THREE.Vector3(tri.pontos[j].x, tri.pontos[j].y, 0).applyMatrix4(matriz);
+          vt.addScaledVector(normal, -meioT);
+          posInt[j * 3] = vt.x - estado.centro.x;
+          posInt[j * 3 + 1] = vt.y - estado.centro.y;
+          posInt[j * 3 + 2] = vt.z - estado.centro.z;
         }
-        geoInterna.setAttribute("uv", new THREE.BufferAttribute(uvInterna, 2));
-        var malhaInterna = new THREE.Mesh(geoInterna, materialFaceInterno);
-        malhaInterna.userData = {
+        var indicesInt = [];
+        for (j = 0; j < tri.triangulos.length; j++) {
+          if (inverter) {
+            indicesInt.push(tri.triangulos[j][0], tri.triangulos[j][1], tri.triangulos[j][2]);
+          } else {
+            indicesInt.push(tri.triangulos[j][2], tri.triangulos[j][1], tri.triangulos[j][0]);
+          }
+        }
+        var geoInt = new THREE.BufferGeometry();
+        geoInt.setAttribute("position", new THREE.BufferAttribute(posInt, 3));
+        geoInt.setIndex(indicesInt);
+        geoInt.computeVertexNormals();
+        geoInt.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+
+        var malhaInt = new THREE.Mesh(geoInt, materialFaceInterno);
+        malhaInt.userData = {
           face: id,
           lado: "interno",
           pontoInterior: dadosFace.pontoInterior,
-          contorno: dadosFace.contorno
+          contorno: baseContorno.map(function (pt) {
+            var vc = new THREE.Vector3(pt.x, pt.y, 0).applyMatrix4(matriz);
+            vc.addScaledVector(normal, -meioT);
+            return {
+              x: vc.x - estado.centro.x,
+              y: vc.y - estado.centro.y,
+              z: vc.z - estado.centro.z
+            };
+          })
         };
-        grupo.add(malhaInterna);
-        estado.malhasInternas.push(malhaInterna);
+        grupo.add(malhaInt);
+        estado.malhasInternas.push(malhaInt);
+
+        // 3. Paredes Laterais (Side Walls)
+        var sidePositions = [];
+        for (j = 0; j < baseContorno.length; j++) {
+          var ptA = baseContorno[j];
+          var ptB = baseContorno[(j + 1) % baseContorno.length];
+          var aW = new THREE.Vector3(ptA.x, ptA.y, 0).applyMatrix4(matriz);
+          var bW = new THREE.Vector3(ptB.x, ptB.y, 0).applyMatrix4(matriz);
+
+          var aEx = aW.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+          var bEx = bW.clone().addScaledVector(normal, meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+          var aIn = aW.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+          var bIn = bW.clone().addScaledVector(normal, -meioT).sub(new THREE.Vector3(estado.centro.x, estado.centro.y, estado.centro.z));
+
+          sidePositions.push(
+            aEx.x, aEx.y, aEx.z,
+            bEx.x, bEx.y, bEx.z,
+            bIn.x, bIn.y, bIn.z,
+
+            aEx.x, aEx.y, aEx.z,
+            bIn.x, bIn.y, bIn.z,
+            aIn.x, aIn.y, aIn.z
+          );
+        }
+        if (sidePositions.length > 0) {
+          var geoSide = new THREE.BufferGeometry();
+          geoSide.setAttribute("position", new THREE.BufferAttribute(new Float32Array(sidePositions), 3));
+          geoSide.computeVertexNormals();
+          var malhaSide = new THREE.Mesh(geoSide, materialFaceLateral);
+          malhaSide.userData = { face: id, lado: "lateral" };
+          grupo.add(malhaSide);
+          estado.malhasInternas.push(malhaSide);
+        }
 
         for (j = 0; j < baseContorno.length; j++) {
           var a = new THREE.Vector3(baseContorno[j].x, baseContorno[j].y, 0).applyMatrix4(matriz);
@@ -923,6 +1014,10 @@
       }
     }
 
+    /* UV da face. Referencia = retangulo da artboard (mm do documento).
+     * Se a arte tem uma caixa de conteudo (`conteudo`, normalizada em [0,1]),
+     * a UV e remapeada para o DESENHO preencher o painel: sem isso, a parte
+     * da artboard sem arte virava papel branco/cinza no meio do 3D. */
     function uvDaFace(pontos, arte) {
       var uv = new Float32Array(pontos.length * 2);
       var r = arte && arte.rect ? arte.rect : null;
@@ -931,16 +1026,62 @@
       var alt = r.top - r.bottom;
       if (!(larg > 0) || !(alt > 0)) return uv;
       var off = estado.artes.offset || { x: 0, y: 0 };
+      var c = arte && arte.conteudo ? arte.conteudo : null;
+      var du = c ? c.u1 - c.u0 : 1;
+      var dv = c ? c.v1 - c.v0 : 1;
       for (var i = 0; i < pontos.length; i++) {
-        uv[i * 2] = (pontos[i].x + off.x - r.left) / larg;
-        uv[i * 2 + 1] = (pontos[i].y + off.y - r.bottom) / alt;
+        var u = (pontos[i].x + off.x - r.left) / larg;
+        var v = (pontos[i].y + off.y - r.bottom) / alt;
+        if (c) {
+          u = c.u0 + u * du;
+          v = c.v0 + v * dv;
+        }
+        uv[i * 2] = u;
+        uv[i * 2 + 1] = v;
       }
       return uv;
     }
 
+    /* Alguma arte esta sendo exibida como textura nos paineis? */
+    function artesVisiveis() {
+      var modo = estado.modoArte;
+      if (modo === "nenhuma") return false;
+      if (modo === "ambas") return !!(estado.artes.externa || estado.artes.interna);
+      if (modo === "externa") return !!estado.artes.externa;
+      if (modo === "interna") return !!estado.artes.interna;
+      return false;
+    }
+
+    /* Bordas (cinza) e vincos (azul) sao guias TECNICAS. Elas sao desenhadas
+     * em LineSegments sobre os paineis e, quando a arte esta aplicada como
+     * textura, cortam o desenho com riscos/faixas cinzas. Com arte visivel
+     * elas ficam invisiveis: a face mostra somente o material com a imagem.
+     * O fundo tambem passa a ser cor de papel: qualquer fresta entre paineis
+     * aparece como papel, nunca como o cinza da interface. */
+    function atualizarOverlays() {
+      var comArte = artesVisiveis();
+      var mostrar = !comArte;
+      if (estado.bordas) estado.bordas.visible = mostrar;
+      if (estado.vincos) estado.vincos.visible = mostrar;
+      if (renderer) {
+        if (comArte) renderer.setClearColor(COR_PAPEL, 1);
+        else renderer.setClearColor(0x000000, 0);
+      }
+    }
+
+    /* Arte de cada lado da folha. Documento com UMA artboard nao tem arte
+     * interna: nesse caso o lado de dentro mostra a MESMA arte externa (e o
+     * UV interno ja usa o retangulo da 1a artboard, espelhado). Sem esse
+     * fallback o verso dos paineis e das abas caia no material de papel e
+     * aparecia como faixa/mancha cinza entre as faces com arte. */
+    function arteDoLado(interno) {
+      if (interno) return estado.artes.interna || estado.artes.externa || null;
+      return estado.artes.externa || null;
+    }
+
     function materialDaMalha(malha, selecionada) {
       var interno = malha.userData.lado === "interno";
-      var arte = interno ? estado.artes.interna : estado.artes.externa;
+      var arte = arteDoLado(interno);
       var modo = estado.modoArte;
       var mostraArte =
         !!arte && (modo === "ambas" || (interno ? modo === "interna" : modo === "externa"));
@@ -954,6 +1095,7 @@
 
     function atualizarSelecao() {
       var i;
+      atualizarOverlays();
       for (i = 0; i < estado.malhas.length; i++) {
         var m = estado.malhas[i];
         m.material = materialDaMalha(m, estado.facesSelecionadas[m.userData.face] === true);
@@ -1482,13 +1624,69 @@
 
     /* Artes: { externa: {texture, rect}, interna: {texture, rect} }
      * opcoes: { modo: "ambas"|"externa"|"interna"|"nenhuma", espelharInterna } */
+    function logArteDebug() {
+      if (!F.log) return;
+      var off = estado.artes.offset || { x: 0, y: 0 };
+      F.log("3d", "arteDebug: modo=" + estado.modoArte +
+        " texturaExt=" + (materialArteExterna.map ? "sim" : "nao") +
+        " offset=" + off.x.toFixed(2) + "," + off.y.toFixed(2));
+      var r = estado.artes.externa && estado.artes.externa.rect;
+      if (r) {
+        F.log("3d", "arteDebug: rectExt=[" + r.left.toFixed(2) + "," +
+          r.bottom.toFixed(2) + "," + r.right.toFixed(2) + "," + r.top.toFixed(2) + "]");
+      }
+      var c = estado.artes.externa && estado.artes.externa.conteudo;
+      F.log("3d", "arteDebug: conteudoExt=" + (c
+        ? ("u " + c.u0.toFixed(3) + ".." + c.u1.toFixed(3) + " v " + c.v0.toFixed(3) + ".." + c.v1.toFixed(3))
+        : "artboard inteira"));
+      var comArte = 0, semArte = 0;
+      for (var i = 0; i < estado.malhas.length; i++) {
+        if (estado.malhas[i].material === materialArteExterna ||
+            estado.malhas[i].material === materialSelArteExterna) comArte++;
+        else semArte++;
+      }
+      F.log("3d", "arteDebug: facesExternas=" + estado.malhas.length +
+        " comArte=" + comArte + " semArte=" + semArte +
+        " bordas=" + (estado.bordas ? (estado.bordas.visible ? "visiveis" : "ocultas") : "-") +
+        " fundo=" + (artesVisiveis() ? "papel" : "transparente"));
+      var invertidas = 0;
+      for (var w = 0; w < estado.malhas.length; w++) {
+        var idw = estado.malhas[w].userData.face;
+        if (estado.ladoExterno && estado.ladoExterno[idw] < 0) invertidas++;
+      }
+      F.log("3d", "arteDebug: invertidas=" + invertidas + " de " + estado.malhas.length);
+      if (estado.malhas.length <= 40) {
+        for (var j = 0; j < estado.malhas.length; j++) {
+          var m = estado.malhas[j];
+          var uv = m.geometry.getAttribute("uv");
+          if (!uv) continue;
+          var minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+          for (var k = 0; k < uv.count; k++) {
+            var u = uv.getX(k), v = uv.getY(k);
+            if (u < minU) minU = u;
+            if (u > maxU) maxU = u;
+            if (v < minV) minV = v;
+            if (v > maxV) maxV = v;
+          }
+          F.log("3d", "arteDebug: face=" + m.userData.face +
+            " mat=" + (m.material === materialArteExterna || m.material === materialSelArteExterna ? "arte" : "papel") +
+            " u=" + minU.toFixed(3) + ".." + maxU.toFixed(3) +
+            " v=" + minV.toFixed(3) + ".." + maxV.toFixed(3));
+        }
+      }
+    }
+
     function definirArtes(novas, opcoes) {
       if (novas) {
         estado.artes.externa = novas.externa || null;
         estado.artes.interna = novas.interna || null;
         estado.artes.offset = novas.offset || estado.artes.offset || { x: 0, y: 0 };
-        materialArteExterna.map = estado.artes.externa ? estado.artes.externa.texture : null;
-        materialArteInterna.map = estado.artes.interna ? estado.artes.interna.texture : null;
+        var texExterna = estado.artes.externa ? estado.artes.externa.texture : null;
+        var texInterna = estado.artes.interna
+          ? estado.artes.interna.texture
+          : texExterna; // 1 artboard: o verso mostra a mesma arte (espelhada).
+        materialArteExterna.map = texExterna;
+        materialArteInterna.map = texInterna;
         materialSelArteExterna.map = materialArteExterna.map;
         materialSelArteInterna.map = materialArteInterna.map;
         materialArteExterna.needsUpdate = true;
@@ -1503,6 +1701,7 @@
         }
       }
       recriarMalhas();
+      if (novas) logArteDebug();
       renderizar();
     }
 
@@ -1727,6 +1926,13 @@
         return mapa;
       },
       definirVista: definirVista,
+      definirEspessura: function (val) {
+        var t = Number(val);
+        if (isFinite(t) && t >= 0) {
+          estado.espessura = t;
+          renderizar();
+        }
+      },
       articulacoes: articulacoes,
       selecionarFace: selecionarFace,
       limparSelecao: limparSelecao,
@@ -1782,12 +1988,26 @@
           facesSelecionadas: listaSelecionadas(),
           modoArte: estado.modoArte,
           espelharInterna: estado.espelharInterna,
+          arteInternaHerdada: !estado.artes.interna && !!estado.artes.externa,
+          overlays: {
+            bordas: estado.bordas ? estado.bordas.visible : null,
+            vincos: estado.vincos ? estado.vincos.visible : null
+          },
+          ladoExterno: (function () {
+            var pos = 0, neg = 0;
+            for (var q in estado.ladoExterno) {
+              if (!estado.ladoExterno.hasOwnProperty(q)) continue;
+              if (estado.ladoExterno[q] < 0) neg++;
+              else pos++;
+            }
+            return { positivas: pos, invertidas: neg };
+          })(),
           artes: {
             externa: estado.artes.externa
-              ? { rect: estado.artes.externa.rect, temTextura: !!estado.artes.externa.texture, caminho: estado.artes.externa.caminho || "" }
+              ? { rect: estado.artes.externa.rect, temTextura: !!estado.artes.externa.texture, caminho: estado.artes.externa.caminho || "", conteudo: estado.artes.externa.conteudo || null }
               : null,
             interna: estado.artes.interna
-              ? { rect: estado.artes.interna.rect, temTextura: !!estado.artes.interna.texture, caminho: estado.artes.interna.caminho || "" }
+              ? { rect: estado.artes.interna.rect, temTextura: !!estado.artes.interna.texture, caminho: estado.artes.interna.caminho || "", conteudo: estado.artes.interna.conteudo || null }
               : null
           },
           articulaveis: (function () {
