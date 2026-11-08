@@ -25,7 +25,7 @@ There is no lint/typecheck/build config. Do not invent npm scripts.
 
 ## Install / run
 
-- Install = copy repo contents (excluding `.git`) to `%APPDATA%\Adobe\CEP\extensions\com.faca3d`, then (re)start Illustrator. Manifest changes need a full restart; other edits just reopen the panel tab.
+- Install / Update = copy repo contents (excluding `.git`) to `%APPDATA%\Adobe\CEP\extensions\com.faca3d`, clear `%TEMP%\cep_cache\*`, and **completely restart Adobe Illustrator** so stale versions are never cached.
 - `PlayerDebugMode` must be `1` under `HKCU\Software\Adobe\CSXS.<n>` (already set here for 9–15).
 - CEP cache (clear if stale version loads): `%TEMP%\cep_cache\ILST_*_com.faca3d`.
 - Debug port for tests: 7778.
