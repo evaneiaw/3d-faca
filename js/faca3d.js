@@ -61,7 +61,6 @@
     modoArte: "ambas",
     espelharInterna: false,
     mostrarArte: true,
-    espelharVerso: false,
     artesInfo: null,
     artesMapa: null,
     arteUnica: null,
@@ -467,9 +466,6 @@
               carregarLado(dec.intIdx)
             ]).then(function (pair) {
               var ext = pair[0], int = pair[1];
-              if (int) {
-                int.espelhar = (int.artboard !== 0) && estado.espelharVerso;
-              }
               if (!ext && !int) {
                 aplicarArteDupla({ semArte: true, avisos: dec.avisos });
                 return null;
@@ -1800,17 +1796,6 @@
         estado.mostrarArte = this.checked;
         if (estado.viewer3d && estado.viewer3d.definirArteDupla) {
           estado.viewer3d.definirArteDupla(undefined, { mostrar: estado.mostrarArte });
-        }
-      });
-    }
-    var versoEsp = el("faca3dVersoEspelhado");
-    if (versoEsp) {
-      versoEsp.addEventListener("change", function () {
-        estado.espelharVerso = this.checked;
-        var d = estado.arteDupla;
-        if (d && d.int && estado.viewer3d && estado.viewer3d.definirArteDupla) {
-          d.int.espelhar = (d.int.artboard !== 0) && estado.espelharVerso;
-          estado.viewer3d.definirArteDupla(d, { mostrar: estado.mostrarArte });
         }
       });
     }
