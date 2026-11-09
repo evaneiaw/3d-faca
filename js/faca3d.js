@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  var VERSAO = "0.8.3-papelao-ondulado-20261108";
+  var VERSAO = "0.8.5-papelao-ondulado-20261109";
 
   /* Costura de micro-falhas do desenho (picotes nas bases das abas): a borda
    * de um painel fica com um vão pequeno e o painel deixa de ser face. Até
@@ -36,6 +36,7 @@
     "js/core/hinge-audit.js",
     "js/core/face-subdivision.js",
     "js/view/three3d.js",
+    "js/view/arteUnica.js",
     "js/view/artes.js",
     "js/view/diagnostico.js"
   ];
@@ -59,8 +60,16 @@
     teclasMod: { ctrl: false, shift: false },
     modoArte: "ambas",
     espelharInterna: false,
+    mostrarArte: true,
+    espelharVerso: false,
     artesInfo: null,
     artesMapa: null,
+    arteUnica: null,
+    arteDupla: null,
+    arteUnicaInfo: null,
+    assinaturaArte: null,
+    artePollTimer: null,
+    arteReloadTimer: null,
     offsetArte: null,
     avisosArtes: [],
     carregandoArtes: null,
@@ -316,45 +325,322 @@
   }
 
   function aplicarArtes(mapa, avisos, offset) {
-    estado.artesMapa = mapa || null;
-    estado.avisosArtes = avisos || [];
-    if (offset) estado.offsetArte = offset;
-    if (!estado.viewer3d) return;
-    var dados = {
-      externa: mapa ? mapa.externa || null : null,
-      interna: mapa ? mapa.interna || null : null,
-      offset: estado.offsetArte
-    };
-    estado.viewer3d.definirArtes(dados, {
-      modo: estado.modoArte,
-      espelharInterna: estado.espelharInterna
-    });
-    atualizarNotaArtes();
+    return aplicarArteUnica(null);
   }
 
   function atualizarNotaArtes() {
+    atualizarNotaArteUnica();
+  }
+
+  /* ------------------------------------------------ arte dupla (2 artboards) */
+
+  function parsearRectCols(cols, inicio) {
+    if (!cols || cols.length < inicio + 4) return null;
+    if (cols[inicio] === "" && cols[inicio+1] === "" && cols[inicio+2] === "" && cols[inicio+3] === "") return null;
+    return {
+      left: ptParaMm(numero(cols[inicio])),
+      top: ptParaMm(numero(cols[inicio+1])),
+      right: ptParaMm(numero(cols[inicio+2])),
+      bottom: ptParaMm(numero(cols[inicio+3]))
+    };
+  }
+
+  function lerArteDuplaDoDocumento() {
+    return chamarArte("faca3dArteDupla", []).then(function (resposta) {
+      registrarLog("faca3d", "arteDupla: raw=" + String(resposta).replace(/\r?\n/g, " | ").slice(0, 600));
+      var dados = lerLinhas(resposta);
+      var lista = dados.listas.ARTBOARD || [];
+      var artboards = [];
+      for (var i = 0; i < lista.length; i++) {
+        var c = lista[i];
+        artboards.push({
+          indice: Number(c[0]),
+          nome: desescapar(c[1] || ""),
+          rect: parsearRectCols(c, 2),
+          faca: parsearRectCols(c, 6),
+          arte: parsearRectCols(c, 10),
+          hasArte: c[14] === "1",
+          hasFaca: c[15] === "1"
+        });
+      }
+      return {
+        doc: dados.DOC || "",
+        temp: dados.TEMP || "",
+        arteQtd: Number(dados.ARTE_QTD || 0),
+        qtd: Number(dados.QTD_ARTBOARDS || artboards.length),
+        artboards: artboards
+      };
+    });
+  }
+
+  function aplicarArteDupla(dados) {
+    estado.arteDupla = dados || null;
+    estado.arteUnicaInfo = dados || null;
+    if (!estado.viewer3d || !estado.viewer3d.definirArteDupla) {
+      atualizarNotaArteDupla();
+      return;
+    }
+    estado.viewer3d.definirArteDupla(dados, { mostrar: estado.mostrarArte });
+    atualizarNotaArteDupla();
+    var chk = el("faca3dMostrarArte");
+    var tem = !!(dados && ((dados.ext && dados.ext.texture) || (dados.int && dados.int.texture)));
+    if (chk) chk.disabled = !tem;
+  }
+
+  function atualizarNotaArteDupla() {
     var nota = el("faca3dNotaArtes");
     if (!nota) return;
-    var mapa = estado.artesMapa;
-    var info = estado.artesInfo;
-    var linhas = [];
-    if (mapa && (mapa.externa || mapa.interna)) {
-      var nomes = [];
-      if (mapa.externa) nomes.push("externa: \"" + mapa.externa.nome + "\"");
-      if (mapa.interna) nomes.push("interna: \"" + mapa.interna.nome + "\"");
-      linhas.push("Arte " + nomes.join(" · "));
+    var info = estado.arteUnicaInfo;
+    if (info && ((info.ext && info.ext.texture) || (info.int && info.int.texture))) {
+      var partes = [];
+      var ref = info.ext && info.ext.texture ? info.ext : info.int;
+      var w = ref && ref.rectFaca ? (ref.rectFaca.right - ref.rectFaca.left) : 0;
+      var h = ref && ref.rectFaca ? (ref.rectFaca.top - ref.rectFaca.bottom) : 0;
+      if (info.ext && info.ext.texture) partes.push("externa \"" + (info.ext.nome || "") + "\"");
+      if (info.int && info.int.texture) partes.push("interna \"" + (info.int.nome || "") + "\"");
+      nota.textContent = "Arte: " + partes.join(" + ") +
+        (w > 0 && h > 0 ? " · " + w.toFixed(1) + "×" + h.toFixed(1) + " mm (lateral inteira)" : "");
+      if (info.avisos && info.avisos.length) nota.textContent += " · " + info.avisos.join(" | ");
+    } else if (info && info.semArte) {
+      nota.textContent = "Sem camada ARTE: exibindo somente a estrutura da faca.";
     } else {
-      linhas.push("Sem arte: exibindo somente a estrutura da faca.");
+      nota.textContent = "Sem arte: exibindo somente a estrutura da faca.";
     }
-    var avisos = estado.avisosArtes || [];
-    for (var i = 0; i < avisos.length; i++) linhas.push(avisos[i]);
-    nota.textContent = linhas.join(" ");
-    var chk = el("faca3dEspelharInterna");
-    if (chk) chk.disabled = !(mapa && mapa.interna);
+    var chk = el("faca3dMostrarArte");
+    var tem = !!(info && ((info.ext && info.ext.texture) || (info.int && info.int.texture)));
+    if (chk) chk.disabled = !tem;
+  }
+
+  function carregarArteDupla() {
+    if (!estado.viewer3d) return Promise.resolve(null);
+    if (estado.carregandoArtes) return estado.carregandoArtes;
+    var AU = F.view.arteUnica || F.view.arteDupla;
+    if (!AU) {
+      aplicarArteDupla(null);
+      return Promise.resolve(null);
+    }
+    estado.carregandoArtes = lerArteDuplaDoDocumento()
+      .then(function (dd) {
+        if (!dd.artboards.length) {
+          aplicarArteDupla({ semArte: (!dd.arteQtd) });
+          return null;
+        }
+        var dec = AU.decidirDupla(dd.artboards);
+        var pasta = pastaArteUnica(dd);
+        // Exporta as 2 artboards (se tiverem arte). Se exportar falhar, segue sem arte.
+        return chamarArte("faca3dExportarArteDupla", [pasta, 4096])
+          .then(function (respExp) {
+            var exp = lerLinhas(respExp);
+            var porIdx = {};
+            var lista = exp.listas.ARQUIVO || [];
+            for (var i = 0; i < lista.length; i++) {
+              var arq = lista[i];
+              porIdx[Number(arq[0])] = desescapar(arq[1] || "");
+            }
+            // Carrega ext/int em paralelo.
+            function carregarLado(idxLista) {
+              if (idxLista === null || idxLista === undefined || idxLista < 0) return Promise.resolve(null);
+              var ab = dd.artboards[idxLista];
+              if (!ab || !ab.hasArte || !ab.faca || !ab.rect) return Promise.resolve(null);
+              var caminho = porIdx[ab.indice];
+              if (!caminho) return Promise.resolve(null);
+              return AU.carregarTexturaRecortada(caminho, {
+                rectArtboard: ab.rect,
+                rectFaca: ab.faca,
+                anisotropia: 8
+              }).then(function (tex) {
+                return {
+                  texture: tex.texture,
+                  caminho: caminho,
+                  rectFaca: ab.faca,
+                  rectArtboard: ab.rect,
+                  artboard: ab.indice,
+                  nome: ab.nome,
+                  espelhar: ab.indice !== 0,
+                  largura: tex.largura,
+                  altura: tex.altura
+                };
+              }).catch(function () { return null; });
+            }
+            return Promise.all([
+              carregarLado(dec.extIdx),
+              carregarLado(dec.intIdx)
+            ]).then(function (pair) {
+              var ext = pair[0], int = pair[1];
+              if (int) {
+                int.espelhar = (int.artboard !== 0) && estado.espelharVerso;
+              }
+              if (!ext && !int) {
+                aplicarArteDupla({ semArte: true, avisos: dec.avisos });
+                return null;
+              }
+              // 1 artboard só: verso herda a mesma arte (DoubleSide físico).
+              if (dd.artboards.length === 1 && ext && !int) {
+                int = ext;
+              }
+              aplicarArteDupla({ ext: ext, int: int, avisos: dec.avisos });
+              registrarLog("faca3d", "arteDupla aplicada ext=" + (!!ext) + " int=" + (!!int));
+              return pair;
+            });
+          })
+          .catch(function (eExp) {
+            registrarLog("faca3d", "arteDupla: export ERRO " + (eExp && eExp.message ? eExp.message : eExp));
+            aplicarArteDupla({ semArte: true, avisos: dec.avisos });
+            return null;
+          });
+      })
+      .catch(function (e) {
+        registrarLog("faca3d", "arteDupla: ERRO " + (e && e.message ? e.message : e));
+        aplicarArteDupla(null);
+        return null;
+      })
+      .then(function (r) {
+        estado.carregandoArtes = null;
+        return r;
+      });
+    return estado.carregandoArtes;
+  }
+
+  /* ------------------------------------------------ arte única (do zero) */
+
+  function parsearRectTab(texto) {
+    // "l\tt\tr\tb" em 1/10000 pt -> { left, top, right, bottom } em mm.
+    if (!texto) return null;
+    var cf = String(texto).split("\t");
+    if (cf.length < 4 || cf[0] === "" || cf[1] === "" || cf[2] === "" || cf[3] === "") return null;
+    return {
+      left: ptParaMm(numero(cf[0])),
+      top: ptParaMm(numero(cf[1])),
+      right: ptParaMm(numero(cf[2])),
+      bottom: ptParaMm(numero(cf[3]))
+    };
+  }
+
+  function lerArteUnicaDoDocumento() {
+    return chamarArte("faca3dArteUnica", []).then(function (resposta) {
+      registrarLog("faca3d", "arteUnica: raw=" + String(resposta).replace(/\r?\n/g, " | ").slice(0, 500));
+      var dados = lerLinhas(resposta);
+      return {
+        doc: dados.DOC || "",
+        temp: dados.TEMP || "",
+        hasArte: dados.HAS_ARTE === "1",
+        arteNome: dados.ARTE_NOME || "",
+        arteItens: Number(dados.ARTE_ITENS || 0),
+        arteQtd: Number(dados.ARTE_QTD || 0),
+        faca: parsearRectTab(dados.FACA),
+        artboard0: parsearRectTab(dados.ARTBOARD0),
+        arteBBox: parsearRectTab(dados.ARTE_BBOX)
+      };
+    });
+  }
+
+  function pastaArteUnica(dados) {
+    var base = dados && dados.temp ? dados.temp : "";
+    var chave = String((dados && dados.doc) || "doc")
+      .replace(/[^a-zA-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(-40);
+    return base + "/FACA3D/faca3d_arte/" + (chave || "doc");
+  }
+
+  function aplicarArteUnica(dados) {
+    estado.arteUnica = dados || null;
+    estado.arteUnicaInfo = dados || null;
+    if (!estado.viewer3d || !estado.viewer3d.definirArteUnica) {
+      atualizarNotaArteUnica();
+      return;
+    }
+    estado.viewer3d.definirArteUnica(dados, { mostrar: estado.mostrarArte });
+    atualizarNotaArteUnica();
+    var chk = el("faca3dMostrarArte");
+    if (chk) chk.disabled = !(dados && dados.texture);
+  }
+
+  function atualizarNotaArteUnica() {
+    var nota = el("faca3dNotaArtes");
+    if (!nota) return;
+    var info = estado.arteUnicaInfo;
+    if (info && info.texture) {
+      var w = info.rectFaca ? (info.rectFaca.right - info.rectFaca.left) : 0;
+      var h = info.rectFaca ? (info.rectFaca.top - info.rectFaca.bottom) : 0;
+      nota.textContent = "Arte: camada ARTE" +
+        (info.arteNome ? " \"" + info.arteNome + "\"" : "") +
+        (w > 0 && h > 0 ? " · " + w.toFixed(1) + "×" + h.toFixed(1) + " mm (lateral inteira)" : "");
+    } else if (info && info.semArte) {
+      nota.textContent = "Sem camada ARTE: exibindo somente a estrutura da faca.";
+    } else {
+      nota.textContent = "Sem arte: exibindo somente a estrutura da faca.";
+    }
+    var chk = el("faca3dMostrarArte");
+    if (chk) chk.disabled = !(info && info.texture);
+  }
+
+  function carregarArteUnica() {
+    if (!estado.viewer3d) return Promise.resolve(null);
+    if (estado.carregandoArtes) return estado.carregandoArtes;
+    if (!F.view.arteUnica) {
+      aplicarArteUnica(null);
+      return Promise.resolve(null);
+    }
+    estado.carregandoArtes = lerArteUnicaDoDocumento()
+      .then(function (ud) {
+        if (!ud.hasArte) {
+          aplicarArteUnica({ semArte: true });
+          return null;
+        }
+        if (!ud.faca || !ud.artboard0) {
+          aplicarArteUnica(null);
+          return null;
+        }
+        var pasta = pastaArteUnica(ud);
+        return chamarArte("faca3dExportarArteUnica", [pasta, 4096]).then(function (respExp) {
+          var exp = lerLinhas(respExp);
+          var lista = exp.listas.ARQUIVO || [];
+          if (!lista.length) {
+            registrarLog("faca3d", "arteUnica: export sem ARQUIVO " + String(respExp).slice(0, 300));
+            aplicarArteUnica(null);
+            return null;
+          }
+          var arq = lista[0];
+          var caminho = desescapar(arq[1] || "");
+          var geoCaixa = estado.res && estado.res.geometria ? estado.res.geometria.caixa : null;
+          return F.view.arteUnica.carregarTexturaRecortada(caminho, {
+            rectArtboard: ud.artboard0,
+            rectFaca: ud.faca,
+            anisotropia: 8
+          }).then(function (tex) {
+            var wMm = geoCaixa && geoCaixa.largura ? geoCaixa.largura : (ud.faca.right - ud.faca.left);
+            var hMm = geoCaixa && geoCaixa.altura ? geoCaixa.altura : (ud.faca.top - ud.faca.bottom);
+            aplicarArteUnica({
+              texture: tex.texture,
+              caminho: caminho,
+              rectFaca: ud.faca,
+              rectArtboard: ud.artboard0,
+              arteNome: ud.arteNome,
+              W: wMm,
+              H: hMm,
+              largura: tex.largura,
+              altura: tex.altura
+            });
+            registrarLog("faca3d", "arteUnica aplicada " + tex.largura + "x" + tex.altura);
+            return tex;
+          });
+        });
+      })
+      .catch(function (e) {
+        registrarLog("faca3d", "arteUnica: ERRO " + (e && e.message ? e.message : e));
+        aplicarArteUnica(null);
+        return null;
+      })
+      .then(function (r) {
+        estado.carregandoArtes = null;
+        return r;
+      });
+    return estado.carregandoArtes;
   }
 
   function carregarArtes() {
-    return Promise.resolve(null);
+    return carregarArteDupla();
   }
 
   function carregarScript(src, cb) {
@@ -536,7 +822,7 @@
     var info = el("faca3dDiagInfo");
     if (!info) return;
     if (!rec) {
-      info.textContent = "Clique em um vinco para ver o motivo da classificação.";
+      info.textContent = "Clique em um vinco para ver o motivo da classificação. · Roda = zoom · Arrastar = mover · Duplo clique = ajustar.";
       return;
     }
     var linhas = [];
@@ -732,19 +1018,57 @@
     estado.animacao = requestAnimationFrame(passo);
   }
 
+  // Alvo do "Dobrar": confere se tem ângulos salvos e volta pra mesma posição.
+  // Sem salvos, usa o perfil padrão (todas 90°).
+  function alvoDobrar() {
+    var perfil = estado.perfil || {};
+    var salvo = estado.dobrasSalvas && estado.dobrasSalvas.angulos ? estado.dobrasSalvas.angulos : null;
+    if (!salvo) return perfil;
+    var faces = estado.viewer3d && estado.viewer3d.articulaveis ? estado.viewer3d.articulaveis() : Object.keys(perfil);
+    var alvo = {};
+    for (var i = 0; i < faces.length; i++) {
+      var f = faces[i];
+      if (salvo.hasOwnProperty(f)) alvo[f] = Number(salvo[f]) || 0;
+      else if (perfil.hasOwnProperty(f)) alvo[f] = perfil[f];
+      else alvo[f] = 90;
+    }
+    // Mantém também faces do perfil que não estão em articulaveis (robustez).
+    for (var k in perfil) {
+      if (perfil.hasOwnProperty(k) && !alvo.hasOwnProperty(k)) {
+        alvo[k] = salvo.hasOwnProperty(k) ? (Number(salvo[k]) || 0) : perfil[k];
+      }
+    }
+    return alvo;
+  }
+
   function animarMontagem(duracao) {
     cancelarAnimacao();
-    if (!estado.viewer3d || !estado.perfil) return;
+    if (!estado.viewer3d || (!estado.perfil && !estado.dobrasSalvas)) return;
     // Só sai da vista "baixo" (plano 0°) quando ela é a inicial; se o usuário
     // escolheu outra câmera, mantém a escolha durante a dobra.
     var selMontagem = el("faca3dVista");
     var vistaMontagem = selMontagem ? selMontagem.value : "";
     if (!vistaMontagem || vistaMontagem === "baixo") {
-      estado.viewer3d.definirVista("perspectiva_direita");
-      if (selMontagem) selMontagem.value = "perspectiva_direita";
+      estado.viewer3d.definirVista("perspectiva_esquerda");
+      if (selMontagem) selMontagem.value = "perspectiva_esquerda";
     }
-    var alvo = estado.perfil;
+    var alvo = alvoDobrar();
+    registrarLog("faca3d", "dobrar alvo=" + (estado.dobrasSalvas ? "salvos" : "perfil") + " dobras=" + contarDobras({ angulos: alvo }));
+    var sinaisSalvos = estado.dobrasSalvas && estado.dobrasSalvas.sinais ? estado.dobrasSalvas.sinais : {};
+    var rotuloDobrar = estado.dobrasSalvas ? "dobrando · ângulos salvos" : "montagem por perfil (todas as dobras 90°)";
+    var angTelaFinal = estado.dobrasSalvas && isFinite(Number(estado.dobrasSalvas.anguloGlobal))
+      ? Number(estado.dobrasSalvas.anguloGlobal)
+      : 90;
     var inicio = performance.now();
+    function aplicarFrame(mapa) {
+      if (estado.dobrasSalvas) {
+        // aplicarDobras preserva os sentidos (-1) salvos durante a animação;
+        // definirAngulos os apagaria a cada frame.
+        estado.viewer3d.aplicarDobras({ angulos: mapa, sinais: sinaisSalvos, anguloGlobal: angTelaFinal }, rotuloDobrar);
+      } else {
+        estado.viewer3d.definirAngulos(mapa, rotuloDobrar);
+      }
+    }
     function passo(agora) {
       var t = Math.min(1, (agora - inicio) / duracao);
       var e = t * t * (3 - 2 * t);
@@ -753,7 +1077,7 @@
         if (alvo.hasOwnProperty(k)) mapa[k] = alvo[k] * e;
       }
       try {
-        estado.viewer3d.definirAngulos(mapa);
+        aplicarFrame(mapa);
       } catch (erro) {
         estado.animacao = null;
         return;
@@ -762,8 +1086,8 @@
         estado.animacao = requestAnimationFrame(passo);
       } else {
         estado.animacao = null;
-        estado.viewer3d.definirAngulos(alvo);
-        definirAnguloNaTela(90);
+        aplicarFrame(alvo);
+        definirAnguloNaTela(angTelaFinal);
       }
     }
     estado.animacao = requestAnimationFrame(passo);
@@ -817,13 +1141,13 @@
     atualizarFaceUI();
     atualizarBaseUI();
     var vistaSel = el("faca3dVista");
-    if (vistaSel) vistaSel.value = "baixo";
+    if (vistaSel) vistaSel.value = "perspectiva_esquerda";
 
     // Aplica o perfil para medir contatos e mostrar a nota no estado final.
     if (estado.perfil) viewer.definirAngulos(estado.perfil);
     montarNota(m, total);
     aplicarPlanificado();
-    viewer.definirVista("baixo");
+    viewer.definirVista("perspectiva_esquerda");
 
     if (estado.diagAberto && estado.diag) {
       estado.diag.desenhar(res, m);
@@ -832,6 +1156,7 @@
     }
 
     carregarArtes();
+    estado.assinaturaArte = null;
 
     // Restaura os ângulos que o usuário salvou para esta faca (se existirem).
     estado.dobrasSalvas = null;
@@ -1162,14 +1487,33 @@
 
   /* silencioso=true é a restauração automática ao ler a faca: não avisa
    * quando não há nada salvo. */
+  function lerDobrasDisco() {
+    var chave = chaveDobrasAtual();
+    if (!chave) return Promise.resolve(null);
+    return chamarArte("faca3dLerDobras", [chave]).then(function (texto) {
+      var cfg = null;
+      if (texto) {
+        try { cfg = JSON.parse(String(texto)); } catch (e) { cfg = null; }
+      }
+      if (!cfg || !cfg.angulos) {
+        estado.dobrasSalvas = null;
+        atualizarBotoesDobra();
+        return null;
+      }
+      estado.dobrasSalvas = cfg;
+      atualizarBotoesDobra();
+      return cfg;
+    });
+  }
+
   function restaurarDobras(silencioso) {
     if (!estado.res || !estado.viewer3d) {
       if (!silencioso) setStatus("Leia a faca antes de restaurar os ângulos.", "err");
-      return;
+      return Promise.resolve(null);
     }
     var chave = chaveDobrasAtual();
-    if (!chave) return;
-    chamarArte("faca3dLerDobras", [chave])
+    if (!chave) return Promise.resolve(null);
+    return chamarArte("faca3dLerDobras", [chave])
       .then(function (texto) {
         var cfg = null;
         if (texto) {
@@ -1183,7 +1527,7 @@
           estado.dobrasSalvas = null;
           atualizarBotoesDobra();
           if (!silencioso) setStatus("Nenhum ângulo salvo para esta faca.", "ok");
-          return;
+          return null;
         }
         var ok = aplicarConfigDobra(cfg);
         estado.dobrasSalvas = cfg;
@@ -1193,6 +1537,7 @@
           setStatus("Ângulos restaurados (" + n + " dobra(s)).", "ok");
           registrarLog("faca3d", "angulos restaurados chave=" + chave + " dobras=" + n);
         }
+        return cfg;
       })
       .catch(function (e) {
         if (!silencioso) {
@@ -1290,6 +1635,7 @@
       if (!nome || nome === "EvalScript error." || nome === "undefined") {
         // Sem documento aberto: limpa a referência para reler ao reabrir.
         estado.docNomeAtual = null;
+        estado.assinaturaArte = null;
         return;
       }
       if (!estado.docNomeAtual) {
@@ -1297,9 +1643,36 @@
         if (!estado.res) executarLeitura();
         return;
       }
-      if (nome === estado.docNomeAtual) return;
-      estado.docNomeAtual = nome;
-      executarLeitura();
+      if (nome !== estado.docNomeAtual) {
+        estado.docNomeAtual = nome;
+        estado.assinaturaArte = null;
+        executarLeitura();
+        return;
+      }
+      verificarArte();
+    }).catch(function () {});
+  }
+
+  // Poll leve da ARTE (sem exportar PNG): só re-exporta se a assinatura mudar.
+  function verificarArte() {
+    if (!estado.viewer3d || !estado.res || document.hidden || estado.carregandoArtes || estado.ocupado) return;
+    chamarArte("faca3dArteAssinatura", []).then(function (resposta) {
+      if (!estado.viewer3d || document.hidden || estado.carregandoArtes || estado.ocupado) return;
+      var dados = lerLinhas(resposta);
+      var sig = dados.ASSIN || "";
+      if (!sig) return;
+      if (estado.assinaturaArte === null) {
+        estado.assinaturaArte = sig;
+        return;
+      }
+      if (sig === estado.assinaturaArte) return;
+      estado.assinaturaArte = sig;
+      // Debounce 800ms para agrupar edições rápidas (arrastar vários pontos).
+      if (estado.arteReloadTimer) clearTimeout(estado.arteReloadTimer);
+      estado.arteReloadTimer = setTimeout(function () {
+        estado.arteReloadTimer = null;
+        carregarArteDupla();
+      }, 800);
     }).catch(function () {});
   }
 
@@ -1346,16 +1719,32 @@
       if (estado.diagAberto) fecharDiagnostico();
       else abrirDiagnostico();
     });
+    var btnZoom = el("faca3dBtnZoom");
+    if (btnZoom) {
+      btnZoom.addEventListener("click", function () {
+        if (estado.viewer3d && estado.viewer3d.ajustarZoom) {
+          estado.viewer3d.ajustarZoom();
+        }
+      });
+    }
     var fecharDiag = el("faca3dDiagFechar");
     if (fecharDiag) fecharDiag.addEventListener("click", fecharDiagnostico);
     el("faca3dBtnDobrar").addEventListener("click", function () {
-      if (!estado.viewer3d || !estado.perfil) return;
+      if (!estado.viewer3d) return;
       estado.viewer3d.limparSelecao();
       estado.faceSelecionada = null;
       estado.facesSelecionadas = [];
       estado.sinalFace = 1;
       atualizarFaceUI();
-      animarMontagem(1200);
+      // Confere o disco antes de dobrar: se o salvo em memória estiver
+      // nulo (restore inicial ainda não chegou), lê sem aplicar e só então
+      // anima para ele (sem pular para o dobrado antes da animação).
+      var dono = function () { animarMontagem(1200); };
+      if (!estado.dobrasSalvas) {
+        lerDobrasDisco().then(dono, dono);
+      } else {
+        dono();
+      }
     });
     el("faca3dBtnDesdobrar").addEventListener("click", function () {
       if (!estado.viewer3d) return;
@@ -1373,6 +1762,7 @@
       cancelarAnimacao();
       var g = parseFloat(this.value) || 0;
       if (g >= 85 && g <= 95) g = 90;
+      else if (g >= 40 && g <= 50) g = 45;
       definirAnguloNaTela(g);
       if (!estado.viewer3d) return;
       if (estado.facesSelecionadas.length) {
@@ -1397,26 +1787,30 @@
       estado.sinalFace = 1;
       atualizarFaceUI();
       aplicarPlanificado();
-      if (estado.viewer3d) estado.viewer3d.definirVista("baixo");
+      if (estado.viewer3d) estado.viewer3d.definirVista("perspectiva_esquerda");
       var sel = el("faca3dVista");
-      if (sel) sel.value = "baixo";
+      if (sel) sel.value = "perspectiva_esquerda";
     });
     el("faca3dVista").addEventListener("change", function () {
       if (estado.viewer3d) estado.viewer3d.definirVista(this.value);
     });
-    var arteModo = el("faca3dArteModo");
-    if (arteModo) {
-      arteModo.addEventListener("change", function () {
-        estado.modoArte = this.value;
-        if (estado.viewer3d) estado.viewer3d.definirArtes(null, { modo: estado.modoArte });
+    var mostrarArte = el("faca3dMostrarArte");
+    if (mostrarArte) {
+      mostrarArte.addEventListener("change", function () {
+        estado.mostrarArte = this.checked;
+        if (estado.viewer3d && estado.viewer3d.definirArteDupla) {
+          estado.viewer3d.definirArteDupla(undefined, { mostrar: estado.mostrarArte });
+        }
       });
     }
-    var espelhar = el("faca3dEspelharInterna");
-    if (espelhar) {
-      espelhar.addEventListener("change", function () {
-        estado.espelharInterna = this.checked;
-        if (estado.viewer3d) {
-          estado.viewer3d.definirArtes(null, { espelharInterna: estado.espelharInterna });
+    var versoEsp = el("faca3dVersoEspelhado");
+    if (versoEsp) {
+      versoEsp.addEventListener("change", function () {
+        estado.espelharVerso = this.checked;
+        var d = estado.arteDupla;
+        if (d && d.int && estado.viewer3d && estado.viewer3d.definirArteDupla) {
+          d.int.espelhar = (d.int.artboard !== 0) && estado.espelharVerso;
+          estado.viewer3d.definirArteDupla(d, { mostrar: estado.mostrarArte });
         }
       });
     }
@@ -1494,7 +1888,7 @@
     try { document.addEventListener("visibilitychange", function () {
       if (!document.hidden) verificarDocumento();
     }); } catch (e) {}
-    try { setInterval(verificarDocumento, 5000); } catch (e) {}
+    try { setInterval(verificarDocumento, 3000); } catch (e) {}
     expandirPainel();
     definirAnguloNaTela(90);
 

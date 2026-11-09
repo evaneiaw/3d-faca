@@ -8,7 +8,7 @@
 <body>
   <div id="faca3dApp" class="faca3d-app">
     <header class="faca3d-header">
-      <h1 class="faca3d-title">3D Faca <span id="faca3dVersao" style="font-size: 12px; font-weight: normal; opacity: 0.85; margin-left: 8px;">v0.8.3-papelao-ondulado-20261108</span></h1>
+      <h1 class="faca3d-title">3D Faca <span id="faca3dVersao" style="font-size: 12px; font-weight: normal; opacity: 0.85; margin-left: 8px;">v0.8.5-papelao-ondulado-20261109</span></h1>
       <span class="faca3d-phase">Espessura Física (Estrutura)</span>
       <span id="faca3dDoc" class="faca3d-doc">—</span>
     </header>
@@ -46,8 +46,8 @@
             <div class="faca3d-view">
               <label class="faca3d-fold-label" for="faca3dVista">Vista</label>
               <select id="faca3dVista" class="faca3d-select">
+                <option value="perspectiva_esquerda" selected>Perspectiva frente-esquerda</option>
                 <option value="perspectiva_direita">Perspectiva frente-direita</option>
-                <option value="perspectiva_esquerda">Perspectiva frente-esquerda</option>
                 <option value="frente">Frente (face 8)</option>
                 <option value="topo">Topo</option>
                 <option value="baixo">Plano 0° (arte externa)</option>
@@ -59,10 +59,18 @@
             <div class="faca3d-espessura" style="display:flex; align-items:center; gap:6px;">
               <label class="faca3d-fold-label" for="faca3dEspessura">Espessura (mm)</label>
               <input id="faca3dEspessura" type="number" min="0" max="10" step="0.5" value="1.5" class="faca3d-input" style="width: 60px; padding: 2px 4px;" title="Espessura física do material em mm" />
+              <label class="faca3d-fold-label" style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                <input id="faca3dMostrarArte" type="checkbox" checked title="Mostrar a camada ARTE sobre a caixa" /> Arte
+              </label>
+              <label class="faca3d-fold-label" style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                <input id="faca3dVersoEspelhado" type="checkbox" title="Espelha U do verso para alinhar com a faca espelhada (texto fica ao contrário se o arquivo não foi espelhado)" /> Verso alinhado
+              </label>
             </div>
           </div>
           <div class="faca3d-toolbar-group">
             <button id="faca3dBtnDiag" class="faca3d-btn small"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>Diagnóstico</button>
+            <button id="faca3dBtnZoom" class="faca3d-btn small" title="Ajustar a câmera para caber a caixa toda (nem perto, nem longe)"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4"/><path d="M10 10l3 3M5 7h4M7 5v4"/></svg>Fit</button>
+            <button id="faca3dBtnArtes" class="faca3d-btn small" title="Recarregar a arte do Illustrator (também atualiza sozinha a cada 3s)"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8a6 6 0 1 0 2-4.5M2 2v4h4"/></svg>Atualizar arte</button>
           </div>
         </div>
 
@@ -103,7 +111,7 @@
             <span><i class="faca3d-diag-eixo"></i>Eixo / sentido</span>
           </div>
           <div id="faca3dDiagCanvas" class="faca3d-diag-canvas"></div>
-          <div id="faca3dDiagInfo" class="faca3d-diag-info">Clique em um vinco para ver o motivo.</div>
+          <div id="faca3dDiagInfo" class="faca3d-diag-info">Clique em um vinco para ver o motivo. · Roda = zoom · Arrastar = mover · Duplo clique = ajustar.</div>
         </div>
 
         <div id="faca3dBaseBar" class="faca3d-base-bar" hidden>

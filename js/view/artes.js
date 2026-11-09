@@ -1,10 +1,12 @@
-/* FACA 3D — arte externa e interna (0.8.0).
+/* FACA 3D — arte externa e interna (0.8.0). DEPRECADO: o pipeline novo é
+ * js/view/arteUnica.js (camada ARTE única, lateral inteira). Este arquivo fica
+ * só como shim (normalizar/urlDeArquivo/carregarTextura) para compat.
  *
  * Interpreta as artboards do documento (nomes ou ordem), decide qual e a arte
  * externa e qual e a interna e transforma cada PNG exportado pelo ExtendScript
  * em textura do Three.js. O mapeamento por face (UV) fica no three3d.js.
  *
- * API:
+ * API legada:
  *   Faca3D.view.artes.decidir(artboards)
  *   Faca3D.view.artes.carregarTextura(url, { papel })
  */
@@ -162,6 +164,12 @@
     return "file:///" + encodeURI(p).replace(/#/g, "%23").replace(/\?/g, "%3F");
   }
 
+  function pot2(n) {
+    var p = 1;
+    while (p < n) p = p * 2;
+    return p;
+  }
+
   /* Carrega o PNG exportado e devolve uma textura pronta (fundo de papel).
    * Usa Image diretamente (src = file:///...), evitando fetch() que e bloqueado
    * pelo Chromium do CEP para arquivos locais. */
@@ -180,14 +188,26 @@
             reject(new Error("Arte com dimensao zero: " + caminho));
             return;
           }
+          var cw = img.naturalWidth;
+          var chh = img.naturalHeight;
+          var potW = pot2(Math.ceil(cw));
+          var potH = pot2(Math.ceil(chh));
+          var gArte = potW / cw;
+          var ghArte = potH / chh;
+          if (ghArte < gArte) gArte = ghArte;
           var canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
+          canvas.width = potW;
+          canvas.height = potH;
           var ctx = canvas.getContext("2d");
           ctx.fillStyle = opt.papel || COR_PAPEL;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
+          ctx.fillRect(0, 0, potW, potH);
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(img, 0, 0, cw * gArte, chh * ghArte);
           var textura = new THREE.CanvasTexture(canvas);
+          textura.magFilter = THREE.LinearFilter;
+          var supMip = !!(THREE && THREE.LinearMipmapLinearFilter);
+          textura.minFilter = supMip ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
+          textura.generateMipmaps = supMip;
           textura.anisotropy = opt.anisotropia || 4;
           textura.needsUpdate = true;
           resolve({ texture: textura, largura: canvas.width, altura: canvas.height });

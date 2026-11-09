@@ -101,6 +101,34 @@
     return { pontos: vertices, contorno: contorno, triangulos: indices };
   }
 
+  /* UV da arte única na lateral inteira (pura, testável em Node). */
+  function uvFaca(ponto, W, H) {
+    if (V.arteUnica && typeof V.arteUnica.uvFaca === "function") return V.arteUnica.uvFaca(ponto, W, H);
+    var w = Number(W);
+    var h = Number(H);
+    if (!(w > 0) || !(h > 0)) return { u: 0, v: 0 };
+    var x = ponto && isFinite(ponto.x) ? Number(ponto.x) : 0;
+    var y = ponto && isFinite(ponto.y) ? Number(ponto.y) : 0;
+    return { u: x / w, v: y / h };
+  }
+
+  function uvFacaInversa(ponto, W, H) {
+    if (V.arteUnica && typeof V.arteUnica.uvFacaInversa === "function") return V.arteUnica.uvFacaInversa(ponto, W, H);
+    var uv = uvFaca(ponto, W, H);
+    uv.u = 1 - uv.u;
+    return uv;
+  }
+
+  function caixaFacaDe(geoCaixa, pontos) {
+    if (V.arteUnica && typeof V.arteUnica.caixaFacaDe === "function") return V.arteUnica.caixaFacaDe(geoCaixa, pontos);
+    var W = 0, H = 0;
+    if (geoCaixa && isFinite(geoCaixa.largura) && isFinite(geoCaixa.altura)) {
+      W = Number(geoCaixa.largura);
+      H = Number(geoCaixa.altura);
+    }
+    return { W: W, H: H };
+  }
+
   /* Matriz de uma dobra: gira o filho em torno do eixo (p1,p2) já no mundo. */
   function matrizDobra3(THREE, matrizPai, p1, p2, anguloRad, sinal) {
     var v1 = new THREE.Vector3(p1.x, p1.y, 0).applyMatrix4(matrizPai);
@@ -385,6 +413,63 @@
       emissive: 0x5a3500,
       emissiveIntensity: 0.45
     });
+    // Arte única (camada ARTE, limite = lateral inteira): um decal DoubleSide
+    // por face, mesma textura nos dois lados (verso espelhado fisicamente).
+    var materialArteUnica = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+      depthTest: true
+    });
+    var materialSelArteUnica = new THREE.MeshStandardMaterial({
+      color: 0xffd9a3,
+      roughness: 0.86,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      emissive: 0x5a3500,
+      emissiveIntensity: 0.45,
+      depthWrite: true,
+      depthTest: true
+    });
+    // Arte dupla (2 artboards): externa no frente, interna no verso.
+    var materialArteExt = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+      depthTest: true
+    });
+    var materialArteInt = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+      depthTest: true
+    });
+    var materialSelArteExt = new THREE.MeshStandardMaterial({
+      color: 0xffd9a3,
+      roughness: 0.86,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      emissive: 0x5a3500,
+      emissiveIntensity: 0.45,
+      depthWrite: true,
+      depthTest: true
+    });
+    var materialSelArteInt = new THREE.MeshStandardMaterial({
+      color: 0xffd9a3,
+      roughness: 0.86,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      emissive: 0x5a3500,
+      emissiveIntensity: 0.45,
+      depthWrite: true,
+      depthTest: true
+    });
     var materialBorda = new THREE.LineBasicMaterial({ color: COR_BORDA });
     var materialVinco = new THREE.LineBasicMaterial({ color: COR_VINCO });
     var materialDestaque = new THREE.LineBasicMaterial({
@@ -405,11 +490,19 @@
       rotuloModo: null,
       malhas: [],
       malhasInternas: [],
+      decals: [],
+      filetes: [],
       espessura: 1.5,
       artes: { externa: null, interna: null },
       modoArte: "ambas",
       espelharInterna: false,
+      arteUnica: null,
+      arteDupla: null,
+      mostrarArte: true,
+      caixaFacaUV: null,
       ladoExterno: null,
+      ladoExternoFixo: null,
+      ladoExternoChave: "",
       giroFace: null,
       destaque: null,
       bordas: null,
@@ -418,8 +511,8 @@
       alvo: { x: 0, y: 0, z: 0 },
       dimensao: 1,
       dimensaoPlana: 1,
-      vista: "perspectiva_direita",
-      theta: 0.75,
+      vista: "perspectiva_esquerda",
+      theta: -Math.PI + 0.75,
       phi: 1.05,
       raio: 1000
     };
@@ -620,6 +713,20 @@
         estado.malhasInternas[i].geometry.dispose();
       }
       estado.malhasInternas = [];
+      if (estado.decals) {
+        for (i = 0; i < estado.decals.length; i++) {
+          grupo.remove(estado.decals[i]);
+          estado.decals[i].geometry.dispose();
+        }
+        estado.decals = [];
+      }
+      if (estado.filetes) {
+        for (i = 0; i < estado.filetes.length; i++) {
+          grupo.remove(estado.filetes[i]);
+          estado.filetes[i].geometry.dispose();
+        }
+        estado.filetes = [];
+      }
       if (estado.destaque) {
         grupo.remove(estado.destaque);
         estado.destaque.geometry.dispose();
@@ -689,18 +796,48 @@
       };
       estado.caixaMundo = { min: min, max: max };
       estado.dimensao = Math.max(max.x - min.x, max.y - min.y, max.z - min.z, 1);
+      // Domínio da UV: lateral inteira da faca (bbox normalizada 0..W,0..H).
+      estado.caixaFacaUV = caixaFacaDe(
+        estado.res && estado.res.geometria ? estado.res.geometria.caixa : null,
+        null
+      );
+      if (!(estado.caixaFacaUV.W > 0) || !(estado.caixaFacaUV.H > 0)) {
+        estado.caixaFacaUV = {
+          W: Math.max(planaMax.x - planaMin.x, 0),
+          H: Math.max(planaMax.y - planaMin.y, 0)
+        };
+      }
 
-      // Lado de fora da folha: a folha e UMA so, entao todas as faces precisam
-      // do mesmo lado. O criterio antigo decidia face por face comparando a
-      // normal com a direcao ate o centroide; com a folha plana (paraFora.z==0)
-      // ou face perto do centroide isso virava ruido numerico e o sinal saia
-      // aleatorio por painel. Painel com sinal errado e descartado pelo
-      // FrontSide: sobrava o fundo cinza do painel entre as faces.
-      //
-      // Recalculado a cada montagem de malhas (o voto depende da pose atual):
-      // com a folha plana vale a convencao +z; assim que ela dobra, o voto fica
-      // decisivo e o lado de fora passa a ser o de fora de verdade.
+      // Lado de fora da folha: UMA só para a folha toda. O voto é feito na pose
+      // dobrada (90°) e congelado: se recalculado em 0° (plano, peso z=0) o sinal
+      // vira e externa/interna trocam ao desdobrar ("desvira"). O lado físico
+      // da folha não muda com o ângulo, então o voto não pode mudarde pose.
       if (estado.montagem && estado.montagem.facesMontadas.length) {
+        var chaveLado = estado.montagem.raiz + ":" + estado.montagem.facesMontadas.join(",");
+        var maxAng = Math.abs(Number(estado.angulo) || 0);
+        for (var aa in estado.angulos) {
+          if (estado.angulos.hasOwnProperty(aa)) maxAng = Math.max(maxAng, Math.abs(Number(estado.angulos[aa]) || 0));
+        }
+        var plano = maxAng < 0.5;
+        if (plano && estado.ladoExternoFixo && estado.ladoExternoChave === chaveLado) {
+          estado.ladoExterno = {};
+          for (var qf in estado.ladoExternoFixo) {
+            if (estado.ladoExternoFixo.hasOwnProperty(qf)) estado.ladoExterno[qf] = estado.ladoExternoFixo[qf];
+          }
+          estado.giroFace = estado.giroFace || {};
+          // giroFace é derivado da profundidade na árvore (não da pose): mantém.
+          for (i = 0; i < estado.montagem.facesMontadas.length; i++) {
+            var idg = estado.montagem.facesMontadas[i];
+            // professor (profundidade) recalculado abaixo só se faltar
+          }
+          // profundidade (giro) precisa dos prof; recalcula leve:
+          var prof2 = {};
+          var ordemM2 = estado.montagem.ordem;
+          for (var ip2 = 1; ip2 < ordemM2.length; ip2++) prof2[ordemM2[ip2].face] = (prof2[ordemM2[ip2].pai] || 0) + 1;
+          for (i = 0; i < estado.montagem.facesMontadas.length; i++) {
+            estado.giroFace[estado.montagem.facesMontadas[i]] = (prof2[estado.montagem.facesMontadas[i]] || 0) >= 2;
+          }
+        } else {
         estado.ladoExterno = {};
         if (!estado.giroFace) estado.giroFace = {};
         var prof = {};
@@ -756,6 +893,13 @@
           estado.ladoExterno[idF] =
             (frenteNegativa(triF, false) ? -1 : 1) * sinalGlobal;
         }
+        // Congela para reusar quando desdobrar (plano).
+        estado.ladoExternoFixo = {};
+        for (var cf2 in estado.ladoExterno) {
+          if (estado.ladoExterno.hasOwnProperty(cf2)) estado.ladoExternoFixo[cf2] = estado.ladoExterno[cf2];
+        }
+        estado.ladoExternoChave = chaveLado;
+        } // fim do else (não-plano)
       }
 
       var verticesBorda = [];
@@ -850,6 +994,80 @@
         grupo.add(malhaPainel);
         estado.malhas.push(malhaPainel);
 
+        // Decals da arte: ShapeGeometry com UV planar na lateral inteira.
+        // Frente = externa, verso = interna; a matriz de dobra move sólido+
+        // decal juntos, então a arte gruda ao dobrar. Com 2 artboards, o lado
+        // espelhado (artboard != 0) usa u invertido para alinhar na faca da 0.
+        if ((estado.arteDupla || estado.arteUnica) && estado.caixaFacaUV) {
+          try {
+            var cf = estado.caixaFacaUV;
+            var offDecal = 0.05;
+            var dupla = estado.arteDupla;
+            var texExt = null, texInt = null;
+            var espExt = false, espInt = false;
+            var matExt = materialArteUnica, matInt = materialArteUnica;
+            if (dupla && (dupla.ext || dupla.int)) {
+              texExt = dupla.ext && dupla.ext.texture ? dupla.ext.texture : null;
+              texInt = dupla.int && dupla.int.texture ? dupla.int.texture : null;
+              espExt = !!(dupla.ext && dupla.ext.espelhar);
+              espInt = !!(dupla.int && dupla.int.espelhar);
+              matExt = materialArteExt;
+              matInt = materialArteInt;
+            } else if (estado.arteUnica && estado.arteUnica.texture) {
+              texExt = estado.arteUnica.texture;
+              texInt = estado.arteUnica.texture;
+            }
+            // Lado de fora = -z quando inverter (ladoExterno<0, caso desta faca:
+            // 32/32 invertidas). Externa vai no lado de fora, interna no de dentro.
+            var zExt = inverter ? -(meioT + offDecal) : (meioT + offDecal);
+            var zInt = inverter ? (meioT + offDecal) : -(meioT + offDecal);
+            // V = espelho de leitura (o decal é visto por trás em um dos lados).
+            // Externo fica em -z quando inverter: visto de trás -> precisa espelhar
+            // o U para o texto ler certo de fora; interna em +z: visto de frente.
+            var vExt = inverter;
+            var vInt = !inverter;
+            var totalExt = (espExt ? 1 : 0) ^ (vExt ? 1 : 0);
+            var totalInt = (espInt ? 1 : 0) ^ (vInt ? 1 : 0);
+            var ladosDecal = [
+              { z: zExt, nome: "externo", tex: texExt, espelhar: !!totalExt, mat: matExt },
+              { z: zInt, nome: "interno", tex: texInt, espelhar: !!totalInt, mat: matInt }
+            ];
+            for (var d = 0; d < ladosDecal.length; d++) {
+              if (!ladosDecal[d].tex) continue;
+              var geoDecal = new THREE.ShapeGeometry(shape);
+              var posD = geoDecal.getAttribute("position");
+              var uvD = geoDecal.getAttribute("uv");
+              if (posD && uvD) {
+                for (var vd = 0; vd < posD.count; vd++) {
+                  var pontoD = { x: posD.getX(vd), y: posD.getY(vd) };
+                  var uvv = ladosDecal[d].espelhar
+                    ? uvFacaInversa(pontoD, cf.W, cf.H)
+                    : uvFaca(pontoD, cf.W, cf.H);
+                  uvD.setXY(vd, uvv.u, uvv.v);
+                }
+                uvD.needsUpdate = true;
+              }
+              geoDecal.translate(0, 0, ladosDecal[d].z);
+              geoDecal.applyMatrix4(matriz);
+              geoDecal.translate(-estado.centro.x, -estado.centro.y, -estado.centro.z);
+              geoDecal.computeVertexNormals();
+              var decal = new THREE.Mesh(geoDecal, ladosDecal[d].mat);
+              decal.userData = {
+                face: id,
+                lado: ladosDecal[d].nome,
+                tipo: "decal",
+                pontoInterior: pontoInterno(tri, matriz)
+              };
+              decal.visible = estado.mostrarArte;
+              decal.renderOrder = 1;
+              grupo.add(decal);
+              estado.decals.push(decal);
+            }
+          } catch (eDecal) {
+            if (F.log) F.log("3d", "arte decal falhou face=" + id + " " + (eDecal && eDecal.message ? eDecal.message : eDecal));
+          }
+        }
+
         for (j = 0; j < baseContorno.length; j++) {
           var a = new THREE.Vector3(baseContorno[j].x, baseContorno[j].y, 0).applyMatrix4(matriz);
           var b = new THREE.Vector3(
@@ -887,6 +1105,108 @@
         geoVinco.setAttribute("position", new THREE.BufferAttribute(new Float32Array(verticesVinco), 3));
         estado.vincos = new THREE.LineSegments(geoVinco, materialVinco);
         grupo.add(estado.vincos);
+      }
+
+      // Pontes de dobra (continuidade de chapa): faixa curva conectando a
+      // aresta externa de um painel à do vizinho, e a interna idem. Fecha o
+      // vão em V do sólido e mantém a arte atravessando a dobra (UV igual à
+      // da linha de vinco nos dois painéis, sem corte).
+      try {
+        var tMmF = (estado.espessura !== undefined && isFinite(estado.espessura)) ? estado.espessura : 1.5;
+        var tPtF = F.units && F.units.mmParaPt ? F.units.mmParaPt(tMmF) : tMmF * 2.834645669291339;
+        var meioTF = tPtF / 2;
+        var cfF = estado.caixaFacaUV;
+        var duplaF = estado.arteDupla;
+        var temDuplaF = !!(duplaF && (duplaF.ext || duplaF.int));
+        for (var hf = 1; hf < estado.montagem.ordem.length; hf++) {
+          var passoF = estado.montagem.ordem[hf];
+          if (passoF.rigida) continue;
+          var angF = estado.angulos && estado.angulos.hasOwnProperty(passoF.face) ? estado.angulos[passoF.face] : estado.angulo;
+          var sinalF = (estado.sinais && estado.sinais[passoF.face] ? estado.sinais[passoF.face] : 1) *
+            ((estado.sinaisOverride && estado.sinaisOverride[passoF.face] === -1) ? -1 : 1);
+          var thetaF = ((Number(angF) || 0) * Math.PI) / 180 * sinalF;
+          if (!(Math.abs(thetaF) > 0.001)) continue;
+          var mpF = matrizes[passoF.pai];
+          if (!mpF) continue;
+          var A0 = new THREE.Vector3(passoF.p1.x, passoF.p1.y, 0).applyMatrix4(mpF);
+          var A1 = new THREE.Vector3(passoF.p2.x, passoF.p2.y, 0).applyMatrix4(mpF);
+          if (!isFinite(A0.x) || !isFinite(A1.x)) continue;
+          var eixoF = new THREE.Vector3().subVectors(A1, A0);
+          if (eixoF.lengthSq() < 1e-12) continue;
+          var eixoN = eixoF.clone().normalize();
+          var nP = new THREE.Vector3(0, 0, 1).transformDirection(mpF);
+          var inverterF = (estado.ladoExterno && estado.ladoExterno[passoF.pai] < 0) ? true : false;
+          var sinalExtF = inverterF ? -1 : 1;
+          var NSEG = 4;
+          var ladosF = [
+            { sgn: sinalExtF, externo: true },
+            { sgn: -sinalExtF, externo: false }
+          ];
+          for (var lf = 0; lf < ladosF.length; lf++) {
+            var ladoF = ladosF[lf];
+            // Mesmo espelho de leitura dos decals: externo visto por trás.
+            var vF2 = ladoF.externo ? inverterF : (!inverterF);
+            var espTF = false;
+            if (temDuplaF) {
+              var sSrcF = ladoF.externo ? !!(duplaF.ext && duplaF.ext.espelhar) : !!(duplaF.int && duplaF.int.espelhar);
+              espTF = (!!sSrcF) !== (!!vF2);
+            }
+            var posF = [], uvF = [], idxF = [];
+            var N = NSEG;
+            // linhas s=0..1 (2) x colunas k=0..N
+            for (var sj = 0; sj <= 1; sj++) {
+              var sF = sj;
+              var baseF = new THREE.Vector3().lerpVectors(A0, A1, sF);
+              var pPlanoF = {
+                x: passoF.p1.x + (passoF.p2.x - passoF.p1.x) * sF,
+                y: passoF.p1.y + (passoF.p2.y - passoF.p1.y) * sF
+              };
+              for (var kF = 0; kF <= N; kF++) {
+                var phiF = thetaF * (kF / N);
+                var qF = new THREE.Quaternion().setFromAxisAngle(eixoN, phiF);
+                var vF = nP.clone().applyQuaternion(qF).multiplyScalar(ladoF.sgn * meioTF);
+                var posV = baseF.clone().add(vF);
+                posF.push(posV.x - estado.centro.x, posV.y - estado.centro.y, posV.z - estado.centro.z);
+                var uvvF;
+                if (temDuplaF) {
+                  uvvF = espTF && cfF ? uvFacaInversa(pPlanoF, cfF.W, cfF.H) : (cfF ? uvFaca(pPlanoF, cfF.W, cfF.H) : { u: 0, v: 0 });
+                } else if (cfF) {
+                  uvvF = uvFaca(pPlanoF, cfF.W, cfF.H);
+                } else {
+                  uvvF = { u: 0, v: 0 };
+                }
+                uvF.push(uvvF.u, uvvF.v);
+              }
+            }
+            for (var qj = 0; qj < 1; qj++) {
+              for (var qk = 0; qk < N; qk++) {
+                var aF = qj * (N + 1) + qk;
+                var bF = aF + 1;
+                var cF2 = aF + (N + 1);
+                var dF = cF2 + 1;
+                idxF.push(aF, bF, dF, aF, dF, cF2);
+              }
+            }
+            var geoF = new THREE.BufferGeometry();
+            geoF.setAttribute("position", new THREE.BufferAttribute(new Float32Array(posF), 3));
+            geoF.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(uvF), 2));
+            geoF.setIndex(idxF);
+            geoF.computeVertexNormals();
+            var matF;
+            if (arteUnicaVisivel()) {
+              if (temDuplaF) matF = ladoF.externo ? materialArteExt : materialArteInt;
+              else matF = materialArteUnica;
+            } else {
+              matF = materialFaceLateral;
+            }
+            var filete = new THREE.Mesh(geoF, matF);
+            filete.userData = { face: passoF.face, pai: passoF.pai, lado: ladoF.externo ? "externo" : "interno", tipo: "filete" };
+            grupo.add(filete);
+            estado.filetes.push(filete);
+          }
+        }
+      } catch (eFilete) {
+        if (F.log) F.log("3d", "filete falhou " + (eFilete && eFilete.message ? eFilete.message : eFilete));
       }
 
       atualizarSelecao();
@@ -964,7 +1284,8 @@
     /* UV da face. Referencia = retangulo da artboard (mm do documento).
      * Se a arte tem uma caixa de conteudo (`conteudo`, normalizada em [0,1]),
      * a UV e remapeada para o DESENHO preencher o painel: sem isso, a parte
-     * da artboard sem arte virava papel branco/cinza no meio do 3D. */
+     * da artboard sem arte virava papel branco/cinza no meio do 3D.
+     * Legado: mantido apenas para compatibilidade; o pipeline novo usa uvFaca. */
     function uvDaFace(pontos, arte) {
       var uv = new Float32Array(pontos.length * 2);
       var r = arte && arte.rect ? arte.rect : null;
@@ -989,8 +1310,65 @@
       return uv;
     }
 
+    /* UV nova (do zero): lateral inteira da faca. x,y em mm normalizado
+     * (origem 0,0 no canto inferior esquerdo da bbox), W,H em mm. */
+    function uvFaca(ponto, W, H) {
+      if (V.arteUnica && typeof V.arteUnica.uvFaca === "function") {
+        return V.arteUnica.uvFaca(ponto, W, H);
+      }
+      var w = Number(W);
+      var h = Number(H);
+      if (!(w > 0) || !(h > 0)) return { u: 0, v: 0 };
+      var x = ponto && isFinite(ponto.x) ? Number(ponto.x) : 0;
+      var y = ponto && isFinite(ponto.y) ? Number(ponto.y) : 0;
+      return { u: x / w, v: y / h };
+    }
+
+    function caixaFacaDe(geoCaixa, pontos) {
+      if (V.arteUnica && typeof V.arteUnica.caixaFacaDe === "function") {
+        return V.arteUnica.caixaFacaDe(geoCaixa, pontos);
+      }
+      var W = 0, H = 0;
+      if (geoCaixa && isFinite(geoCaixa.largura) && isFinite(geoCaixa.altura)) {
+        W = Number(geoCaixa.largura);
+        H = Number(geoCaixa.altura);
+      }
+      if (!(W > 0) || !(H > 0)) {
+        var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        var lista = pontos || [];
+        for (var i = 0; i < lista.length; i++) {
+          if (lista[i].x < minX) minX = lista[i].x;
+          if (lista[i].y < minY) minY = lista[i].y;
+          if (lista[i].x > maxX) maxX = lista[i].x;
+          if (lista[i].y > maxY) maxY = lista[i].y;
+        }
+        if (isFinite(minX) && isFinite(maxX)) { W = maxX - minX; H = maxY - minY; }
+      }
+      return { W: W, H: H };
+    }
+
+    /* UV da arte interna quando a fonte é a artboard espelhada. */
+    function uvFacaInversa(ponto, W, H) {
+      if (V.arteUnica && typeof V.arteUnica.uvFacaInversa === "function") {
+        return V.arteUnica.uvFacaInversa(ponto, W, H);
+      }
+      var uv = uvFaca(ponto, W, H);
+      uv.u = 1 - uv.u;
+      return uv;
+    }
+
+    /* Arte única visível agora? */
+    function arteUnicaVisivel() {
+      var d = estado.arteDupla;
+      if (d && (d.ext || d.int)) {
+        return !!estado.mostrarArte && !!((d.ext && d.ext.texture) || (d.int && d.int.texture));
+      }
+      return !!(estado.arteUnica && estado.arteUnica.texture && estado.mostrarArte);
+    }
+
     /* Alguma arte esta sendo exibida como textura nos paineis? */
     function artesVisiveis() {
+      if (estado.arteDupla || estado.arteUnica) return arteUnicaVisivel();
       var modo = estado.modoArte;
       if (modo === "nenhuma") return false;
       if (modo === "ambas") return !!(estado.artes.externa || estado.artes.interna);
@@ -1027,17 +1405,21 @@
     }
 
     function materialDaMalha(malha, selecionada) {
+      // Sólido (papel/lateral). A arte única vive no decal; aqui nunca textura.
       var interno = malha.userData.lado === "interno";
-      var arte = arteDoLado(interno);
-      var modo = estado.modoArte;
-      var mostraArte =
-        !!arte && (modo === "ambas" || (interno ? modo === "interna" : modo === "externa"));
-      if (!mostraArte) {
-        if (selecionada) return interno ? materialSelecionadaInterna : materialSelecionada;
-        return interno ? materialFaceInterno : materialFace;
+      if (selecionada) return interno ? materialSelecionadaInterna : materialSelecionada;
+      return interno ? materialFaceInterno : materialFace;
+    }
+
+    function materialDoDecal(decal, selecionada) {
+      var interno = decal.userData.lado === "interno";
+      var d = estado.arteDupla;
+      if (d && (d.ext || d.int)) {
+        if (interno) return selecionada ? materialSelArteInt : materialArteInt;
+        return selecionada ? materialSelArteExt : materialArteExt;
       }
-      if (selecionada) return interno ? materialSelArteInterna : materialSelArteExterna;
-      return interno ? materialArteInterna : materialArteExterna;
+      if (selecionada) return materialSelArteUnica;
+      return materialArteUnica;
     }
 
     function atualizarSelecao() {
@@ -1050,6 +1432,27 @@
       for (i = 0; i < estado.malhasInternas.length; i++) {
         var mi = estado.malhasInternas[i];
         mi.material = materialDaMalha(mi, estado.facesSelecionadas[mi.userData.face] === true);
+      }
+      if (estado.decals) {
+        for (i = 0; i < estado.decals.length; i++) {
+          var d = estado.decals[i];
+          d.visible = arteUnicaVisivel();
+          d.material = materialDoDecal(d, estado.facesSelecionadas[d.userData.face] === true);
+        }
+      }
+      if (estado.filetes) {
+        for (i = 0; i < estado.filetes.length; i++) {
+          var fl = estado.filetes[i];
+          fl.visible = true;
+          if (arteUnicaVisivel()) {
+            var externoF = fl.userData.lado === "externo";
+            var duplaF2 = estado.arteDupla;
+            if (duplaF2 && (duplaF2.ext || duplaF2.int)) fl.material = externoF ? materialArteExt : materialArteInt;
+            else fl.material = materialArteUnica;
+          } else {
+            fl.material = materialFaceLateral;
+          }
+        }
       }
       if (estado.destaque) {
         grupo.remove(estado.destaque);
@@ -1150,6 +1553,7 @@
       raycaster.setFromCamera(ndc, camera);
       grupo.updateMatrixWorld(true);
       var alvos = estado.malhas.concat(estado.malhasInternas);
+      if (estado.decals && estado.decals.length) alvos = alvos.concat(estado.decals);
       var achados = raycaster.intersectObjects(alvos, false);
       if (!achados.length) return null;
       return achados[0].object.userData.face;
@@ -1191,14 +1595,44 @@
       renderizar();
     }
 
+    /* Câmera padrão: frente-esquerda (ao abrir o 3D, no reset e ao ler de
+     * novo). O usuário pode trocar pelo seletor Vista. */
     function ajustarCamera() {
       var base = estado.dimensaoPlana || estado.dimensao;
       estado.raio = base * 1.2 + 40;
-      estado.theta = -0.75;
+      estado.theta = -Math.PI + 0.75;
       estado.phi = 1.05;
-      estado.vista = "perspectiva_direita";
+      estado.vista = "perspectiva_esquerda";
       estado.alvo = { x: 0, y: 0, z: 0 };
       grupo.rotation.set(0, 0, 0);
+      posicionarCamera();
+    }
+
+    /* Zoom automático (fit): enquadra a bounding box dobrada na tela na
+     * direção atual, sem tocar em ângulo/base fixa. Não é o reset (que volta
+     * para perspectiva_esquerda fixa), é só o raio. */
+    function ajustarZoom() {
+      var caixa = estado.caixaMundo;
+      if (!caixa || !caixa.min || !caixa.max) return;
+      var dx = Math.max(1, caixa.max.x - caixa.min.x);
+      var dy = Math.max(1, caixa.max.y - caixa.min.y);
+      var dz = Math.max(1, caixa.max.z - caixa.min.z);
+      var rs = 0.5 * Math.sqrt(dx * dx + dy * dy + dz * dz);
+      dimensoes();
+      var vfov = (camera.fov || 42) * Math.PI / 180;
+      var aspect = camera.aspect || 1;
+      var metadeH = Math.atan(Math.tan(vfov / 2) * aspect);
+      var metade = Math.min(vfov / 2, metadeH);
+      var dist;
+      if (estado.vista === "interior") {
+        dist = Math.max(1, rs * 0.55);
+      } else {
+        dist = (rs / Math.max(0.05, Math.sin(metade))) * 1.1;
+      }
+      if (!isFinite(dist) || !(dist > 0)) return;
+      dist = Math.max(1, Math.min(50000, dist));
+      estado.raio = dist;
+      if (estado.vista !== "interior") estado.alvo = { x: 0, y: 0, z: 0 };
       posicionarCamera();
     }
 
@@ -1224,6 +1658,9 @@
       } else if (vista === "perspectiva_esquerda") {
         estado.theta = -Math.PI + 0.75;
         estado.phi = 1.05;
+      } else if (vista === "perspectiva_direita") {
+        estado.theta = -0.75;
+        estado.phi = 1.05;
       } else if (vista === "interior") {
         var caixa = estado.caixaMundo || { min: { x: -100, y: -100, z: -100 }, max: { x: 100, y: 100, z: 100 } };
         var hx = Math.max(1, (caixa.max.x - caixa.min.x) / 2);
@@ -1239,8 +1676,8 @@
         estado.theta = Math.atan2(vy, vx);
         estado.phi = Math.acos(Math.min(1, Math.max(-1, vz / estado.raio)));
       } else {
-        estado.vista = "perspectiva_direita";
-        estado.theta = -0.75;
+        estado.vista = "perspectiva_esquerda";
+        estado.theta = -Math.PI + 0.75;
         estado.phi = 1.05;
       }
       posicionarCamera();
@@ -1623,32 +2060,81 @@
       }
     }
 
+    /* Anisotropia real do hardware via renderer (WebGL1 do CEP: max ~4-8). */
+    function sincronizarAnisotropia(tex) {
+      if (!tex) return;
+      if (renderer && renderer.capabilities && typeof renderer.capabilities.getMaxAnisotropy === "function") {
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+      try { tex.needsUpdate = true; } catch (eT) {}
+    }
+
     function definirArtes(novas, opcoes) {
-      if (novas) {
-        estado.artes.externa = novas.externa || null;
-        estado.artes.interna = novas.interna || null;
-        estado.artes.offset = novas.offset || estado.artes.offset || { x: 0, y: 0 };
-        var texExterna = estado.artes.externa ? estado.artes.externa.texture : null;
-        var texInterna = estado.artes.interna
-          ? estado.artes.interna.texture
-          : texExterna; // 1 artboard: o verso mostra a mesma arte (espelhada).
-        materialArteExterna.map = texExterna;
-        materialArteInterna.map = texInterna;
-        materialSelArteExterna.map = materialArteExterna.map;
-        materialSelArteInterna.map = materialArteInterna.map;
-        materialArteExterna.needsUpdate = true;
-        materialArteInterna.needsUpdate = true;
-        materialSelArteExterna.needsUpdate = true;
-        materialSelArteInterna.needsUpdate = true;
+      // Shim legado: roteia para a arte única (decals). Não usar mais.
+      if (novas && novas.externa && novas.externa.texture) {
+        return definirArteUnica(
+          {
+            texture: novas.externa.texture,
+            caminho: novas.externa.caminho || "",
+            rectFaca: novas.externa.rect || null,
+            rectArtboard: novas.externa.rect || null
+          },
+          opcoes || {}
+        );
       }
-      if (opcoes) {
-        if (opcoes.modo) estado.modoArte = opcoes.modo;
-        if (typeof opcoes.espelharInterna === "boolean") {
-          estado.espelharInterna = opcoes.espelharInterna;
-        }
-      }
+      if (opcoes && opcoes.modo) estado.modoArte = opcoes.modo;
+      if (opcoes && typeof opcoes.espelharInterna === "boolean") estado.espelharInterna = opcoes.espelharInterna;
       recriarMalhas();
-      if (novas) logArteDebug();
+      renderizar();
+    }
+
+    function definirArteUnica(nova, opcoes) {
+      if (nova !== undefined) {
+        if (estado.arteUnica && estado.arteUnica.texture && estado.arteUnica.texture !== (nova && nova.texture)) {
+          try { estado.arteUnica.texture.dispose(); } catch (eD) {}
+        }
+        estado.arteUnica = nova || null;
+        var tex = estado.arteUnica ? estado.arteUnica.texture : null;
+        materialArteUnica.map = tex;
+        materialSelArteUnica.map = tex;
+        materialArteUnica.needsUpdate = true;
+        materialSelArteUnica.needsUpdate = true;
+        sincronizarAnisotropia(tex);
+      }
+      if (opcoes && typeof opcoes.mostrar === "boolean") estado.mostrarArte = opcoes.mostrar;
+      recriarMalhas();
+      renderizar();
+    }
+
+    function definirArteDupla(nova, opcoes) {
+      if (nova !== undefined) {
+        var ant = estado.arteDupla;
+        function descartar(obj) {
+          if (obj && obj.texture) { try { obj.texture.dispose(); } catch (eD) {} }
+        }
+        var nExt = nova ? (nova.ext || null) : null;
+        var nInt = nova ? (nova.int || null) : null;
+        if (ant) {
+          // Não descarta textura que foi reutilizada no novo objeto.
+          if (!(nExt && ant.ext && nExt.texture === ant.ext.texture)) descartar(ant.ext);
+          if (!(nInt && ant.int && nInt.texture === ant.int.texture)) descartar(ant.int);
+        }
+        estado.arteDupla = nova || null;
+        var texExt = nExt && nExt.texture ? nExt.texture : null;
+        var texInt = nInt && nInt.texture ? nInt.texture : null;
+        materialArteExt.map = texExt;
+        materialSelArteExt.map = texExt;
+        materialArteInt.map = texInt;
+        materialSelArteInt.map = texInt;
+        materialArteExt.needsUpdate = true;
+        materialSelArteExt.needsUpdate = true;
+        materialArteInt.needsUpdate = true;
+        materialSelArteInt.needsUpdate = true;
+        sincronizarAnisotropia(texExt);
+        sincronizarAnisotropia(texInt);
+      }
+      if (opcoes && typeof opcoes.mostrar === "boolean") estado.mostrarArte = opcoes.mostrar;
+      recriarMalhas();
       renderizar();
     }
 
@@ -1813,23 +2299,42 @@
       canvas.removeEventListener("pointerleave", aoSairCursor);
       for (var i = 0; i < estado.malhas.length; i++) estado.malhas[i].geometry.dispose();
       for (var im = 0; im < estado.malhasInternas.length; im++) estado.malhasInternas[im].geometry.dispose();
+      if (estado.decals) {
+        for (var idc = 0; idc < estado.decals.length; idc++) estado.decals[idc].geometry.dispose();
+      }
+      if (estado.filetes) {
+        for (var idf = 0; idf < estado.filetes.length; idf++) estado.filetes[idf].geometry.dispose();
+      }
       if (estado.destaque) estado.destaque.geometry.dispose();
       if (estado.bordas) estado.bordas.geometry.dispose();
       if (estado.vincos) estado.vincos.geometry.dispose();
       materialFace.dispose();
       materialFaceInterno.dispose();
+      materialFaceLateral.dispose();
+      materialMiolo.dispose();
       materialSelecionada.dispose();
       materialSelecionadaInterna.dispose();
       materialArteExterna.dispose();
       materialArteInterna.dispose();
       materialSelArteExterna.dispose();
       materialSelArteInterna.dispose();
+      materialArteUnica.dispose();
+      materialSelArteUnica.dispose();
+      materialArteExt.dispose();
+      materialArteInt.dispose();
+      materialSelArteExt.dispose();
+      materialSelArteInt.dispose();
       materialBorda.dispose();
       materialVinco.dispose();
       materialDestaque.dispose();
       try {
         if (estado.artes.externa && estado.artes.externa.texture) estado.artes.externa.texture.dispose();
         if (estado.artes.interna && estado.artes.interna.texture) estado.artes.interna.texture.dispose();
+        if (estado.arteUnica && estado.arteUnica.texture) estado.arteUnica.texture.dispose();
+        if (estado.arteDupla) {
+          if (estado.arteDupla.ext && estado.arteDupla.ext.texture) estado.arteDupla.ext.texture.dispose();
+          if (estado.arteDupla.int && estado.arteDupla.int.texture) estado.arteDupla.int.texture.dispose();
+        }
       } catch (eTex) {}
       try {
         renderer.dispose();
@@ -1851,6 +2356,8 @@
       perfilPadrao: perfilPadrao,
       aplicarDobras: aplicarDobras,
       definirArtes: definirArtes,
+      definirArteUnica: definirArteUnica,
+      definirArteDupla: definirArteDupla,
       materiais: function () {
         var mapa = {};
         function nome(m) {
@@ -1862,17 +2369,33 @@
           if (m === materialArteInterna) return "arte-interna";
           if (m === materialSelArteExterna) return "sel-arte-externa";
           if (m === materialSelArteInterna) return "sel-arte-interna";
+          if (m === materialArteUnica) return "arte";
+          if (m === materialSelArteUnica) return "sel-arte";
+          if (m === materialArteExt) return "arte-ext";
+          if (m === materialArteInt) return "arte-int";
+          if (m === materialSelArteExt) return "sel-arte-ext";
+          if (m === materialSelArteInt) return "sel-arte-int";
           return "?";
         }
         for (var i = 0; i < estado.malhas.length; i++) {
-          mapa["ext-" + estado.malhas[i].userData.face] = nome(estado.malhas[i].material);
+          mapa["sol-" + estado.malhas[i].userData.face] = nome(
+            Array.isArray(estado.malhas[i].material) ? estado.malhas[i].material[1] : estado.malhas[i].material
+          );
         }
         for (var j = 0; j < estado.malhasInternas.length; j++) {
           mapa["int-" + estado.malhasInternas[j].userData.face] = nome(estado.malhasInternas[j].material);
         }
+        if (estado.decals) {
+          for (var d = 0; d < estado.decals.length; d++) {
+            var dc = estado.decals[d];
+            var lado = dc.userData.lado === "interno" ? "int" : "ext";
+            mapa[lado + "-" + dc.userData.face] = nome(dc.material);
+          }
+        }
         return mapa;
       },
       definirVista: definirVista,
+      ajustarZoom: ajustarZoom,
       definirEspessura: function (val) {
         var t = Number(val);
         if (isFinite(t) && t >= 0) {
@@ -1958,6 +2481,31 @@
               ? { rect: estado.artes.interna.rect, temTextura: !!estado.artes.interna.texture, caminho: estado.artes.interna.caminho || "", conteudo: estado.artes.interna.conteudo || null }
               : null
           },
+          arteUnica: estado.arteUnica
+            ? {
+                temTextura: !!estado.arteUnica.texture,
+                caminho: estado.arteUnica.caminho || "",
+                rectFaca: estado.arteUnica.rectFaca || null,
+                rectArtboard: estado.arteUnica.rectArtboard || null,
+                temArte: !!estado.arteUnica.texture
+              }
+            : null,
+          arteDupla: estado.arteDupla
+            ? {
+                ext: estado.arteDupla.ext
+                  ? { temTextura: !!estado.arteDupla.ext.texture, caminho: estado.arteDupla.ext.caminho || "", artboard: estado.arteDupla.ext.artboard || null, nome: estado.arteDupla.ext.nome || "", espelhar: !!estado.arteDupla.ext.espelhar }
+                  : null,
+                int: estado.arteDupla.int
+                  ? { temTextura: !!estado.arteDupla.int.texture, caminho: estado.arteDupla.int.caminho || "", artboard: estado.arteDupla.int.artboard || null, nome: estado.arteDupla.int.nome || "", espelhar: !!estado.arteDupla.int.espelhar }
+                  : null
+              }
+            : null,
+          mostrarArte: estado.mostrarArte,
+          caixaFacaUV: estado.caixaFacaUV
+            ? { W: estado.caixaFacaUV.W, H: estado.caixaFacaUV.H }
+            : null,
+          decals: (estado.decals || []).length,
+          filetes: (estado.filetes || []).length,
           articulaveis: (function () {
             var lista = [];
             for (var f in estado.articulaveis) {
@@ -1974,13 +2522,18 @@
             upZ: camera.up.z,
             alvoX: controls ? controls.target.x : 0,
             alvoY: controls ? controls.target.y : 0,
-            alvoZ: controls ? controls.target.z : 0
+            alvoZ: controls ? controls.target.z : 0,
+            raio: estado.raio,
+            theta: estado.theta,
+            phi: estado.phi
           },
           matrices: {},
           uvs: (function () {
+            // UVs dos decals (arte única). Sem decals, devolve {}.
             var mapaUv = {};
-            for (var k = 0; k < estado.malhas.length; k++) {
-              var uvAttr = estado.malhas[k].geometry.getAttribute("uv");
+            var lista = estado.decals && estado.decals.length ? estado.decals : estado.malhas;
+            for (var k = 0; k < lista.length; k++) {
+              var uvAttr = lista[k].geometry.getAttribute("uv");
               if (!uvAttr) continue;
               var minU = 1e9, maxU = -1e9, minV = 1e9, maxV = -1e9;
               for (var p = 0; p < uvAttr.count; p++) {
@@ -1991,12 +2544,15 @@
                 if (v < minV) minV = v;
                 if (v > maxV) maxV = v;
               }
-              mapaUv[estado.malhas[k].userData.face] = {
-                minU: minU,
-                maxU: maxU,
-                minV: minV,
-                maxV: maxV
-              };
+              // Frente e verso têm a mesma UV; mantém a primeira (externa).
+              if (!(lista[k].userData.face in mapaUv)) {
+                mapaUv[lista[k].userData.face] = {
+                  minU: minU,
+                  maxU: maxU,
+                  minV: minV,
+                  maxV: maxV
+                };
+              }
             }
             return mapaUv;
           })(),
@@ -2040,6 +2596,9 @@
     matrizesDaMontagem: matrizesDaMontagem,
     escolherSinaisCom: escolherSinaisCom,
     normalizarDobras: normalizarDobras,
+    uvFaca: uvFaca,
+    uvFacaInversa: uvFacaInversa,
+    caixaFacaDe: caixaFacaDe,
     ANGULO_PADRAO: ANGULO_PADRAO
   };
 })();
