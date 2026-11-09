@@ -202,22 +202,23 @@
     return p;
   }
 
-  /* Redimensiona o recorte para potências de 2 (obrigatorio p/ mipmaps no
-   * WebGL1) respeitando proporcao (contain) e teto. Devolve { w, h, sw, sh }
-   * com dims de canvas (POT) e dims de conteudo (preenchimento). */
+  /* Cria canvas POT adicionando padding, SEM redimensionar o conteúdo original.
+   * O canvas tem dimensão POT (padrão 4096 máx), mas a imagem mantém seu
+   * tamanho original (sw×sh) posicionada com offset calculado.
+   * Devolve { w, h, sw, sh, ox, oy } onde:
+   *   w,h = dimensão do canvas POT
+   *   sw,sh = dimensão original da imagem (preservada)
+   *   ox,oy = offset no canvas para centralizar/posicionar a imagem */
   function tamanhoPot(rec, opt) {
     var maxD = Math.max(rec.sw, rec.sh);
     var teto = (opt && isFinite(opt.maxPx) && opt.maxPx > 0) ? opt.maxPx : 4096;
-    var s = teto / maxD;
-    if (!(s < 1)) s = 1;
-    var pw = pot2(Math.ceil(rec.sw * s));
-    var ph = pot2(Math.ceil(rec.sh * s));
-    if (pw > teto) pw = pot2(Math.floor(teto));
-    if (ph > teto) ph = pot2(Math.floor(teto));
-    var g = pw / rec.sw;
-    var gh = ph / rec.sh;
-    if (gh < g) g = gh;
-    return { w: pw, h: ph, sw: rec.sw * g, sh: rec.sh * g };
+    // Canvas POT: menor potencia de 2 >= max dimensão
+    var pw = pot2(maxD);
+    var ph = pot2(maxD);
+    // Offset para centralizar a imagem no canvas POT (ou posicionar conforme necessidade)
+    var ox = (pw - rec.sw) / 2;
+    var oy = (ph - rec.sh) / 2;
+    return { w: pw, h: ph, sw: rec.sw, sh: rec.sh, ox: ox, oy: oy };
   }
 
   /* Carrega o PNG da artboard e recorta para a bbox da faca.
@@ -257,7 +258,8 @@
           ctx.fillStyle = opt.papel || COR_PAPEL;
           ctx.fillRect(0, 0, tam.w, tam.h);
           ctx.imageSmoothingEnabled = true;
-          ctx.drawImage(img, rec.sx, rec.sy, rec.sw, rec.sh, 0, 0, tam.sw, tam.sh);
+          // Desenha a imagem original no offset calculado (sem escalar)
+          ctx.drawImage(img, rec.sx, rec.sy, rec.sw, rec.sh, tam.ox, tam.oy, rec.sw, rec.sh);
           if (!raiz.THREE || !raiz.THREE.CanvasTexture) {
             reject(new Error("THREE.CanvasTexture indisponível."));
             return;
