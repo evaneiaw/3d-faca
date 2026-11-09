@@ -231,8 +231,17 @@
     var u = produtoVetorial(qp, r) / den;
     // Folga paramétrica: coordenadas em mm acumulam ~1e-8 de erro; 1e-9
     // rejeitava junções em "T" exatamente na ponta (abas não fechavam).
-    var folga = 1e-6;
-    if (t < -folga || t > 1 + folga || u < -folga || u > 1 + folga) return null;
+    // Na ponta, a conversão pt->mm deixa erro de ~1e-4 mm; em segmento de
+    // 40 mm isso é paramétrico ~1,5e-6, acima da folga fixa de 1e-6 (caso
+    // real: corte horizontal terminando sobre a vertical quase-exata em
+    // (186,797) em faaaaccaaaa.pdf, que ficava solto (grau 1) e fundia dois
+    // painéis). A folga passa a corresponder a até `tol` mm além do
+    // segmento, limitada a 1% do comprimento.
+    var lenR = comprimento(r);
+    var lenS = comprimento(s);
+    var folgaT = Math.max(1e-6, Math.min(0.01, tolUso / Math.max(lenR, 1e-9)));
+    var folgaU = Math.max(1e-6, Math.min(0.01, tolUso / Math.max(lenS, 1e-9)));
+    if (t < -folgaT || t > 1 + folgaT || u < -folgaU || u > 1 + folgaU) return null;
     return { ponto: interpolar(p1, p2, t), t: t, u: u, colinear: false, sobreposicao: null };
   }
 

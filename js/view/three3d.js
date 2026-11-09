@@ -295,7 +295,7 @@
     renderer.setClearColor(0xf1f5f9, 1);
 
     var cena = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(42, 1, 1, 200000);
+    var camera = new THREE.PerspectiveCamera(42, 1, 50, 10000);
     camera.up.set(0, 0, 1);
 
     var controls = null;
@@ -415,13 +415,17 @@
     });
     // Arte única (camada ARTE, limite = lateral inteira): um decal DoubleSide
     // por face, mesma textura nos dois lados (verso espelhado fisicamente).
+    // polygonOffset ajuda a reduzir z-fighting entre decal e geometria sólida.
     var materialArteUnica = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.9,
       metalness: 0.02,
       side: THREE.DoubleSide,
       depthWrite: true,
-      depthTest: true
+      depthTest: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     });
     var materialSelArteUnica = new THREE.MeshStandardMaterial({
       color: 0xffd9a3,
@@ -431,16 +435,23 @@
       emissive: 0x5a3500,
       emissiveIntensity: 0.45,
       depthWrite: true,
-      depthTest: true
+      depthTest: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     });
     // Arte dupla (2 artboards): externa no frente, interna no verso.
+    // polygonOffset ajuda a reduzir z-fighting entre decal e geometria sólida.
     var materialArteExt = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.9,
       metalness: 0.02,
       side: THREE.DoubleSide,
       depthWrite: true,
-      depthTest: true
+      depthTest: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     });
     var materialArteInt = new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -448,7 +459,10 @@
       metalness: 0.02,
       side: THREE.DoubleSide,
       depthWrite: true,
-      depthTest: true
+      depthTest: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     });
     var materialSelArteExt = new THREE.MeshStandardMaterial({
       color: 0xffd9a3,

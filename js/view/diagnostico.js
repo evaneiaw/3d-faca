@@ -51,6 +51,15 @@
       k: 1,
       tx: 0,
       ty: 0,
+      kBase: 1,
+      txBase: 0,
+      tyBase: 0,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      ajustado: false,
+      arrastando: false,
+      arrastoInicio: null,
       selecionado: null,
       segmentos: [],
       modoBase: false,
@@ -79,15 +88,55 @@
       return estado.ty - y * estado.k;
     }
 
-    function ajustar(w, h) {
+    function aplicarTransformacao() {
+      estado.k = estado.kBase * estado.zoom;
+      estado.tx = estado.txBase + estado.panX;
+      estado.ty = estado.tyBase + estado.panY;
+    }
+
+    function ajustar(w, h, forcar) {
       if (!estado.res) return;
+      if (estado.ajustado && !forcar) {
+        if (w === estado.lastW && h === estado.lastH) {
+          aplicarTransformacao();
+          return;
+        }
+        // Resize: recalcula o encaixe, mas mantém o zoom e o ponto do mundo
+        // que estava no centro no centro do novo tamanho.
+        var cx = (estado.lastW / 2 - estado.tx) / estado.k;
+        var cy = (estado.ty - estado.lastH / 2) / estado.k;
+        var c2 = estado.res.geometria.caixa;
+        var pad2 = 28;
+        var k2 = Math.min((w - pad2 * 2) / Math.max(c2.largura, 1), (h - pad2 * 2) / Math.max(c2.altura, 1));
+        if (!isFinite(k2) || k2 <= 0) k2 = 1;
+        estado.kBase = k2;
+        estado.k = k2 * estado.zoom;
+        estado.tx = w / 2 - cx * estado.k;
+        estado.ty = h / 2 + cy * estado.k;
+        estado.txBase = estado.tx - estado.panX;
+        estado.tyBase = estado.ty - estado.panY;
+        estado.lastW = w;
+        estado.lastH = h;
+        return;
+      }
       var c = estado.res.geometria.caixa;
       var pad = 28;
       var k = Math.min((w - pad * 2) / Math.max(c.largura, 1), (h - pad * 2) / Math.max(c.altura, 1));
       if (!isFinite(k) || k <= 0) k = 1;
-      estado.k = k;
-      estado.tx = (w - c.largura * k) / 2 - c.minX * k;
-      estado.ty = (h + c.altura * k) / 2 + c.minY * k;
+      var tx = (w - c.largura * k) / 2 - c.minX * k;
+      var ty = (h + c.altura * k) / 2 + c.minY * k;
+      estado.kBase = k;
+      estado.txBase = tx;
+      estado.tyBase = ty;
+      if (forcar) {
+        estado.zoom = 1;
+        estado.panX = 0;
+        estado.panY = 0;
+      }
+      aplicarTransformacao();
+      estado.ajustado = true;
+      estado.lastW = w;
+      estado.lastH = h;
     }
 
     function caminhoPath(c) {
@@ -394,6 +443,19 @@
       desenharEixos();
       desenharVincos();
       desenharRejeicoes();
+      // Indicador de zoom (canto inferior esquerdo, em px de tela).
+      var rotulo = "zoom " + Math.round(estado.zoom * 100) + "%";
+      ctx.font = "11px Segoe UI";
+      var w = ctx.measureText(rotulo).width + 12;
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.fillRect(8, d.h - 26, w, 18);
+      ctx.strokeStyle = "rgba(17,24,39,0.25)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(8, d.h - 26, w, 18);
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(rotulo, 14, d.h - 17);
     }
 
     function pontoSegmento(px, py, a, b) {
@@ -407,6 +469,7 @@
     }
 
     function aoClicar(e) {
+      if (estado._ignorouClique) { estado._ignorouClique = false; return; }
       var r = canvas.getBoundingClientRect();
       var px = e.clientX - r.left;
       var py = e.clientY - r.top;
@@ -430,6 +493,69 @@
       if (melhor !== null) selecionar(melhor);
     }
 
+    function aoRoda(e) {
+      if (!estado.res) return;
+      e.preventDefault();
+      var r = canvas.getBoundingClientRect();
+      var mx = e.clientX - r.left;
+      var my = e.clientY - r.top;
+      var fator = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      var novoZoom = estado.zoom * fator;
+      if (novoZoom < 0.1) novoZoom = 0.1;
+      if (novoZoom > 80) novoZoom = 80;
+      // zoom centrado no cursor: manter o ponto do mundo sob o mouse fixo
+      var mundoX = (mx - estado.tx) / estado.k;
+      var mundoY = (estado.ty - my) / estado.k;
+      estado.zoom = novoZoom;
+      aplicarTransformacao();
+      estado.tx = mx - mundoX * estado.k;
+      estado.ty = my + mundoY * estado.k;
+      estado.txBase = estado.tx - estado.panX;
+      estado.tyBase = estado.ty - estado.panY;
+      desenhar();
+    }
+
+    function aoMouseDown(e) {
+      // Pan: botão esquerdo (fora do modo base), meio, direito ou Alt+esquerdo.
+      // Em modo base, o botão esquerdo livre continua sendo a seleção de face.
+      if (estado.modoBase && e.button === 0 && !e.altKey) return;
+      if (e.button === 0 || e.button === 1 || e.button === 2) {
+        e.preventDefault();
+        estado.arrastando = true;
+        estado.arrastoInicio = { x: e.clientX, y: e.clientY, tx: estado.tx, ty: estado.ty };
+        canvas.style.cursor = "grabbing";
+      }
+    }
+
+    function aoMouseMove(e) {
+      if (!estado.arrastando) return;
+      var dx = e.clientX - estado.arrastoInicio.x;
+      var dy = e.clientY - estado.arrastoInicio.y;
+      estado.tx = estado.arrastoInicio.tx + dx;
+      estado.ty = estado.arrastoInicio.ty + dy;
+      estado.txBase = estado.tx - estado.panX;
+      estado.tyBase = estado.ty - estado.panY;
+      desenhar();
+    }
+
+    function aoMouseUp(e) {
+      if (estado.arrastando) {
+        var dx = e.clientX - estado.arrastoInicio.x;
+        var dy = e.clientY - estado.arrastoInicio.y;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) estado._ignorouClique = true;
+        estado.arrastando = false;
+        estado.arrastoInicio = null;
+        canvas.style.cursor = estado.modoBase ? "pointer" : "crosshair";
+      }
+    }
+
+    function aoDuploClique(e) {
+      if (!estado.res) return;
+      var d = dimensoes();
+      ajustar(d.w, d.h, true);
+      desenhar();
+    }
+
     function selecionar(indice) {
       estado.selecionado = indice;
       desenhar();
@@ -450,11 +576,23 @@
       estado.res = res;
       estado.montagem = montagem;
       estado.selecionado = null;
+      estado.ajustado = false;
+      estado.zoom = 1;
+      estado.panX = 0;
+      estado.panY = 0;
       desenhar();
     }
 
+    function aoContextMenu(e) { e.preventDefault(); }
+
     function destruir() {
       canvas.removeEventListener("click", aoClicar);
+      canvas.removeEventListener("wheel", aoRoda);
+      canvas.removeEventListener("mousedown", aoMouseDown);
+      canvas.removeEventListener("dblclick", aoDuploClique);
+      canvas.removeEventListener("contextmenu", aoContextMenu);
+      raiz.removeEventListener("mousemove", aoMouseMove);
+      raiz.removeEventListener("mouseup", aoMouseUp);
       if (observador) {
         try {
           observador.disconnect();
@@ -466,6 +604,12 @@
     }
 
     canvas.addEventListener("click", aoClicar);
+    canvas.addEventListener("wheel", aoRoda, { passive: false });
+    canvas.addEventListener("mousedown", aoMouseDown);
+    canvas.addEventListener("dblclick", aoDuploClique);
+    canvas.addEventListener("contextmenu", aoContextMenu);
+    raiz.addEventListener("mousemove", aoMouseMove);
+    raiz.addEventListener("mouseup", aoMouseUp);
     var observador = null;
     if (typeof raiz.ResizeObserver === "function") {
       observador = new raiz.ResizeObserver(function () {

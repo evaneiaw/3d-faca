@@ -676,3 +676,51 @@ Direção/perfil inferidos; 4 contatos de ~1 mm; 4 recortes sem vinco; ArtiosCAD
 - Icones SVG inline nos botoes principais (Dobrar, Desdobrar, Reset, Ler, Diagnostico, Confirmar, Cancelar).
 - Inputs/selects alinhados ao mesmo acabamento.
 - Responsividade aprimorada para painel CEP estreito.
+
+
+## 0.8.4 — Painel superior de faaaaccaaaa.pdf (V14/V19) + zoom no diagnóstico
+
+**Tipo:** correção de geometria + recurso de visualização.
+
+### Causa (V14/V19 `sem-par`)
+O corte horizontal terminando em `(186,797)` devia partir a vertical `x=186`
+na junção em T, mas a folga paramétrica fixa de `1e-6` em
+`intersecaoRetas` rejeitava a junção por um desvio de `0,00006 mm`
+(paramétrico ~1,5e-6). A ponta ficava solta (vértice de grau 1, aresta em
+ponte) e o painel de cima fundia com o de baixo numa única face, de modo
+que V14/V19 não tinham segunda face e não dobravam.
+
+### Correção
+- `js/core/geometry-utils.js`: folga paramétrica proporcional em
+  `intersecaoRetas` (até `tol` mm além do segmento, máx. 1% do comprimento).
+  O T é detectado, a vertical é partida em dois trechos (5 + 10 mm) e o
+  painel de cima vira face própria. No arquivo real, V14/V19 passam a
+  `dobra` (faces 16–17, eixo de 268 mm em `y≈792`, com 1 conexão virtual de
+  recorte cobrindo o vão de 140 mm entre 86–226) e a face 17 articula no 3D.
+- Testes novos em `testes/testes-geometria.mjs` (intersecção em T na ponta
+  com desvio sub-micrométrico + partida da vertical no grafo).
+
+### Zoom no diagnóstico
+- Roda do mouse = zoom centrado no cursor; arrastar = mover; duplo clique =
+  ajustar; botão esquerdo move fora do modo base (Alt+botão esquerdo também
+  move dentro do modo base); indicador de nível no canto do canvas.
+
+### Testes
+- Node: `testes/testes-geometria.mjs` 128/128; `testes/testes-estruturais.mjs`
+  28/28. AO vivo (Illustrator 30.8.2 + `faaaaccaaaa.pdf`): V14/V19 `dobra`,
+  grau do vértice em `(186,797)` = 3.
+
+
+## 0.8.5 — Câmera inicial frente-esquerda
+
+**Tipo:** ajuste de vista padrão.
+
+- `js/view/three3d.js`: `ajustarCamera()` (abertura do 3D e `resetarVista()`) e
+  o estado inicial passam de `perspectiva_direita` para
+  `perspectiva_esquerda` (frente-esquerda, pedido do usuário).
+- `js/faca3d.js`: `renderizar3D()` (botão **Ler novamente**), botão **Reset** e
+  a dobra (`animarMontagem`, quando vinha do plano) também usam
+  `perspectiva_esquerda`; o seletor *Vista* abre marcado nessa opção
+  (`faca3d.html`).
+- Verificação ao vivo: seletor = `perspectiva_esquerda`, câmera em
+  x/y negativos (frente-esquerda) e V14/V19 seguem `dobra` (34 no total).

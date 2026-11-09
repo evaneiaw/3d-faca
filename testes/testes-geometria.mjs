@@ -105,6 +105,18 @@ ok("PT_MM = 25.4/72", quase(U.PT_MM, 25.4 / 72, 1e-12));
   ok("retas colineares com sobreposicao", r && r.colinear && r.sobreposicao !== null);
 }
 {
+  // Caso real (faaaaccaaaa.pdf): horizontal terminando sobre vertical quase-
+  // exata em (186,797), com desvio paramétrico ~1,5e-6 (0,00006 mm). Com a
+  // folga fixa de 1e-6 a junção era rejeitada e a ponta ficava solta (grau 1).
+  const r = U.intersecaoRetas(
+    { x: 225.99963972222224, y: 796.9988011111111 },
+    { x: 185.99968444444443, y: 796.9988011111111 },
+    { x: 185.99968444444443, y: 791.9988111111111 },
+    { x: 185.99950805555557, y: 806.9986752777777 }, 0.01);
+  ok("intersecao em T na ponta com desvio sub-micrometrico",
+    r && Math.abs(r.ponto.x - 185.9996) < 0.01 && Math.abs(r.ponto.y - 796.9988) < 0.01, JSON.stringify(r));
+}
+{
   const pts = U.achatarBezier({ x: 0, y: 0 }, { x: 0, y: 10 }, { x: 10, y: 10 }, { x: 10, y: 0 }, 0.01);
   ok("achatar bezier gera pontos", pts.length > 3, "n=" + pts.length);
   const erro = Math.max.apply(
@@ -226,6 +238,20 @@ resultados.push("CONTORNOS");
   const { grafo } = rodarGeometria(segs);
   ok("T vira juncao", grafo.interseccoes.length === 1 && grafo.interseccoes[0].tipo === "juncao",
     "n=" + grafo.interseccoes.length + " tipo=" + (grafo.interseccoes[0] && grafo.interseccoes[0].tipo));
+}
+{
+  // Regressão (faaaaccaaaa.pdf, V14/V19): a vertical ligeiramente inclinada
+  // deve ser partida na ponta do corte horizontal; sem o corte, o corte fica
+  // solto (grau 1, aresta em ponte) e funde os dois painéis numa face só.
+  const segs = [
+    segReta(0, 185.99968444444443, 791.9988111111111, 185.99950805555557, 806.9986752777777),
+    segReta(1, 225.99963972222224, 796.9988011111111, 185.99968444444443, 796.9988011111111)
+  ];
+  const { grafo } = rodarGeometria(segs);
+  const noT = grafo.nos.filter(function (n) { return Math.abs(n.x - 185.9996) < 0.01 && Math.abs(n.y - 796.9988) < 0.01; });
+  ok("T inclinada parte a vertical (no grau 3)",
+    grafo.interseccoes.length === 1 && noT.length === 1 && noT[0].arestas.length === 3,
+    "inters=" + grafo.interseccoes.length + " nos=" + JSON.stringify(noT.map(function (n) { return n.arestas; })));
 }
 {
   // tolerância: 0,03 mm junta; 0,2 mm não junta
