@@ -1539,3 +1539,82 @@ body {
     min-width: 0;
   }
 }
+
+/* ============================================================
+   FACA 3D - PAINEL DE INFORMACOES COLAPSÁVEL
+   ============================================================ */
+
+.faca3d-info-panel {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border, #e1e1e1);
+  background: var(--panel-bg, #fff);
+}
+
+.faca3d-info-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #707070);
+  font-family: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.faca3d-info-toggle:hover {
+  background: rgba(31, 35, 40, 0.04);
+  color: var(--text, #2c2c2c);
+}
+
+.faca3d-info-chevron {
+  font-size: 10px;
+  transition: transform 0.15s ease;
+  display: inline-block;
+}
+
+.faca3d-info-toggle[aria-expanded="true"] .faca3d-info-chevron {
+  transform: rotate(90deg);
+}
+
+.faca3d-info-resumo {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.faca3d-info-body {
+  padding: 0 10px 8px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--text-muted, #707070);
+  border-top: 1px solid var(--border, #e1e1e1);
+}
+
+.faca3d-info-body[hidden] {
+  display: none;
+}
+
+.faca3d-info-full {
+  padding: 6px 0 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.faca3d-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.faca3d-version {
+  font-size: 10px;
+  color: var(--text-muted, #707070);
+  opacity: 0.8;
+  white-space: nowrap;
+}

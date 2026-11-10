@@ -97,6 +97,18 @@
     texto.textContent = mensagem;
   }
 
+  function setInfo3D(mensagem) {
+    var corpo = el("faca3dInfo3D");
+    if (corpo) corpo.textContent = (mensagem === null || mensagem === undefined) ? "" : String(mensagem);
+    var resumo = el("faca3dInfoResumo");
+    if (resumo) {
+      var txt = (mensagem === null || mensagem === undefined) ? "" : String(mensagem);
+      var curto = txt.split("·")[0].trim();
+      if (curto.length > 90) curto = curto.slice(0, 87) + "…";
+      resumo.textContent = curto || "Detalhes da montagem";
+    }
+  }
+
   function registrarLog(origem, mensagem) {
     try {
       if (!csInterface) return;
@@ -731,7 +743,7 @@
     caixa.appendChild(criar("div", "faca3d-empty-title", titulo));
     caixa.appendChild(criar("div", "faca3d-empty-text", texto));
     host.appendChild(caixa);
-    el("faca3dInfo3D").textContent = "Aguardando leitura da faca.";
+    setInfo3D("Aguardando leitura da faca.");
     el("faca3dNota3D").textContent = "";
   }
 
@@ -748,7 +760,7 @@
       caixa.appendChild(d);
     }
     host.appendChild(caixa);
-    el("faca3dInfo3D").textContent = "Falha na montagem.";
+    setInfo3D("Falha na montagem.");
     el("faca3dNota3D").textContent = "";
   }
 
@@ -763,7 +775,7 @@
       host: host,
       aoInfo: function (texto) {
         var info = el("faca3dInfo3D");
-        if (info) info.textContent = texto + " · esquerdo gira · direito move · roda zoom";
+        setInfo3D(texto + " · esquerdo gira · direito move · roda zoom");
       },
       aoSelecionarFace: aoSelecionarFace
     });
@@ -1557,7 +1569,7 @@
         var sub = F.geometry.subdivisao ? F.geometry.subdivisao.subdividir(res) : res;
         estado.res = sub;
         var nome = sub.geometria.meta.documento || "-";
-        el("faca3dDoc").textContent = nome;
+        var _d = el("faca3dDoc"); if (_d) _d.textContent = nome;
 		estado.docNomeAtual = nome;
         renderizar3D(sub);
         var m = estado.viewer3d && estado.viewer3d.montagem();
@@ -1588,7 +1600,7 @@
         var msg = e && e.message ? e.message : String(e);
         if (codigo === "SEM_DOC") {
           estado.res = null;
-          el("faca3dDoc").textContent = "-";
+          var _d2 = el("faca3dDoc"); if (_d2) _d2.textContent = "-";
           mostrarVazio(
             "Nenhum documento aberto",
             "Abra a faca no Illustrator e clique em Ler novamente."
@@ -1596,7 +1608,7 @@
           setStatus("Nenhum documento aberto.", "err");
         } else if (codigo === "SEM_FACA") {
           estado.res = null;
-          el("faca3dDoc").textContent = "-";
+          var _d2 = el("faca3dDoc"); if (_d2) _d2.textContent = "-";
           mostrarVazio(
             "Camada FACA não encontrada",
             "A faca precisa estar na camada FACA. As demais camadas (arte, texto, anotações) não são interpretadas."
@@ -1908,6 +1920,19 @@
         // expandirPainel();
       }
     } catch (eGrip) {}
+    // Painel de informações colapsável (chevron).
+    try {
+      var infoToggle = el("faca3dInfoToggle");
+      var infoBody = el("faca3dInfoBody");
+      if (infoToggle && infoBody) {
+        infoToggle.addEventListener("click", function () {
+          var aberto = infoToggle.getAttribute("aria-expanded") === "true";
+          infoToggle.setAttribute("aria-expanded", aberto ? "false" : "true");
+          if (aberto) infoBody.setAttribute("hidden", "");
+          else infoBody.removeAttribute("hidden");
+        });
+      }
+    } catch (eInfo) {}
     definirAnguloNaTela(90);
 
     try {

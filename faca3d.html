@@ -8,9 +8,7 @@
 <body>
   <div id="faca3dApp" class="faca3d-app">
     <header class="faca3d-header">
-      <h1 class="faca3d-title">3D Faca <span id="faca3dVersao" style="font-size: 12px; font-weight: normal; opacity: 0.85; margin-left: 8px;">v0.8.5-papelao-ondulado-20261109</span></h1>
-      <span class="faca3d-phase">Espessura Física (Estrutura)</span>
-      <span id="faca3dDoc" class="faca3d-doc">—</span>
+      <h1 class="faca3d-title">3D Faca</h1>
     </header>
 
     <main class="faca3d-main faca3d-main-single">
@@ -82,10 +80,16 @@
           </div>
         </div>
 
-        <div class="faca3d-stage-foot">
-          <span id="faca3dInfo3D">Aguardando leitura da faca.</span>
+        <div class="faca3d-info-panel" id="faca3dInfoPanel">
+          <button class="faca3d-info-toggle" id="faca3dInfoToggle" type="button" aria-expanded="false">
+            <span class="faca3d-info-chevron" id="faca3dInfoChevron">▸</span>
+            <span id="faca3dInfoResumo" class="faca3d-info-resumo">Aguardando leitura da faca.</span>
+          </button>
+          <div class="faca3d-info-body" id="faca3dInfoBody" hidden>
+            <div id="faca3dInfo3D" class="faca3d-info-full"></div>
+            <div id="faca3dNota3D" class="faca3d-note"></div>
+          </div>
         </div>
-        <div id="faca3dNota3D" class="faca3d-note"></div>
 
         <div id="faca3dDiag" class="faca3d-diag" hidden>
           <div class="faca3d-diag-head">
@@ -121,6 +125,7 @@
 
     <footer id="faca3dStatus" class="faca3d-status">
       <span id="faca3dStatusText">Pronto.</span>
+      <span id="faca3dVersao" class="faca3d-version"></span>
     </footer>
   </div>
   <div id="faca3dResizeGrip" class="faca3d-resize-grip" title="Arraste para redimensionar o painel"></div>
