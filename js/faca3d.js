@@ -1040,14 +1040,8 @@
   function animarMontagem(duracao) {
     cancelarAnimacao();
     if (!estado.viewer3d || (!estado.perfil && !estado.dobrasSalvas)) return;
-    // Só sai da vista "baixo" (plano 0°) quando ela é a inicial; se o usuário
-    // escolheu outra câmera, mantém a escolha durante a dobra.
-    var selMontagem = el("faca3dVista");
-    var vistaMontagem = selMontagem ? selMontagem.value : "";
-    if (!vistaMontagem || vistaMontagem === "baixo") {
-      estado.viewer3d.definirVista("perspectiva_esquerda");
-      if (selMontagem) selMontagem.value = "perspectiva_esquerda";
-    }
+    // Mantém a câmera onde o usuário a colocou (inclusive nas vistas planas
+    // 0°/topo/baixo) durante a dobra; não troca para perspectiva_esquerda.
     var alvo = alvoDobrar();
     registrarLog("faca3d", "dobrar alvo=" + (estado.dobrasSalvas ? "salvos" : "perfil") + " dobras=" + contarDobras({ angulos: alvo }));
     var sinaisSalvos = estado.dobrasSalvas && estado.dobrasSalvas.sinais ? estado.dobrasSalvas.sinais : {};
