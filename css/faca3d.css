@@ -1291,8 +1291,126 @@ body {
   }
 }
 /* ============================================================
-   FACA 3D - CORRECAO DE DISPOSICAO DOS CONTROLES (erro.png)
+   FACA 3D - PAINEL RESPONSIVO / REDIMENSIONAVEL
    ============================================================ */
+
+.faca3d-app {
+  container-type: inline-size;
+  container-name: panel;
+}
+
+.faca3d-viewer {
+  min-height: 140px;
+}
+
+.faca3d-diag-canvas {
+  min-height: 120px;
+}
+
+/* Header: quebra suave quando o painel e estreito */
+.faca3d-header {
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.faca3d-doc {
+  white-space: normal;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* Largura media: grupos encolhem e quebram em 2 linhas */
+@container panel (max-width: 700px) {
+  .faca3d-toolbar-group,
+  .faca3d-toolbar-actions,
+  .faca3d-fold,
+  .faca3d-art,
+  .faca3d-artes,
+  .faca3d-view,
+  .faca3d-dobra-salva {
+    flex: 1 1 100%;
+    border-left: none;
+    padding-left: 0;
+  }
+  .faca3d-select,
+  .faca3d-face-select,
+  .faca3d-arte-select {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+  .faca3d-fold input[type="range"] {
+    min-width: 60px;
+  }
+  .faca3d-face-nome {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Largura estreita: empilha grupos e botões ocupam a largura */
+@container panel (max-width: 420px) {
+  .faca3d-toolbar-group,
+  .faca3d-toolbar-actions {
+    flex: 1 1 100%;
+  }
+  .faca3d-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .faca3d-btn.small {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .faca3d-phase {
+    display: none;
+  }
+  .faca3d-title {
+    font-size: 13px;
+  }
+}
+
+/* Painel baixo: prioriza o visualizador 3D */
+@container panel (max-height: 360px) {
+  .faca3d-header {
+    padding: 6px 10px;
+  }
+  .faca3d-toolbar {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+  .faca3d-nota-artes {
+    padding: 2px 8px;
+    font-size: 9px;
+  }
+  .faca3d-status {
+    min-height: 24px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  .faca3d-viewer {
+    min-height: 120px;
+  }
+  .faca3d-diag-info {
+    height: 56px;
+  }
+}
+
+/* Fallback para navegadores sem suporte a container queries */
+@media (max-width: 420px) {
+  .faca3d-toolbar-group,
+  .faca3d-toolbar-actions {
+    flex: 1 1 100%;
+  }
+  .faca3d-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+}
+
 
 .faca3d-toolbar {
   display: flex;
