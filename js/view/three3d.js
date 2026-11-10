@@ -119,6 +119,44 @@
     return uv;
   }
 
+  /* Decide se o U do decal/filete de um lado precisa ser invertido.
+   *
+   * A arte de cada lado é recortada da SUA artboard, então o único ajuste
+   * necessário é o espelhamento da artboard de origem em relação à faca da
+   * artboard 0 (a única que fornece geometria). Não se aplica mais o "visto
+   * por trás": a montagem é espelhada em X (grupo.scale.x = -1) quando o lado
+   * de fora da folha é -Z, e o espelho da montagem já coloca a leitura de cada
+   * superfície no sentido certo. Misturar as duas coisas era o que invertia a
+   * arte interna e a externa ao mesmo tempo.
+   *
+   * Opções: { fonteEspelhada, espelhoX, inverter, externo }
+   * - espelhoX + fonteEspelhada: usa o mapeamento da artboard espelhada.
+   * - sem espelhoX: mantém a regra antiga (fallback para documentos em que a
+   *   folha não é invertida).
+   */
+  function ladoEspelhaU(opcoes) {
+    var o = opcoes || {};
+    var fonte = !!o.fonteEspelhada;
+    if (o.espelhoX) return fonte;
+    var inverter = !!o.inverter;
+    var vistoPorTras = o.externo ? inverter : !inverter;
+    return fonte !== vistoPorTras;
+  }
+
+  /* A montagem é espelhada em X quando o lado de fora da folha é -Z (maioria
+   * das faces com ladoExterno < 0). Aí a vista plana de cima mostra o INTERNO,
+   * como a 2ª artboard. A decisão não depende do ângulo: usa o lado físico já
+   * congelado em estado.ladoExterno. Pura para os testes de Node. */
+  function espelhoDaFolha(ladoExterno, facesMontadas) {
+    var sinal = 0;
+    var lista = facesMontadas || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (ladoExterno && ladoExterno[lista[i]] < 0) sinal -= 1;
+      else sinal += 1;
+    }
+    return sinal < 0;
+  }
+
   function caixaFacaDe(geoCaixa, pontos) {
     if (V.arteUnica && typeof V.arteUnica.caixaFacaDe === "function") return V.arteUnica.caixaFacaDe(geoCaixa, pontos);
     var W = 0, H = 0;
@@ -916,6 +954,14 @@
         } // fim do else (não-plano)
       }
 
+      // Espelho da montagem (ver espelhoDaFolha): quando o lado de fora da
+      // folha é -Z, a vista plana de cima mostra o INTERNO; espelhar o grupo
+      // em X exibe a faca como na 2ª artboard e mantém a externa para fora na
+      // caixa dobrada. Cada lado continua usando a arte da sua própria
+      // artboard (ver ladoEspelhaU).
+      estado.espelhoX = espelhoDaFolha(estado.ladoExterno, estado.montagem.facesMontadas);
+      grupo.scale.x = estado.espelhoX ? -1 : 1;
+
       var verticesBorda = [];
       var verticesVinco = [];
 
@@ -1024,7 +1070,11 @@
               texExt = dupla.ext && dupla.ext.texture ? dupla.ext.texture : null;
               texInt = dupla.int && dupla.int.texture ? dupla.int.texture : null;
               espExt = !!(dupla.ext && dupla.ext.espelhar);
-              espInt = !!(dupla.int && dupla.int.espelhar);
+              // Uma única artboard: o verso herda a arte externa (mesmo objeto).
+              // A interna é o outro lado da mesma folha, então o U entra
+              // invertido para a arte continuar legível na vista plana.
+              var intHerdada = !!(dupla.int && dupla.int === dupla.ext);
+              espInt = !!(dupla.int && (dupla.int.espelhar || intHerdada));
               matExt = materialArteExt;
               matInt = materialArteInt;
             } else if (estado.arteUnica && estado.arteUnica.texture) {
@@ -1035,13 +1085,21 @@
             // 32/32 invertidas). Externa vai no lado de fora, interna no de dentro.
             var zExt = inverter ? -(meioT + offDecal) : (meioT + offDecal);
             var zInt = inverter ? (meioT + offDecal) : -(meioT + offDecal);
-            // V = espelho de leitura (o decal é visto por trás em um dos lados).
-            // Externo fica em -z quando inverter: visto de trás -> precisa espelhar
-            // o U para o texto ler certo de fora; interna em +z: visto de frente.
-            var vExt = inverter;
-            var vInt = !inverter;
-            var totalExt = (espExt ? 1 : 0) ^ (vExt ? 1 : 0);
-            var totalInt = (espInt ? 1 : 0) ^ (vInt ? 1 : 0);
+            // Com a montagem espelhada em X, cada lado mostra a SUA artboard:
+            // só o espelhamento da fonte (artboard != 0) entra no U. Sem o
+            // espelho (fallback), mantém a regra antiga de "visto por trás".
+            var totalExt = ladoEspelhaU({
+              fonteEspelhada: espExt,
+              espelhoX: !!estado.espelhoX,
+              inverter: inverter,
+              externo: true
+            });
+            var totalInt = ladoEspelhaU({
+              fonteEspelhada: espInt,
+              espelhoX: !!estado.espelhoX,
+              inverter: inverter,
+              externo: false
+            });
             var ladosDecal = [
               { z: zExt, nome: "externo", tex: texExt, espelhar: !!totalExt, mat: matExt },
               { z: zInt, nome: "interno", tex: texInt, espelhar: !!totalInt, mat: matInt }
@@ -1158,13 +1216,18 @@
           ];
           for (var lf = 0; lf < ladosF.length; lf++) {
             var ladoF = ladosF[lf];
-            // Mesmo espelho de leitura dos decals: externo visto por trás.
-            var vF2 = ladoF.externo ? inverterF : (!inverterF);
-            var espTF = false;
+            // Mesmo critério de U dos decais (ver ladoEspelhaU).
+            var sSrcF = false;
             if (temDuplaF) {
-              var sSrcF = ladoF.externo ? !!(duplaF.ext && duplaF.ext.espelhar) : !!(duplaF.int && duplaF.int.espelhar);
-              espTF = (!!sSrcF) !== (!!vF2);
+              if (ladoF.externo) sSrcF = !!(duplaF.ext && duplaF.ext.espelhar);
+              else sSrcF = !!(duplaF.int && (duplaF.int.espelhar || duplaF.int === duplaF.ext));
             }
+            var espTF = ladoEspelhaU({
+              fonteEspelhada: sSrcF,
+              espelhoX: !!estado.espelhoX,
+              inverter: inverterF,
+              externo: ladoF.externo
+            });
             var posF = [], uvF = [], idxF = [];
             var N = NSEG;
             // linhas s=0..1 (2) x colunas k=0..N
@@ -1577,7 +1640,10 @@
       var malha = malhaDaFace(face);
       if (!malha || !malha.userData.pontoInterior) return null;
       var p = malha.userData.pontoInterior;
-      var v = new THREE.Vector3(p.x, p.y, p.z);
+      // O ponto é do espaço do objeto; a montagem pode estar espelhada em X
+      // (grupo.scale.x = -1), então projeta pela matriz do grupo.
+      grupo.updateMatrixWorld(true);
+      var v = new THREE.Vector3(p.x, p.y, p.z).applyMatrix4(grupo.matrixWorld);
       v.project(camera);
       var r = canvas.getBoundingClientRect();
       return {
@@ -2472,6 +2538,7 @@
           faceSelecionada: estado.faceSelecionada,
           facesSelecionadas: listaSelecionadas(),
           modoArte: estado.modoArte,
+          espelhoX: !!estado.espelhoX,
           espelharInterna: estado.espelharInterna,
           arteInternaHerdada: !estado.artes.interna && !!estado.artes.externa,
           overlays: {
@@ -2612,6 +2679,8 @@
     normalizarDobras: normalizarDobras,
     uvFaca: uvFaca,
     uvFacaInversa: uvFacaInversa,
+    ladoEspelhaU: ladoEspelhaU,
+    espelhoDaFolha: espelhoDaFolha,
     caixaFacaDe: caixaFacaDe,
     ANGULO_PADRAO: ANGULO_PADRAO
   };

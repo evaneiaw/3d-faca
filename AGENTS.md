@@ -10,14 +10,15 @@ CEP extension for Adobe Illustrator (`com.faca3d`, v0.8.0). Standalone plugin. R
 - `js/core/*` — geometry pipeline (path-parser → topology → contour-builder → face-detector → structural-lines → hinge-audit → geometry-engine → face-subdivision).
 - `js/view/*` — `three3d.js` (scene, folds, UV), `artes.js`, `diagnostico.js`.
 - `js/faca3d.js` — panel controller; `js/core/loader.js` loads modules in `MODULOS` order (base derived from `location.href`).
-- `testes/` — 2 Node suites (`.mjs`) + 6 panel suites (`.js`).
+- `testes/` — 8 Node suites (`.mjs`) + 6 panel suites (`.js`).
 
 ## Commands
 
 Node suites (run from repo root; no package.json/build step):
 ```
-node testes/testes-geometria.mjs      # 126/126
+node testes/testes-geometria.mjs      # 128/128
 node testes/testes-estruturais.mjs    # 28/28
+node testes/testes-orientacao.mjs     # 28/28
 ```
 Panel suites (`testes/*.js`) run inside the open CEP panel via CDP on debug port **7778** (`%TEMP%\opencode\cep_cdp2.mjs`). They are state-sensitive: reload the panel between suites. Requires a doc with the right setup (e.g. 2 artboards EXTERNO/INTERNO for artes tests).
 
