@@ -1868,7 +1868,46 @@
       if (!document.hidden) verificarDocumento();
     }); } catch (e) {}
     try { setInterval(verificarDocumento, 3000); } catch (e) {}
-    expandirPainel();
+    // Painel redimensionavel por alça própria (independente do host).
+    try {
+      var grip = el("faca3dResizeGrip");
+      if (grip) {
+        var cs = new CSInterface();
+        var redim = { ativo: false, x0: 0, y0: 0, w0: 0, h0: 0 };
+        grip.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          redim.ativo = true;
+          redim.x0 = e.screenX;
+          redim.y0 = e.screenY;
+          try {
+            redim.w0 = window.outerWidth || document.documentElement.clientWidth || 900;
+            redim.h0 = window.outerHeight || document.documentElement.clientHeight || 600;
+          } catch (e0) {
+            redim.w0 = 900;
+            redim.h0 = 600;
+          }
+          document.body.style.cursor = "nwse-resize";
+          try { grip.setCapture && grip.setCapture(); } catch (e1) {}
+        });
+        function aoMoverRedim(e) {
+          if (!redim.ativo) return;
+          var dx = e.screenX - redim.x0;
+          var dy = e.screenY - redim.y0;
+          var w = Math.max(420, Math.min(1600, redim.w0 + dx));
+          var h = Math.max(280, Math.min(1000, redim.h0 + dy));
+          try { cs.resizeTo(w, h); } catch (e2) {}
+        }
+        function aoSoltarRedim() {
+          if (!redim.ativo) return;
+          redim.ativo = false;
+          document.body.style.cursor = "";
+        }
+        window.addEventListener("mousemove", aoMoverRedim);
+        window.addEventListener("mouseup", aoSoltarRedim);
+        // Evita que o resize inicial force um tamanho grande ao abrir.
+        // expandirPainel();
+      }
+    } catch (eGrip) {}
     definirAnguloNaTela(90);
 
     try {

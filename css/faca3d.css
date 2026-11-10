@@ -1290,9 +1290,38 @@ body {
     white-space: normal;
   }
 }
-/* ============================================================
-   FACA 3D - PAINEL RESPONSIVO / REDIMENSIONAVEL
-   ============================================================ */
+/* Alça de redimensionamento do painel (independente do host) */
+.faca3d-resize-grip {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  z-index: 9999;
+  background: transparent;
+}
+.faca3d-resize-grip::before {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--text-muted, #707070);
+  border-bottom: 2px solid var(--text-muted, #707070);
+  opacity: 0.6;
+  transition: opacity 0.12s ease;
+}
+.faca3d-resize-grip:hover::before {
+  opacity: 1;
+  border-color: var(--accent, #0969da);
+}
+.faca3d-resize-grip:active::before {
+  border-color: var(--accent, #0969da);
+  opacity: 1;
+}
+
 
 .faca3d-app {
   container-type: inline-size;

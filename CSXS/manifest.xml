@@ -42,6 +42,14 @@
                             <Height>820</Height>
                             <Width>1100</Width>
                         </Size>
+                        <MinSize>
+                            <Height>280</Height>
+                            <Width>420</Width>
+                        </MinSize>
+                        <MaxSize>
+                            <Height>1000</Height>
+                            <Width>1600</Width>
+                        </MaxSize>
                     </Geometry>
                     <Icons>
                         <Icon Type="Normal">./icons/icon-48.png</Icon>
