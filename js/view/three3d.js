@@ -331,6 +331,16 @@
       throw erro;
     }
     renderer.setClearColor(0xf1f5f9, 1);
+    // Cor: a textura é sRGB; a saída do renderer também precisa ser sRGB,
+    // senão a conversão sRGB->linear da textura fica "presa" e as cores
+    // aparecem mais escuras do que no Illustrator.
+    try {
+      if (raiz.THREE && raiz.THREE.sRGBEncoding !== undefined) {
+        renderer.outputEncoding = raiz.THREE.sRGBEncoding;
+      } else if (raiz.THREE && raiz.THREE.SRGBColorSpace !== undefined) {
+        if (renderer.outputColorSpace !== undefined) renderer.outputColorSpace = raiz.THREE.SRGBColorSpace;
+      }
+    } catch (eOut) {}
 
     var cena = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(42, 1, 50, 10000);
