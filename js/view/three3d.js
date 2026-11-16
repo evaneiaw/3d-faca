@@ -2810,64 +2810,85 @@
           }
         } catch (eTm) {}
 
-        /* Sombra de contato, derivada da caixa real da peça. */
-        if (comSombras && estado.caixaMundo && estado.caixaMundo.min && estado.caixaMundo.max) {
+        /* Sombra de contato.
+         *
+         * IMPORTANTE: a geometria é montada já centralizada na origem
+         * (translate(-centro)), então estado.caixaMundo NÃO está no espaço do
+         * mundo — usar caixaMundo.min.z punha o plano na altura do meio da
+         * peça. A base correta é o min.z do bounding box real do grupo. */
+        if (comSombras) {
           try {
-            var cm = estado.caixaMundo;
-            var cx = (cm.min.x + cm.max.x) / 2;
-            var cy = (cm.min.y + cm.max.y) / 2;
-            var pisoZ = cm.min.z - 2;
-            var tamBase = Math.max(
-              cm.max.x - cm.min.x,
-              cm.max.y - cm.min.y,
-              cm.max.z - cm.min.z,
-              1
-            );
-            var tam = tamBase * 2.4;
+            grupo.updateMatrixWorld(true);
+            var caixa = new THREE.Box3().setFromObject(grupo);
+            var temCaixa =
+              caixa &&
+              isFinite(caixa.min.x) && isFinite(caixa.min.y) && isFinite(caixa.min.z) &&
+              isFinite(caixa.max.x) && isFinite(caixa.max.y) && isFinite(caixa.max.z);
+            if (temCaixa) {
+              var cm = caixa;
+              var cx = (cm.min.x + cm.max.x) / 2;
+              var cy = (cm.min.y + cm.max.y) / 2;
+              var tamBase = Math.max(
+                cm.max.x - cm.min.x,
+                cm.max.y - cm.min.y,
+                cm.max.z - cm.min.z,
+                1
+              );
+              var tam = tamBase * 2.4;
 
-            var pisoGeom = new THREE.PlaneGeometry(tam, tam);
-            var pisoMat = new THREE.ShadowMaterial();
-            pisoMat.opacity = 0.4;
-            var piso = new THREE.Mesh(pisoGeom, pisoMat);
-            piso.position.set(cx, cy, pisoZ);
-            piso.receiveShadow = true;
-            cena.add(piso);
-            temporarios.push(piso);
+              /* Plano um pouco abaixo da base: encosta sem brigar por
+               * profundidade com as faces de baixo. */
+              var pisoZ = cm.min.z - Math.max(0.5, tamBase * 0.002);
 
-            var luzSombra = new THREE.DirectionalLight(0xffffff, 0.6);
-            luzSombra.position.set(cx + tam * 0.45, cy + tam * 0.45, pisoZ + tam * 1.1);
-            if (luzSombra.target) luzSombra.target.position.set(cx, cy, pisoZ);
-            luzSombra.castShadow = true;
-            try {
-              luzSombra.shadow.mapSize.set(2048, 2048);
-              var sc = luzSombra.shadow.camera;
-              sc.left = -tam / 2;
-              sc.right = tam / 2;
-              sc.top = tam / 2;
-              sc.bottom = -tam / 2;
-              sc.near = 1;
-              sc.far = tam * 4;
-              if (sc.updateProjectionMatrix) sc.updateProjectionMatrix();
-            } catch (eSc) {}
-            cena.add(luzSombra);
-            temporarios.push(luzSombra);
-            if (luzSombra.target) {
-              cena.add(luzSombra.target);
-              temporarios.push(luzSombra.target);
+              var pisoGeom = new THREE.PlaneGeometry(tam, tam);
+              var pisoMat = new THREE.ShadowMaterial();
+              pisoMat.opacity = 0.5;
+              var piso = new THREE.Mesh(pisoGeom, pisoMat);
+              piso.position.set(cx, cy, pisoZ);
+              piso.receiveShadow = true;
+              cena.add(piso);
+              temporarios.push(piso);
+
+              /* Luz acima, apontando para a base, para a sombra cair no chão. */
+              var luzSombra = new THREE.DirectionalLight(0xffffff, 0.6);
+              luzSombra.position.set(
+                cx + tam * 0.25,
+                cy + tam * 0.25,
+                cm.max.z + tamBase * 0.9
+              );
+              if (luzSombra.target) luzSombra.target.position.set(cx, cy, pisoZ);
+              luzSombra.castShadow = true;
+              try {
+                luzSombra.shadow.mapSize.set(2048, 2048);
+                var sc = luzSombra.shadow.camera;
+                sc.left = -tam / 2;
+                sc.right = tam / 2;
+                sc.top = tam / 2;
+                sc.bottom = -tam / 2;
+                sc.near = 1;
+                sc.far = tam * 3 + tamBase;
+                if (sc.updateProjectionMatrix) sc.updateProjectionMatrix();
+              } catch (eSc) {}
+              cena.add(luzSombra);
+              temporarios.push(luzSombra);
+              if (luzSombra.target) {
+                cena.add(luzSombra.target);
+                temporarios.push(luzSombra.target);
+              }
+
+              renderer.shadowMap.enabled = true;
+              try {
+                if (THREE.PCFSoftShadowMap !== undefined) {
+                  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                }
+              } catch (eTipoS) {}
+              grupo.traverse(function (obj) {
+                if (obj && obj.isMesh) {
+                  castAntes.push({ obj: obj, antigo: !!obj.castShadow });
+                  obj.castShadow = true;
+                }
+              });
             }
-
-            renderer.shadowMap.enabled = true;
-            try {
-              if (THREE.PCFSoftShadowMap !== undefined) {
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-              }
-            } catch (eTipoS) {}
-            grupo.traverse(function (obj) {
-              if (obj && obj.isMesh) {
-                castAntes.push({ obj: obj, antigo: !!obj.castShadow });
-                obj.castShadow = true;
-              }
-            });
           } catch (eSombra) {
             /* sem sombras: segue com o render normal */
           }
