@@ -178,6 +178,94 @@ function lerArquivo(rel) {
     return txt;
 }
 
+/* ---------------------------------------------------------------------------
+ * Render Top: grava um PNG (vindo do painel em base64) no Desktop.
+ * ExtendScript não tem atob(), então a decodificação base64 é feita aqui e o
+ * arquivo é escrito em modo BINARY. Devolve o caminho gravado ou "ERRO:...".
+ * ------------------------------------------------------------------------- */
+var F3D_B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+function faca3dB64Decodificar(s) {
+    var src = String(s === null || s === undefined ? "" : s).replace(/[^A-Za-z0-9+\/=]/g, "");
+    var out = "";
+    var i = 0;
+    while (i < src.length) {
+        var c1 = F3D_B64.indexOf(src.charAt(i++));
+        var c2 = F3D_B64.indexOf(src.charAt(i++));
+        var c3 = F3D_B64.indexOf(src.charAt(i++));
+        var c4 = F3D_B64.indexOf(src.charAt(i++));
+        if (c1 < 0 || c2 < 0) break;
+        out += String.fromCharCode((c1 << 2) | (c2 >> 4));
+        if (c3 >= 0) out += String.fromCharCode(((c2 & 15) << 4) | (c3 >> 2));
+        if (c4 >= 0) out += String.fromCharCode(((c3 & 3) << 6) | c4);
+    }
+    return out;
+}
+
+function faca3dSalvarPng(base64, nomeArquivo, tamanhoEsperado, abrir) {
+    try {
+        var bruto = String(base64 === null || base64 === undefined ? "" : base64);
+        /* Proteção contra truncamento na ponte evalScript: se o texto chegou
+         * menor do que o painel enviou, o PNG sairia corrompido. */
+        if (tamanhoEsperado !== undefined && tamanhoEsperado !== null && tamanhoEsperado !== "") {
+            var esperado = Number(tamanhoEsperado);
+            if (isFinite(esperado) && esperado > 0 && bruto.length !== esperado) {
+                return "ERRO:payload truncado (" + bruto.length + " de " + esperado + ")";
+            }
+        }
+        var dados = bruto;
+        var virgula = dados.indexOf(",");
+        if (virgula >= 0) dados = dados.substring(virgula + 1);
+        if (!dados) return "ERRO:imagem vazia";
+
+        var bin = faca3dB64Decodificar(dados);
+        if (!bin) return "ERRO:falha ao decodificar a imagem";
+
+        var nome = String(nomeArquivo || "");
+        nome = nome.replace(/[\\\/:*?"<>|]/g, "-").replace(/^\s+|\s+$/g, "");
+        if (!nome) nome = "faca3d-render-top.png";
+        if (!/\.png$/i.test(nome)) nome += ".png";
+
+        var pasta = null;
+        try {
+            pasta = Folder.desktop;
+        } catch (eDesktop) {
+            pasta = null;
+        }
+        if (!pasta) {
+            try {
+                pasta = new Folder(Folder.myDocuments.fsName);
+            } catch (eDocs) {
+                pasta = null;
+            }
+        }
+        if (!pasta) return "ERRO:sem pasta de destino";
+
+        var alvo = new File(pasta.fsName + "/" + nome);
+        var contador = 1;
+        while (alvo.exists && contador < 100) {
+            alvo = new File(
+                pasta.fsName + "/" + nome.replace(/\.png$/i, "") + "-" + contador + ".png"
+            );
+            contador++;
+        }
+
+        alvo.encoding = "BINARY";
+        if (!alvo.open("w")) return "ERRO:nao foi possivel abrir para escrita";
+        alvo.write(bin);
+        alvo.close();
+        if (!alvo.exists || alvo.length <= 0) return "ERRO:arquivo gravado vazio";
+        /* Abre o PNG no visualizador padrão (o pedido é ver o render na hora).
+         * Falha aqui não invalida o arquivo já gravado. */
+        if (abrir !== undefined && abrir !== null && abrir !== "" && abrir !== false && abrir !== 0 && abrir !== "0") {
+            try { alvo.execute(); } catch (eAbrir) {}
+        }
+        return alvo.fsName;
+    } catch (e) {
+        return "ERRO:" + (e && e.message ? e.message : String(e));
+    }
+}
+
 function getDocInfo() {
     try {
         var doc = app.activeDocument;

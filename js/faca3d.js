@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  var VERSAO = "0.8.9-bias-normal-20261112";
+  var VERSAO = "0.8.9-render-top-snapshot-20261116";
 
   /* Costura de micro-falhas do desenho (picotes nas bases das abas): a borda
    * de um painel fica com um vão pequeno e o painel deixa de ser face. Até
@@ -223,6 +223,36 @@
   // Expõe o log para os módulos de visualização (three3d) diagnosticarem o
   // mapeamento de arte sem depender do console do CEP.
   F.log = registrarLog;
+  // Expõe o estado para o snapshot HD (render top) conseguir falar com o
+  // viewer3d e ler as opções atuais do painel.
+  F.estado = estado;
+
+  /* Dois dígitos com zero à esquerda (nome do arquivo do render). */
+  function faca3dDoisDigitosJs(n) {
+    n = Number(n) || 0;
+    return n < 10 ? "0" + n : "" + n;
+  }
+
+  /* Plano B do Render Top: dispara o download direto pelo navegador do CEP.
+   * Usado só quando o ExtendScript não conseguiu gravar o arquivo. */
+  function baixarPngRenderTop(dataURL, nome, largura, altura) {
+    try {
+      var link = document.createElement("a");
+      link.href = dataURL;
+      link.download = nome || "faca3d-render-top.png";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      var texto =
+        "Render Top pronto (" + (largura || "?") + "x" + (altura || "?") +
+        "). Download iniciado: " + (nome || "faca3d-render-top.png");
+      setStatus(texto, "ok");
+    } catch (e) {
+      setStatus("Render Top gerado, mas não foi possível salvar o arquivo.", "err");
+      registrarLog("faca3d", "Render Top: download direto falhou: " + (e && e.message ? e.message : e));
+    }
+  }
 
   function sendToHost(funcName, args) {
     return new Promise(function (resolve, reject) {
@@ -2159,53 +2189,98 @@
       });
     }
     
-    // Botão Render Top - HD com efeitos PBR, Bloom, DOF
+    // Botão Render Top - snapshot HD da cena real montada no painel
     var btnRenderTop = el("faca3dBtnRenderTop");
     if (btnRenderTop) {
       btnRenderTop.addEventListener("click", function () {
-        try {
-          // Verifica se há faca carregada (viewer3d inicializado)
-          if (!estado.viewer3d) {
-            // Nenhuma faca carregada - pedir para abrir ou carregar primeiro
-            registrarLog("faca3d", "Render Top: Nenhuma faca carregada - solicite leitura da faca primeiro");
-            el("faca3dStatusText").textContent = "Nenhuma faca carregada. Lere uma faca primeiro (botão 'Ler novamente').";
-            return;
-          }
-          
-          // Chama render top avançado
-          var resultado = window.faca3dRenderTop({
-            angulo: estado.angulo,
-            mostrarArte: estado.mostrarArte,
-            espessura: parseFloat(el("faca3dEspessura").value) || 1.5,
-            resolucao: 2, // 2x resolução HD
-            qualidadeBloom: 0.5
-          });
-          
-          // Exibe resultado
-          if (resultado && resultado.dataURL) {
-            // Cria elemento para exibir/download o render
-            registrarLog("faca3d", "Render Top gerado: " + resultado.dataURL.substring(0, 50) + "...");
-            
-            // Mostra mensagem no painel
-            el("faca3dStatusText").textContent = "Render Top HD gerado! Clique para salvar.";
-            
-            // Cria link de download oculto
-            var link = document.createElement("a");
-            link.href = resultado.dataURL;
-            link.download = "faca3d-render-top-" + new Date().getHours() + "h" + new Date().getMinutes() + "m.png";
-            link.style.display = "none";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        if (btnRenderTop.disabled) return;
+        if (!estado.viewer3d || !estado.viewer3d.snapshot) {
+          registrarLog("faca3d", "Render Top: nenhuma faca montada no painel");
+          if (estado.viewer3d && !estado.viewer3d.snapshot) {
+            setStatus(
+              "Render Top indisponível nesta sessão. Feche e reabra o Illustrator para carregar a versão nova.",
+              "err"
+            );
           } else {
-            // Resultado sem dataURL - mostrar erro
-            registrarLog("faca3d", "Render Top: Sem dataURL no resultado");
-            el("faca3dStatusText").textContent = "Render concluído, mas não foi possível gerar o arquivo.";
+            setStatus(
+              "Nenhuma faca montada. Abra a faca no Illustrator e clique em 'Ler novamente'.",
+              "err"
+            );
           }
-        } catch(e) {
-          registrarLog("faca3d", "Render Top error: " + e.message);
-          el("faca3dStatusText").textContent = "Erro no render top: " + e.message;
+          return;
         }
+
+        btnRenderTop.disabled = true;
+        var liberarBotao = function () {
+          btnRenderTop.disabled = false;
+        };
+        el("faca3dStatusText").textContent = "Renderizando em alta resolução...";
+        var caixaStatus = el("faca3dStatus");
+        if (caixaStatus) caixaStatus.className = "faca3d-status";
+
+        // Deixa o status pintar antes do trabalho pesado bloquear a thread.
+        setTimeout(function () {
+          try {
+            var snap = estado.viewer3d.snapshot({
+              maiorLado: 3840,
+              sombras: true,
+              vinheta: true
+            });
+            if (!snap || !snap.dataURL || snap.dataURL.length < 100) {
+              throw new Error("O snapshot não gerou imagem.");
+            }
+
+            var d = new Date();
+            var nome =
+              "faca3d-render-top-" +
+              d.getFullYear() +
+              faca3dDoisDigitosJs(d.getMonth() + 1) +
+              faca3dDoisDigitosJs(d.getDate()) +
+              "-" +
+              faca3dDoisDigitosJs(d.getHours()) +
+              faca3dDoisDigitosJs(d.getMinutes()) +
+              faca3dDoisDigitosJs(d.getSeconds()) +
+              ".png";
+
+            registrarLog(
+              "faca3d",
+              "Render Top gerado: " + snap.largura + "x" + snap.altura +
+                " (" + Math.round(snap.dataURL.length / 1024) + " KB base64)"
+            );
+
+            // 1ª opção: grava no Desktop via ExtendScript (faca3dSalvarPng).
+            sendToHost("faca3dSalvarPng", [snap.dataURL, nome, snap.dataURL.length, "1"]).then(
+              function (caminho) {
+                caminho = String(caminho || "");
+                if (caminho.indexOf("ERRO") === 0 || caminho === "EvalScript error.") {
+                  baixarPngRenderTop(snap.dataURL, nome, snap.largura, snap.altura);
+                  registrarLog(
+                    "faca3d",
+                    "Render Top: gravação no Desktop falhou (" + caminho + "); usei download direto"
+                  );
+                } else {
+                  setStatus("Render Top salvo em: " + caminho, "ok");
+                  registrarLog("faca3d", "Render Top salvo em " + caminho);
+                }
+                liberarBotao();
+              },
+              function (erro) {
+                baixarPngRenderTop(snap.dataURL, nome, snap.largura, snap.altura);
+                registrarLog(
+                  "faca3d",
+                  "Render Top: gravação falhou (" +
+                    (erro && erro.message ? erro.message : erro) +
+                    "); usei download direto"
+                );
+                liberarBotao();
+              }
+            );
+          } catch (e) {
+            registrarLog("faca3d", "Render Top erro: " + (e && e.message ? e.message : e));
+            setStatus("Erro no Render Top: " + (e && e.message ? e.message : e), "err");
+            liberarBotao();
+          }
+        }, 40);
       });
     }
     var chkArteInterna = el("faca3dArteInterna");

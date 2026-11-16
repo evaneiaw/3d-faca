@@ -2740,8 +2740,219 @@
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     }
 
+    /* Snapshot HD do que está montado.
+     *
+     * Re-renderiza a MESMA cena (geometria, arte, dobras) numa resolução bem
+     * maior, com fundo de estúdio, sombra de contato e vinheta. Tudo o que é
+     * alterado é restaurado no finally, então o painel continua idêntico.
+     *
+     * opcoes: { maiorLado (px, 640..6000), sombras (bool), vinheta (bool) }
+     * Devolve: { dataURL, largura, altura }
+     */
+    function snapshot(opcoes) {
+      var o = opcoes || {};
+      var maiorLado = Number(o.maiorLado);
+      if (!isFinite(maiorLado) || maiorLado < 640) maiorLado = 3200;
+      if (maiorLado > 6000) maiorLado = 6000;
+      var comSombras = o.sombras !== false;
+      var comVinheta = o.vinheta !== false;
+
+      /* Proporção: a mesma composição que está no painel. */
+      var aspecto = camera.aspect;
+      if (!isFinite(aspecto) || !(aspecto > 0)) {
+        var r0 = canvas.getBoundingClientRect();
+        aspecto = Math.max(1, r0.width) / Math.max(1, r0.height);
+      }
+      if (!isFinite(aspecto) || !(aspecto > 0)) aspecto = 16 / 9;
+      var larg, alt;
+      if (aspecto >= 1) {
+        larg = maiorLado;
+        alt = Math.max(1, Math.round(maiorLado / aspecto));
+      } else {
+        alt = maiorLado;
+        larg = Math.max(1, Math.round(maiorLado * aspecto));
+      }
+
+      /* ---- estado original (restaurado no finally) ---- */
+      var prAntes = renderer.getPixelRatio();
+      var tamAntes = { w: 1, h: 1 };
+      try {
+        var t = renderer.getSize(new THREE.Vector2());
+        tamAntes.w = Math.max(1, Math.round(t.x));
+        tamAntes.h = Math.max(1, Math.round(t.y));
+      } catch (eTam) {}
+      var fundoAntes = cena.background || null;
+      var corAntes = null;
+      try {
+        corAntes = renderer.getClearColor(new THREE.Color());
+      } catch (eCor) {}
+      var alfaAntes = 1;
+      try {
+        alfaAntes = renderer.getClearAlpha();
+      } catch (eAlfa) {}
+      var toneAntes = renderer.toneMapping;
+      var expAntes = renderer.toneMappingExposure;
+      var sombraAntes = renderer.shadowMap.enabled;
+      var tipoSombraAntes = renderer.shadowMap.type;
+      var temporarios = [];
+      var castAntes = [];
+
+      try {
+        /* Fundo de estúdio (bem diferente do cinza claro do painel). */
+        cena.background = new THREE.Color(0x0f1219);
+        renderer.setClearColor(0x0f1219, 1);
+
+        /* Tone mapping cinematográfico, se a versão do Three.js tiver. */
+        try {
+          if (THREE.ACESFilmicToneMapping !== undefined) {
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.05;
+          }
+        } catch (eTm) {}
+
+        /* Sombra de contato, derivada da caixa real da peça. */
+        if (comSombras && estado.caixaMundo && estado.caixaMundo.min && estado.caixaMundo.max) {
+          try {
+            var cm = estado.caixaMundo;
+            var cx = (cm.min.x + cm.max.x) / 2;
+            var cy = (cm.min.y + cm.max.y) / 2;
+            var pisoZ = cm.min.z - 2;
+            var tamBase = Math.max(
+              cm.max.x - cm.min.x,
+              cm.max.y - cm.min.y,
+              cm.max.z - cm.min.z,
+              1
+            );
+            var tam = tamBase * 2.4;
+
+            var pisoGeom = new THREE.PlaneGeometry(tam, tam);
+            var pisoMat = new THREE.ShadowMaterial();
+            pisoMat.opacity = 0.4;
+            var piso = new THREE.Mesh(pisoGeom, pisoMat);
+            piso.position.set(cx, cy, pisoZ);
+            piso.receiveShadow = true;
+            cena.add(piso);
+            temporarios.push(piso);
+
+            var luzSombra = new THREE.DirectionalLight(0xffffff, 0.6);
+            luzSombra.position.set(cx + tam * 0.45, cy + tam * 0.45, pisoZ + tam * 1.1);
+            if (luzSombra.target) luzSombra.target.position.set(cx, cy, pisoZ);
+            luzSombra.castShadow = true;
+            try {
+              luzSombra.shadow.mapSize.set(2048, 2048);
+              var sc = luzSombra.shadow.camera;
+              sc.left = -tam / 2;
+              sc.right = tam / 2;
+              sc.top = tam / 2;
+              sc.bottom = -tam / 2;
+              sc.near = 1;
+              sc.far = tam * 4;
+              if (sc.updateProjectionMatrix) sc.updateProjectionMatrix();
+            } catch (eSc) {}
+            cena.add(luzSombra);
+            temporarios.push(luzSombra);
+            if (luzSombra.target) {
+              cena.add(luzSombra.target);
+              temporarios.push(luzSombra.target);
+            }
+
+            renderer.shadowMap.enabled = true;
+            try {
+              if (THREE.PCFSoftShadowMap !== undefined) {
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+              }
+            } catch (eTipoS) {}
+            grupo.traverse(function (obj) {
+              if (obj && obj.isMesh) {
+                castAntes.push({ obj: obj, antigo: !!obj.castShadow });
+                obj.castShadow = true;
+              }
+            });
+          } catch (eSombra) {
+            /* sem sombras: segue com o render normal */
+          }
+        }
+
+        /* Alta resolução mantendo a mesma composição. */
+        renderer.setPixelRatio(1);
+        renderer.setSize(larg, alt, false);
+        camera.aspect = larg / alt;
+        camera.updateProjectionMatrix();
+        if (controls && controls.update) {
+          try {
+            controls.update();
+          } catch (eCt) {}
+        }
+
+        renderizar();
+
+        /* Vinheta: desenha numa canvas 2D (síncrono, sem Image assíncrona). */
+        var saida = canvas;
+        if (comVinheta) {
+          try {
+            var c2d = document.createElement("canvas");
+            c2d.width = larg;
+            c2d.height = alt;
+            var ctx = c2d.getContext("2d");
+            ctx.drawImage(canvas, 0, 0, larg, alt);
+            var grad = ctx.createRadialGradient(
+              larg / 2,
+              alt / 2,
+              Math.min(larg, alt) * 0.35,
+              larg / 2,
+              alt / 2,
+              Math.max(larg, alt) * 0.74
+            );
+            grad.addColorStop(0, "rgba(0,0,0,0)");
+            grad.addColorStop(1, "rgba(0,0,0,0.55)");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, larg, alt);
+            saida = c2d;
+          } catch (eVin) {}
+        }
+
+        return { dataURL: saida.toDataURL("image/png"), largura: larg, altura: alt };
+      } finally {
+        for (var i = 0; i < temporarios.length; i++) {
+          var ob = temporarios[i];
+          try {
+            cena.remove(ob);
+            if (ob.geometry) ob.geometry.dispose();
+            if (ob.material) ob.material.dispose();
+          } catch (eRm) {}
+        }
+        for (var c = 0; c < castAntes.length; c++) {
+          try {
+            castAntes[c].obj.castShadow = castAntes[c].antigo;
+          } catch (eCs) {}
+        }
+        try {
+          renderer.shadowMap.enabled = sombraAntes;
+          renderer.shadowMap.type = tipoSombraAntes;
+          renderer.toneMapping = toneAntes;
+          renderer.toneMappingExposure = expAntes;
+        } catch (eRt) {}
+        cena.background = fundoAntes;
+        try {
+          if (corAntes) renderer.setClearColor(corAntes, alfaAntes);
+        } catch (eCc) {}
+        /* Restaura o painel pelo caminho normal (relê o tamanho do canvas),
+         * para não deixar aspect/pixelRatio tortos se a leitura falhou. */
+        try {
+          redimensionar();
+        } catch (eRedim) {
+          renderer.setPixelRatio(prAntes);
+          renderer.setSize(tamAntes.w, tamAntes.h, false);
+          camera.aspect = tamAntes.w / tamAntes.h;
+          camera.updateProjectionMatrix();
+          renderizar();
+        }
+      }
+    }
+
     return {
       desenhar: desenhar,
+      snapshot: snapshot,
       definirBase: definirBase,
       definirBaseAutomatica: definirBaseAutomatica,
       definirAbasPorBaixo: definirAbasPorBaixo,
