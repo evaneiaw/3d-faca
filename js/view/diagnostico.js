@@ -32,7 +32,10 @@
     eixo: "#111827",
     selecao: "#111827",
     estrutural: "#12805c",
-    rejeicao: "#d7373f"
+    rejeicao: "#d7373f",
+    /* Ordem das abas: rosa/vinho para destacar do laranja da base. */
+    aba: "#9d174d",
+    abaCand: "#be185d"
   };
 
   function criar(opcoes) {
@@ -65,6 +68,12 @@
       modoBase: false,
       baseAtual: null,
       candidatoBase: null,
+      /* Modo "ordem das abas": clique nos painéis define, de baixo para
+       * cima, quais abas fecham por cima quando têm a mesma largura. */
+      modoAbas: false,
+      /* Abas marcadas como "por baixo" (ids). */
+      abasPorBaixo: [],
+      candidatoAba: null,
       facesTela: []
     };
 
@@ -174,14 +183,20 @@
           tela.push(pj);
         }
         ctx.closePath();
+        var ehAba = estado.abasPorBaixo && estado.abasPorBaixo.length
+          ? estado.abasPorBaixo.indexOf(f.id) >= 0
+          : false;
         var ehBase = estado.baseAtual !== null && f.id === estado.baseAtual;
         var ehCand = estado.candidatoBase !== null && f.id === estado.candidatoBase;
-        if (ehCand) ctx.fillStyle = "rgba(217, 119, 6, 0.32)";
+        var ehCandAba = estado.candidatoAba !== null && f.id === estado.candidatoAba;
+        if (ehCandAba) ctx.fillStyle = "rgba(190, 24, 93, 0.4)";
+        else if (ehAba) ctx.fillStyle = "rgba(157, 23, 77, 0.24)";
+        else if (ehCand) ctx.fillStyle = "rgba(217, 119, 6, 0.32)";
         else if (ehBase) ctx.fillStyle = "rgba(18, 128, 92, 0.18)";
         else ctx.fillStyle = COR.face;
         ctx.fill();
-        ctx.strokeStyle = ehCand ? "#d97706" : ehBase ? "#12805c" : COR.faceBorda;
-        ctx.lineWidth = ehCand || ehBase ? 2.4 : 0.8;
+        ctx.strokeStyle = ehCandAba ? COR.abaCand : ehAba ? COR.aba : ehCand ? "#d97706" : ehBase ? "#12805c" : COR.faceBorda;
+        ctx.lineWidth = ehCand || ehCandAba || ehBase || ehAba ? 2.4 : 0.8;
         ctx.setLineDash([]);
         ctx.stroke();
         estado.facesTela.push({ id: f.id, pontos: tela });
@@ -193,8 +208,12 @@
         var ff = faces[k];
         var ehBase2 = estado.baseAtual !== null && ff.id === estado.baseAtual;
         var ehCand2 = estado.candidatoBase !== null && ff.id === estado.candidatoBase;
-        ctx.fillStyle = ehCand2 ? "#b45309" : ehBase2 ? "#12805c" : "rgba(60, 70, 85, 0.75)";
-        ctx.fillText(String(ff.id), X(ff.centro.x), Y(ff.centro.y));
+        var ehAba2 = estado.abasPorBaixo && estado.abasPorBaixo.length
+          ? estado.abasPorBaixo.indexOf(ff.id) >= 0
+          : false;
+        var rotulo = String(ff.id) + (ehAba2 ? " · baixo" : "");
+        ctx.fillStyle = ehCand2 ? "#b45309" : ehBase2 ? "#12805c" : ehAba2 ? COR.aba : "rgba(60, 70, 85, 0.75)";
+        ctx.fillText(rotulo, X(ff.centro.x), Y(ff.centro.y));
       }
     }
 
@@ -473,6 +492,13 @@
       var r = canvas.getBoundingClientRect();
       var px = e.clientX - r.left;
       var py = e.clientY - r.top;
+      if (estado.modoAbas) {
+        var idAba = faceNoPontoTela(px, py);
+        if (idAba !== null && typeof opt.aoSelecionarAba === "function") {
+          opt.aoSelecionarAba(idAba);
+        }
+        return;
+      }
       if (estado.modoBase) {
         var idFace = faceNoPontoTela(px, py);
         if (idFace !== null && typeof opt.aoSelecionarFace === "function") {
@@ -518,7 +544,7 @@
     function aoMouseDown(e) {
       // Pan: botão esquerdo (fora do modo base), meio, direito ou Alt+esquerdo.
       // Em modo base, o botão esquerdo livre continua sendo a seleção de face.
-      if (estado.modoBase && e.button === 0 && !e.altKey) return;
+      if ((estado.modoBase || estado.modoAbas) && e.button === 0 && !e.altKey) return;
       if (e.button === 0 || e.button === 1 || e.button === 2) {
         e.preventDefault();
         estado.arrastando = true;
@@ -545,7 +571,7 @@
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) estado._ignorouClique = true;
         estado.arrastando = false;
         estado.arrastoInicio = null;
-        canvas.style.cursor = estado.modoBase ? "pointer" : "crosshair";
+        canvas.style.cursor = estado.modoBase || estado.modoAbas ? "pointer" : "crosshair";
       }
     }
 
@@ -627,11 +653,28 @@
       definirModoBase: function (ligado) {
         estado.modoBase = !!ligado;
         if (!estado.modoBase) estado.candidatoBase = null;
-        canvas.style.cursor = estado.modoBase ? "pointer" : "crosshair";
+        canvas.style.cursor = estado.modoBase || estado.modoAbas ? "pointer" : "crosshair";
         desenhar();
       },
       modoBase: function () {
         return estado.modoBase;
+      },
+      definirModoAbas: function (ligado) {
+        estado.modoAbas = !!ligado;
+        if (!estado.modoAbas) estado.candidatoAba = null;
+        canvas.style.cursor = estado.modoBase || estado.modoAbas ? "pointer" : "crosshair";
+        desenhar();
+      },
+      modoAbas: function () {
+        return estado.modoAbas;
+      },
+      definirAbasPorBaixo: function (lista) {
+        estado.abasPorBaixo = (lista || []).slice();
+        desenhar();
+      },
+      definirCandidatoAba: function (id) {
+        estado.candidatoAba = id === null || id === undefined ? null : Number(id);
+        desenhar();
       },
       definirBaseAtual: function (id) {
         estado.baseAtual = id === null || id === undefined ? null : Number(id);

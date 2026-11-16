@@ -2,7 +2,8 @@
  *
  * Pipeline do zero (sem artboard EXTERNO/INTERNO, sem offset, sem conteudo):
  *   - O PNG exportado da artboard 0 é recortado em JS para a bbox da faca.
- *   - A UV é planar na bbox normalizada: u = x / W, v = y / H (mm).
+ *   - A UV é planar na bbox normalizada: u = x / W, v = y / H (mm), depois
+ *     ajustada para o recorte dentro do canvas POT (uvComRecorte).
  *   - A UV fica no espaço do objeto (antes da matriz de dobra), então a
  *     dobra move vértice+UV juntos: a arte gruda na caixa.
  *
@@ -203,22 +204,44 @@
   }
 
   /* Cria canvas POT adicionando padding, SEM redimensionar o conteúdo original.
-   * O canvas tem dimensão POT (padrão 4096 máx), mas a imagem mantém seu
-   * tamanho original (sw×sh) posicionada com offset calculado.
-   * Devolve { w, h, sw, sh, ox, oy } onde:
+   * O canvas tem dimensão POT por eixo (padrão 4096 máx), mas a imagem mantém
+   * seu tamanho original posicionada com offset calculado.
+   * Devolve { w, h, dw, dh, ox, oy } onde:
    *   w,h = dimensão do canvas POT
-   *   sw,sh = dimensão original da imagem (preservada)
-   *   ox,oy = offset no canvas para centralizar/posicionar a imagem */
+   *   dw,dh = dimensão desenhada do recorte (original, ou reduzida se > teto)
+   *   ox,oy = offset no canvas para centralizar o recorte
+   * A UV precisa usar dw/dh/ox/oy (ver uvComRecorte): mapear 0..1 do canvas
+   * inteiro encolhe e centraliza a arte em cada face. */
   function tamanhoPot(rec, opt) {
-    var maxD = Math.max(rec.sw, rec.sh);
     var teto = (opt && isFinite(opt.maxPx) && opt.maxPx > 0) ? opt.maxPx : 4096;
-    // Canvas POT: menor potencia de 2 >= max dimensão
-    var pw = pot2(maxD);
-    var ph = pot2(maxD);
-    // Offset para centralizar a imagem no canvas POT (ou posicionar conforme necessidade)
-    var ox = (pw - rec.sw) / 2;
-    var oy = (ph - rec.sh) / 2;
-    return { w: pw, h: ph, sw: rec.sw, sh: rec.sh, ox: ox, oy: oy };
+    var sw = Math.max(1, Math.round(rec.sw));
+    var sh = Math.max(1, Math.round(rec.sh));
+    var maior = Math.max(sw, sh);
+    var escala = maior > teto ? teto / maior : 1;
+    var dw = Math.max(1, Math.round(sw * escala));
+    var dh = Math.max(1, Math.round(sh * escala));
+    var pw = pot2(dw);
+    var ph = pot2(dh);
+    var ox = (pw - dw) / 2;
+    var oy = (ph - dh) / 2;
+    return { w: pw, h: ph, dw: dw, dh: dh, ox: ox, oy: oy };
+  }
+
+  /* Converte UV normalizada da faca (u,v em 0..1, v=0 na base) para UV do
+   * canvas POT, considerando o padding e o flipY do CanvasTexture.
+   * recorte: { dw, dh, ox, oy } (dimensão desenhada e offset no canvas).
+   * dim: { w, h } (dimensão do canvas). Sem recorte/dim, devolve uv intacto. */
+  function uvComRecorte(uv, recorte, dim) {
+    if (!uv) return { u: 0, v: 0 };
+    if (!recorte || !dim || !(dim.w > 0) || !(dim.h > 0)) return uv;
+    var dw = isFinite(recorte.dw) ? recorte.dw : recorte.sw;
+    var dh = isFinite(recorte.dh) ? recorte.dh : recorte.sh;
+    if (!(dw > 0) || !(dh > 0)) return uv;
+    var ox = recorte.ox || 0;
+    var oy = recorte.oy || 0;
+    var u = (ox + uv.u * dw) / dim.w;
+    var v = 1 - (oy + (1 - uv.v) * dh) / dim.h;
+    return { u: u, v: v };
   }
 
   /* Carrega o PNG da artboard e recorta para a bbox da faca.
@@ -258,8 +281,8 @@
           ctx.fillStyle = opt.papel || COR_PAPEL;
           ctx.fillRect(0, 0, tam.w, tam.h);
           ctx.imageSmoothingEnabled = true;
-          // Desenha a imagem original no offset calculado (sem escalar)
-          ctx.drawImage(img, rec.sx, rec.sy, rec.sw, rec.sh, tam.ox, tam.oy, rec.sw, rec.sh);
+          // Desenha o recorte no offset calculado (sem escalar, exceto teto)
+          ctx.drawImage(img, rec.sx, rec.sy, rec.sw, rec.sh, tam.ox, tam.oy, tam.dw, tam.dh);
           if (!raiz.THREE || !raiz.THREE.CanvasTexture) {
             reject(new Error("THREE.CanvasTexture indisponível."));
             return;
@@ -287,7 +310,10 @@
             texture: textura,
             largura: canvas.width,
             altura: canvas.height,
-            recorte: rec
+            recorte: {
+              sx: rec.sx, sy: rec.sy, sw: rec.sw, sh: rec.sh,
+              dw: tam.dw, dh: tam.dh, ox: tam.ox, oy: tam.oy
+            }
           });
         } catch (e) {
           reject(e);
@@ -307,6 +333,8 @@
     uvFacaInversa: uvFacaInversa,
     caixaFacaDe: caixaFacaDe,
     recorteParaFaca: recorteParaFaca,
+    tamanhoPot: tamanhoPot,
+    uvComRecorte: uvComRecorte,
     urlDeArquivo: urlDeArquivo,
     carregarTexturaRecortada: carregarTexturaRecortada,
     normalizar: normalizar,

@@ -1618,3 +1618,56 @@ body {
   opacity: 0.8;
   white-space: nowrap;
 }
+
+/* Botão liga/desliga do plugin (cabeçalho) */
+.faca3d-power {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 13px;
+  border: 1px solid var(--border, #e1e1e1);
+  background: var(--panel-bg, #fff);
+  color: var(--text-muted, #707070);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.faca3d-power:hover {
+  border-color: var(--text-muted, #707070);
+}
+
+.faca3d-power:focus-visible {
+  outline: 2px solid var(--accent, #1473e6);
+  outline-offset: 1px;
+}
+
+.faca3d-power.is-on {
+  color: var(--ok, #12805c);
+  border-color: rgba(18, 128, 92, 0.45);
+  background: rgba(18, 128, 92, 0.1);
+}
+
+.faca3d-power.is-off {
+  color: var(--err, #d7373f);
+  border-color: rgba(215, 55, 63, 0.5);
+  background: rgba(215, 55, 63, 0.1);
+}
+
+/* Estado desligado: o painel fica congelado (sem leitura do Illustrator);
+   só o botão de energia no cabeçalho continua clicável. */
+.faca3d-app.faca3d-off .faca3d-main {
+  pointer-events: none;
+  opacity: 0.55;
+  filter: grayscale(0.7);
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.faca3d-empty-pause .faca3d-empty-title {
+  color: var(--err, #d7373f);
+}

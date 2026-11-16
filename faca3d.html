@@ -9,6 +9,10 @@
   <div id="faca3dApp" class="faca3d-app">
     <header class="faca3d-header">
       <h1 class="faca3d-title">3D Faca</h1>
+      <button id="faca3dBtnPower" class="faca3d-power is-on" type="button" role="switch" aria-checked="true" title="Desligar: para de consultar o Illustrator e congela o painel">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8v5.7"/><path d="M4.6 4.3a5.6 5.6 0 1 0 6.8 0"/></svg>
+        <span id="faca3dBtnPowerTexto">Ligado</span>
+      </button>
     </header>
 
     <main class="faca3d-main faca3d-main-single">
@@ -60,12 +64,16 @@
               <label class="faca3d-fold-label" style="display:flex; align-items:center; gap:4px; cursor:pointer;">
                 <input id="faca3dMostrarArte" type="checkbox" checked title="Mostrar a camada ARTE sobre a caixa" /> Arte
               </label>
+              <label class="faca3d-fold-label" style="display:flex; align-items:center; gap:4px; cursor:pointer;" title="Com uma única artboard: mostra a arte na face interna (verso) em vez da externa">
+                <input id="faca3dArteInterna" type="checkbox" /> Inverter p/ interna
+              </label>
             </div>
           </div>
           <div class="faca3d-toolbar-group">
             <button id="faca3dBtnDiag" class="faca3d-btn small"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>Diagnóstico</button>
             <button id="faca3dBtnZoom" class="faca3d-btn small" title="Ajustar a câmera para caber a caixa toda (nem perto, nem longe)"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4"/><path d="M10 10l3 3M5 7h4M7 5v4"/></svg>Fit</button>
             <button id="faca3dBtnArtes" class="faca3d-btn small" title="Recarregar a arte do Illustrator (também atualiza sozinha a cada 3s)"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8a6 6 0 1 0 2-4.5M2 2v4h4"/></svg>Atualizar arte</button>
+            <button id="faca3dBtnRenderTop" class="faca3d-btn small faca3d-btn-primary" title="Render avançado HD - gera PNG de alta qualidade com efeitos PBR, bloom e depth of field"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v2l-2 8 10-8h-2zM8 1C3.7 1 0 4.3 0 8.7s3.7 7.7 8 8.7c4.3-1 8-4.3 8-8.7S12.3 1 8 1z"/></svg>Render Top</button>
           </div>
         </div>
 
@@ -98,6 +106,8 @@
             <span id="faca3dDiagBase" class="faca3d-diag-base">Base fixa atual: —</span>
             <button id="faca3dBtnBaseDefinir" class="faca3d-btn small" title="Escolher manualmente o painel que fica imóvel na montagem 3D">Definir base fixa</button>
             <button id="faca3dBtnBaseAuto" class="faca3d-btn small" title="Voltar à base escolhida automaticamente">Base automática</button>
+            <button id="faca3dBtnAbasBaixo" class="faca3d-btn small" title="Clique somente nas abas que ficam POR BAIXO; as demais fecham por cima">Abas por baixo</button>
+            <button id="faca3dBtnAbasAuto" class="faca3d-btn small" title="Voltar à regra automática (entre abas iguais, a mais larga fica por cima)" disabled>Abas automáticas</button>
             <button id="faca3dDiagFechar" class="faca3d-btn small">Fechar</button>
           </div>
           <div class="faca3d-diag-legend">
@@ -120,6 +130,12 @@
           <button id="faca3dBaseBarOk" class="faca3d-btn small faca3d-btn-primary" disabled><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>Confirmar</button>
           <button id="faca3dBaseBarCancel" class="faca3d-btn small"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>Cancelar</button>
         </div>
+
+        <div id="faca3dAbasBar" class="faca3d-base-bar" hidden>
+          <span id="faca3dAbasBarText"></span>
+          <button id="faca3dAbasBarOk" class="faca3d-btn small faca3d-btn-primary" disabled><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>Confirmar</button>
+          <button id="faca3dAbasBarCancel" class="faca3d-btn small"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>Cancelar</button>
+        </div>
       </section>
     </main>
 
@@ -131,5 +147,6 @@
   <div id="faca3dResizeGrip" class="faca3d-resize-grip" title="Arraste para redimensionar o painel"></div>
   <script src="js/CSInterface.js"></script>
   <script src="js/faca3d.js"></script>
+  <script src="js/view/render-top.js"></script>
 </body>
 </html>

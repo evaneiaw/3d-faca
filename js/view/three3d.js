@@ -566,6 +566,10 @@
       ladoExternoFixo: null,
       ladoExternoChave: "",
       giroFace: null,
+      /* Abas que ficam POR BAIXO no empilhamento (ids), definidas no
+       * diagnóstico como a base fixa. Tudo que não está aqui fica por cima;
+       * entre as não marcadas vale a largura (mais larga por cima). */
+      abasPorBaixo: [],
       destaque: null,
       bordas: null,
       vincos: null,
@@ -763,6 +767,219 @@
       };
     }
 
+    /* Largura da face no plano da faca (extensão em X). Critério de
+     * empilhamento das abas: a aba mais larga fecha por cima das menores. */
+    function larguraDaFace(face) {
+      var pts = (face && face.pontos) || [];
+      var minX = Infinity, maxX = -Infinity;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i].x < minX) minX = pts[i].x;
+        if (pts[i].x > maxX) maxX = pts[i].x;
+      }
+      return isFinite(minX) && isFinite(maxX) ? maxX - minX : 0;
+    }
+
+    /* Passo do deslocamento entre níveis DENTRO da mesma classe, em pt.
+     * PRECISA ser maior que o OFF_DECAL (0,05 pt): senão o decal da aba de
+     * baixo flutua acima da tampa da aba que deveria cobri-la. */
+    var PASSO_EMPILHAMENTO = 0.12; // pt
+    /* Folga fixa entre a classe "por baixo" (marcadas) e a "por cima". Só
+     * depende da classe: separa as abas mesmo quando o teste de plano falha
+     * (é o deslocamento de face que o usuário pediu). */
+    var GAP_CLASSES = 0.3; // pt
+    var OFF_DECAL = 0.05; // pt
+
+    /* Mesma superfície: normal a menos de ~1,8° e distância de plano menor
+     * que 0,1 mm. Duas faces só podem disputar profundidade se forem
+     * coplanares; comparar painéis de planos diferentes não faz sentido. */
+    var COS_PLANO = 0.9995;
+    var TOL_PLANO = 0.3; // pt (~0,1 mm)
+
+    /* Plano (normal + centro + pontos no mundo) da face já dobrada.
+     * A normal é orientada pela FRENTE da folha (frenteNegativa): assim todos
+     * os painéis usam o mesmo lado físico. Sem isso, um contorno desenhado em
+     * sentido oposto ganha normal oposta, o deslocamento empurra a aba para o
+     * lado errado e o decal de baixo aparece por cima. */
+    function planoDaFace(face, id, matrizes) {
+      var tri = estado.poligonos[id] || triangular(face);
+      var m = matrizes[id];
+      if (!m || !tri || !tri.triangulos || !tri.triangulos.length) return null;
+      if (!tri.pontos || tri.pontos.length < 3) return null;
+      var cont = tri.contorno || tri.pontos;
+      var mundo = [];
+      var c = new THREE.Vector3(0, 0, 0);
+      for (var i = 0; i < cont.length; i++) {
+        var vm = new THREE.Vector3(cont[i].x, cont[i].y, 0).applyMatrix4(m);
+        mundo.push(vm);
+        c.add(vm);
+      }
+      c.multiplyScalar(1 / cont.length);
+      var t = tri.triangulos[0];
+      var a = new THREE.Vector3(tri.pontos[t[0]].x, tri.pontos[t[0]].y, 0).applyMatrix4(m);
+      var b = new THREE.Vector3(tri.pontos[t[1]].x, tri.pontos[t[1]].y, 0).applyMatrix4(m);
+      var d = new THREE.Vector3(tri.pontos[t[2]].x, tri.pontos[t[2]].y, 0).applyMatrix4(m);
+      var n = new THREE.Vector3().crossVectors(
+        new THREE.Vector3().subVectors(b, a),
+        new THREE.Vector3().subVectors(d, a)
+      );
+      if (n.lengthSq() < 1e-12) return null;
+      n.normalize();
+      if (frenteNegativa(tri, false)) n.negate();
+      return { n: n, p: c, pontos: mundo };
+    }
+
+    /* Base ortonormal do plano (eixos u/v) para medir sobreposição. */
+    function baseDoPlano(n) {
+      var aux = Math.abs(n.z) < 0.9
+        ? new THREE.Vector3(0, 0, 1)
+        : new THREE.Vector3(1, 0, 0);
+      var u = new THREE.Vector3().crossVectors(aux, n).normalize();
+      var v = new THREE.Vector3().crossVectors(n, u).normalize();
+      return { u: u, v: v };
+    }
+
+    function caixaNoPlano(pontos, base) {
+      var caixa = { u0: Infinity, u1: -Infinity, v0: Infinity, v1: -Infinity };
+      for (var i = 0; i < pontos.length; i++) {
+        var pu = pontos[i].dot(base.u);
+        var pv = pontos[i].dot(base.v);
+        if (pu < caixa.u0) caixa.u0 = pu;
+        if (pu > caixa.u1) caixa.u1 = pu;
+        if (pv < caixa.v0) caixa.v0 = pv;
+        if (pv > caixa.v1) caixa.v1 = pv;
+      }
+      return caixa;
+    }
+
+    /* Sobreposição real (não só encostar na dobra). 0,5 pt ~ 0,18 mm. */
+    function caixasSobrepostas(a, b) {
+      var folga = 0.5;
+      return (
+        Math.min(a.u1, b.u1) - Math.max(a.u0, b.u0) > folga &&
+        Math.min(a.v1, b.v1) - Math.max(a.v0, b.v0) > folga
+      );
+    }
+
+    /* Deslocamento de cada face ao longo da normal do seu grupo coplanar.
+     * Regras, de baixo para cima:
+     *   1. abas marcadas no diagnóstico como "por baixo" → classe de baixo;
+     *   2. entre as demais, a mais larga fica por cima;
+     *   3. empate de largura: id menor fica embaixo (estável, nunca pisca).
+     * A classe de baixo desce GAP_CLASSES e a de cima sobe GAP_CLASSES: a
+     * separação entre elas não depende de detectar plano/sobreposição (é o
+     * deslocamento da própria face), e dentro da classe o passo separa os
+     * níveis. Grupos onde nada se sobrepõe ficam com deslocamento 0. */
+    function prioridadesEmpilhamento(ids, mapa, matrizes) {
+      var i, j, k;
+      var marcadas = {};
+      var listaBaixo = estado.abasPorBaixo || [];
+      for (i = 0; i < listaBaixo.length; i++) marcadas[Number(listaBaixo[i])] = true;
+
+      var grupos = [];
+      var deslocamento = {};
+      var direcao = {};
+      var info = [];
+
+      for (i = 0; i < ids.length; i++) {
+        var id = Number(ids[i]);
+        var face = mapa[id];
+        if (!face) continue;
+        deslocamento[id] = 0;
+        var plano = planoDaFace(face, id, matrizes);
+        if (!plano) continue;
+        var grupo = null;
+        for (k = 0; k < grupos.length; k++) {
+          var g = grupos[k];
+          if (Math.abs(g.n.dot(plano.n)) < COS_PLANO) continue;
+          var dist = Math.abs(new THREE.Vector3().subVectors(plano.p, g.p).dot(g.n));
+          if (dist > TOL_PLANO) continue;
+          grupo = g;
+          break;
+        }
+        if (!grupo) {
+          grupo = {
+            n: plano.n.clone(),
+            p: plano.p.clone(),
+            soma: new THREE.Vector3(0, 0, 0),
+            n2: 0,
+            membros: []
+          };
+          grupos.push(grupo);
+        }
+        grupo.soma.add(plano.p);
+        grupo.n2++;
+        grupo.membros.push({
+          id: id,
+          chave: Math.round(larguraDaFace(face) * 10) / 10,
+          baixo: marcadas.hasOwnProperty(id),
+          n: grupo.n.dot(plano.n) < 0 ? plano.n.clone().negate() : plano.n.clone(),
+          cos: grupo.n.dot(plano.n),
+          pontos: plano.pontos,
+          p: plano.p.clone()
+        });
+      }
+
+      for (k = 0; k < grupos.length; k++) {
+        var gp = grupos[k];
+        if (!gp.membros.length) continue;
+        // Sentido do empilhamento: do centro da caixa para fora (lado de onde
+        // a arte é vista). Em folha plana o vetor é degenerado e fica o da
+        // frente da folha, que já é o mesmo para todos os painéis do grupo.
+        var centroGrupo = gp.soma.clone().multiplyScalar(1 / gp.n2);
+        var paraFora = new THREE.Vector3(
+          centroGrupo.x - estado.centro.x,
+          centroGrupo.y - estado.centro.y,
+          centroGrupo.z - estado.centro.z
+        );
+        var dir = gp.n.clone();
+        if (Math.abs(dir.dot(paraFora)) > 1e-6 && dir.dot(paraFora) < 0) dir.negate();
+
+        var base = baseDoPlano(dir);
+        var membros = gp.membros;
+        for (i = 0; i < membros.length; i++) {
+          membros[i].caixa = caixaNoPlano(membros[i].pontos, base);
+          direcao[membros[i].id] = dir.clone();
+        }
+        if (membros.length < 2) continue;
+
+        membros.sort(function (a, b) {
+          if (a.baixo !== b.baixo) return a.baixo ? -1 : 1;
+          if (a.chave !== b.chave) return a.chave - b.chave;
+          return a.id - b.id;
+        });
+        var niveis = [];
+        var sobreposto = false;
+        for (i = 0; i < membros.length; i++) {
+          var nivel = 0;
+          for (j = 0; j < i; j++) {
+            if (caixasSobrepostas(membros[j].caixa, membros[i].caixa)) {
+              sobreposto = true;
+              if (niveis[j] + 1 > nivel) nivel = niveis[j] + 1;
+            }
+          }
+          niveis[i] = nivel;
+        }
+        if (!sobreposto) continue;
+        for (i = 0; i < membros.length; i++) {
+          var m2 = membros[i];
+          var pt = (m2.baixo ? -GAP_CLASSES : GAP_CLASSES) + niveis[i] * PASSO_EMPILHAMENTO;
+          deslocamento[m2.id] = pt;
+          var dPlano = Math.abs(m2.p.clone().sub(gp.p).dot(gp.n));
+          var ang = Math.acos(Math.min(1, Math.abs(m2.cos))) * (180 / Math.PI);
+          info.push({
+            id: m2.id,
+            nivel: niveis[i],
+            baixo: m2.baixo,
+            pt: Math.round(pt * 1000) / 1000,
+            plano: Math.round(dPlano * 1000) / 1000,
+            ang: Math.round(ang * 10) / 10
+          });
+        }
+      }
+      estado.empilhamentoInfo = info;
+      return { deslocamento: deslocamento, direcao: direcao };
+    }
+
     function recriarMalhas() {
       var i, j;
       for (i = 0; i < estado.malhas.length; i++) {
@@ -858,6 +1075,16 @@
       };
       estado.caixaMundo = { min: min, max: max };
       estado.dimensao = Math.max(max.x - min.x, max.y - min.y, max.z - min.z, 1);
+
+      // Empilhamento das abas: precisa das matrizes (comparação entre planos
+      // já dobrados) e do centro do modelo (sentido para fora).
+      var emp = prioridadesEmpilhamento(
+        estado.montagem.facesMontadas,
+        mapa,
+        matrizes
+      );
+      var deslocamentoAba = emp.deslocamento;
+      var direcaoAba = emp.direcao;
       // Domínio da UV: lateral inteira da faca (bbox normalizada 0..W,0..H).
       estado.caixaFacaUV = caixaFacaDe(
         estado.res && estado.res.geometria ? estado.res.geometria.caixa : null,
@@ -982,6 +1209,17 @@
         var tri = estado.poligonos[id] || triangular(face);
         if (!tri) continue;
         var matriz = matrizes[id];
+        // Painéis coplanares sobrepostos (abas de fechamento) empatam no
+        // depth test e a arte "pisca"/vaza entre eles. Cada face recebe um
+        // deslocamento em pt ao longo da normal DO GRUPO (sentido para fora,
+        // igual para todos os coplanares), e não ao longo da normal do
+        // triângulo (que muda de sinal conforme o sentido do contorno).
+        // Abas marcadas como "por baixo" descem e as demais sobem, então a
+        // separação não depende de detectar o plano. O passo entre níveis é
+        // maior que o offDecal: o decal da aba de baixo nunca alcança a tampa
+        // da aba de cima. Sólido, decal e borda usam o mesmo deslocamento
+        // para continuarem colados.
+        var zBias = deslocamentoAba[id] || 0; // pt (com sinal)
 
         var tMm = (estado.espessura !== undefined && isFinite(estado.espessura)) ? estado.espessura : 1.5;
         var tPt = F.units && F.units.mmParaPt ? F.units.mmParaPt(tMm) : tMm * 2.834645669291339;
@@ -999,6 +1237,8 @@
         if (normal.lengthSq() < 0.0001) {
           normal.set(0, 0, 1);
         }
+        // Normal canônica do grupo coplanar; fallback para a do triângulo.
+        var nBias = direcaoAba[id] || normal;
 
         var inverter = (estado.ladoExterno && estado.ladoExterno[id] < 0) ? true : false;
         var uv = uvDaFace(tri.pontos, estado.artes.externa);
@@ -1044,6 +1284,7 @@
         var geoExtruded = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geoExtruded.translate(0, 0, -tPt / 2);
         geoExtruded.applyMatrix4(matriz);
+        geoExtruded.translate(nBias.x * zBias, nBias.y * zBias, nBias.z * zBias);
         geoExtruded.translate(-estado.centro.x, -estado.centro.y, -estado.centro.z);
         geoExtruded.computeVertexNormals();
 
@@ -1070,8 +1311,7 @@
         // espelhado (artboard != 0) usa u invertido para alinhar na faca da 0.
         if ((estado.arteDupla || estado.arteUnica) && estado.caixaFacaUV) {
           try {
-            var cf = estado.caixaFacaUV;
-            var offDecal = 0.05;
+            var offDecal = OFF_DECAL;
             var dupla = estado.arteDupla;
             var texExt = null, texInt = null;
             var espExt = false, espInt = false;
@@ -1111,8 +1351,8 @@
               externo: false
             });
             var ladosDecal = [
-              { z: zExt, nome: "externo", tex: texExt, espelhar: !!totalExt, mat: matExt },
-              { z: zInt, nome: "interno", tex: texInt, espelhar: !!totalInt, mat: matInt }
+              { z: zExt, nome: "externo", externo: true, tex: texExt, espelhar: !!totalExt, mat: matExt },
+              { z: zInt, nome: "interno", externo: false, tex: texInt, espelhar: !!totalInt, mat: matInt }
             ];
             for (var d = 0; d < ladosDecal.length; d++) {
               if (!ladosDecal[d].tex) continue;
@@ -1122,15 +1362,14 @@
               if (posD && uvD) {
                 for (var vd = 0; vd < posD.count; vd++) {
                   var pontoD = { x: posD.getX(vd), y: posD.getY(vd) };
-                  var uvv = ladosDecal[d].espelhar
-                    ? uvFacaInversa(pontoD, cf.W, cf.H)
-                    : uvFaca(pontoD, cf.W, cf.H);
+                  var uvv = uvDecal(ladosDecal[d].espelhar, pontoD, ladosDecal[d].externo);
                   uvD.setXY(vd, uvv.u, uvv.v);
                 }
                 uvD.needsUpdate = true;
               }
               geoDecal.translate(0, 0, ladosDecal[d].z);
               geoDecal.applyMatrix4(matriz);
+              geoDecal.translate(nBias.x * zBias, nBias.y * zBias, nBias.z * zBias);
               geoDecal.translate(-estado.centro.x, -estado.centro.y, -estado.centro.z);
               geoDecal.computeVertexNormals();
               var decal = new THREE.Mesh(geoDecal, ladosDecal[d].mat);
@@ -1157,6 +1396,8 @@
             baseContorno[(j + 1) % baseContorno.length].y,
             0
           ).applyMatrix4(matriz);
+          a.x += nBias.x * zBias; a.y += nBias.y * zBias; a.z += nBias.z * zBias;
+          b.x += nBias.x * zBias; b.y += nBias.y * zBias; b.z += nBias.z * zBias;
           verticesBorda.push(
             a.x - estado.centro.x, a.y - estado.centro.y, a.z - estado.centro.z,
             b.x - estado.centro.x, b.y - estado.centro.y, b.z - estado.centro.z
@@ -1197,7 +1438,6 @@
         var tMmF = (estado.espessura !== undefined && isFinite(estado.espessura)) ? estado.espessura : 1.5;
         var tPtF = F.units && F.units.mmParaPt ? F.units.mmParaPt(tMmF) : tMmF * 2.834645669291339;
         var meioTF = tPtF / 2;
-        var cfF = estado.caixaFacaUV;
         var duplaF = estado.arteDupla;
         var temDuplaF = !!(duplaF && (duplaF.ext || duplaF.int));
         for (var hf = 1; hf < estado.montagem.ordem.length; hf++) {
@@ -1256,11 +1496,9 @@
                 posF.push(posV.x - estado.centro.x, posV.y - estado.centro.y, posV.z - estado.centro.z);
                 var uvvF;
                 if (temDuplaF) {
-                  uvvF = espTF && cfF ? uvFacaInversa(pPlanoF, cfF.W, cfF.H) : (cfF ? uvFaca(pPlanoF, cfF.W, cfF.H) : { u: 0, v: 0 });
-                } else if (cfF) {
-                  uvvF = uvFaca(pPlanoF, cfF.W, cfF.H);
+                  uvvF = uvDecal(espTF, pPlanoF, ladoF.externo);
                 } else {
-                  uvvF = { u: 0, v: 0 };
+                  uvvF = uvDecal(false, pPlanoF, ladoF.externo);
                 }
                 uvF.push(uvvF.u, uvvF.v);
               }
@@ -1279,12 +1517,17 @@
             geoF.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(uvF), 2));
             geoF.setIndex(idxF);
             geoF.computeVertexNormals();
-            var matF;
+            var matF = materialFaceLateral;
             if (arteUnicaVisivel()) {
-              if (temDuplaF) matF = ladoF.externo ? materialArteExt : materialArteInt;
-              else matF = materialArteUnica;
-            } else {
-              matF = materialFaceLateral;
+              // Só usa o material de arte no lado que tem textura: com uma
+              // artboard só a interna fica na cor da chapa (sem arte).
+              var temTexLado = temDuplaF
+                ? (ladoF.externo ? !!(duplaF.ext && duplaF.ext.texture) : !!(duplaF.int && duplaF.int.texture))
+                : !!(estado.arteUnica && estado.arteUnica.texture);
+              if (temTexLado) {
+                if (temDuplaF) matF = ladoF.externo ? materialArteExt : materialArteInt;
+                else matF = materialArteUnica;
+              }
             }
             var filete = new THREE.Mesh(geoF, matF);
             filete.userData = { face: passoF.face, pai: passoF.pai, lado: ladoF.externo ? "externo" : "interno", tipo: "filete" };
@@ -1442,6 +1685,46 @@
       var uv = uvFaca(ponto, W, H);
       uv.u = 1 - uv.u;
       return uv;
+    }
+
+    /* Ajusta a UV normalizada para o recorte dentro do canvas POT (padding +
+     * flipY). Sem recorte, devolve a UV intacta. */
+    function uvComRecorte(uv, recorte, dim) {
+      if (V.arteUnica && typeof V.arteUnica.uvComRecorte === "function") {
+        return V.arteUnica.uvComRecorte(uv, recorte, dim);
+      }
+      if (!uv) return { u: 0, v: 0 };
+      if (!recorte || !dim || !(dim.w > 0) || !(dim.h > 0)) return uv;
+      var dw = isFinite(recorte.dw) ? recorte.dw : recorte.sw;
+      var dh = isFinite(recorte.dh) ? recorte.dh : recorte.sh;
+      if (!(dw > 0) || !(dh > 0)) return uv;
+      var ox = recorte.ox || 0;
+      var oy = recorte.oy || 0;
+      return {
+        u: (ox + uv.u * dw) / dim.w,
+        v: 1 - (oy + (1 - uv.v) * dh) / dim.h
+      };
+    }
+
+    /* Recorte/ dimensões da textura de um lado (externo/interno). */
+    function recorteDoLado(externo) {
+      var dupla = estado.arteDupla;
+      if (dupla && (dupla.ext || dupla.int)) {
+        var obj = externo ? dupla.ext : dupla.int;
+        return obj ? { recorte: obj.recorte, dim: obj.dim } : null;
+      }
+      var unica = estado.arteUnica;
+      if (unica) return { recorte: unica.recorte, dim: unica.dim };
+      return null;
+    }
+
+    /* UV final do decal/filete: normalizada -> espelho opcional -> recorte. */
+    function uvDecal(espelhar, ponto, externo) {
+      var cf = estado.caixaFacaUV;
+      if (!cf || !(cf.W > 0) || !(cf.H > 0)) return { u: 0, v: 0 };
+      var uv = espelhar ? uvFacaInversa(ponto, cf.W, cf.H) : uvFaca(ponto, cf.W, cf.H);
+      var info = recorteDoLado(externo);
+      return uvComRecorte(uv, info && info.recorte, info && info.dim);
     }
 
     /* Arte única visível agora? */
@@ -2199,15 +2482,22 @@
     function definirArteDupla(nova, opcoes) {
       if (nova !== undefined) {
         var ant = estado.arteDupla;
-        function descartar(obj) {
-          if (obj && obj.texture) { try { obj.texture.dispose(); } catch (eD) {} }
-        }
         var nExt = nova ? (nova.ext || null) : null;
         var nInt = nova ? (nova.int || null) : null;
         if (ant) {
-          // Não descarta textura que foi reutilizada no novo objeto.
-          if (!(nExt && ant.ext && nExt.texture === ant.ext.texture)) descartar(ant.ext);
-          if (!(nInt && ant.int && nInt.texture === ant.int.texture)) descartar(ant.int);
+          // Só descarta texturas que realmente saíram de uso: a mesma textura
+          // pode trocar de lado (inverter arte externa/interna) ou ser
+          // compartilhada entre os dois lados.
+          var emUso = [];
+          if (nExt && nExt.texture) emUso.push(nExt.texture);
+          if (nInt && nInt.texture) emUso.push(nInt.texture);
+          function descartarSeLivre(obj) {
+            if (obj && obj.texture && emUso.indexOf(obj.texture) < 0) {
+              try { obj.texture.dispose(); } catch (eD) {}
+            }
+          }
+          descartarSeLivre(ant.ext);
+          descartarSeLivre(ant.int);
         }
         estado.arteDupla = nova || null;
         var texExt = nExt && nExt.texture ? nExt.texture : null;
@@ -2344,6 +2634,24 @@
       return { ok: true, raiz: estado.montagem.raiz, info: estado.baseInfo };
     }
 
+    /* Abas que ficam por baixo (ids). As não marcadas ficam por cima. */
+    function definirAbasPorBaixo(ids) {
+      var lista = [];
+      if (ids && ids.length) {
+        for (var i = 0; i < ids.length; i++) {
+          var n = Number(ids[i]);
+          if (isFinite(n) && lista.indexOf(n) < 0) lista.push(n);
+        }
+      }
+      estado.abasPorBaixo = lista;
+      if (estado.res && estado.montagem) {
+        recriarMalhas();
+        renderizar();
+        avisar();
+      }
+      return { ok: true, abas: lista.slice() };
+    }
+
     function definirBaseAutomatica() {
       if (!estado.res || !estado.montagem) return { ok: false, motivo: "Nenhuma faca montada." };
       montarArvore(estado.res, null);
@@ -2436,6 +2744,13 @@
       desenhar: desenhar,
       definirBase: definirBase,
       definirBaseAutomatica: definirBaseAutomatica,
+      definirAbasPorBaixo: definirAbasPorBaixo,
+      abasPorBaixoAtuais: function () {
+        return (estado.abasPorBaixo || []).slice();
+      },
+      empilhamento: function () {
+        return (estado.empilhamentoInfo || []).slice();
+      },
       base: function () {
         return estado.baseInfo || infoBase();
       },

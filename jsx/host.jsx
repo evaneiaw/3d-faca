@@ -16,10 +16,13 @@ function arquivoFerramenta(raiz) {
     var base = normalizarRaiz(raiz);
     if (!base) {
         try {
-            base = normalizarRaiz(new File($.fileName).parent.parent.fsName);
+            // Corrigido: usa o diretório do arquivo HTML do painel
+            // $.fileName no painel CEP aponta para o .html, então o parent é o diretório da extensão
+            base = normalizarRaiz(new File($.fileName).parent.fsName);
         } catch (e) {}
     }
     if (!base) return null;
+    // Arquivo JSX está na subpasta jsx/ do diretório da extensão
     return new File(base + "/jsx/faca3d.jsx");
 }
 

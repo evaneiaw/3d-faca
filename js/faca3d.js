@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  var VERSAO = "0.8.5-papelao-ondulado-20261109";
+  var VERSAO = "0.8.9-bias-normal-20261112";
 
   /* Costura de micro-falhas do desenho (picotes nas bases das abas): a borda
    * de um painel fica com um vão pequeno e o painel deixa de ser face. Até
@@ -48,6 +48,10 @@
   var csInterface = null;
   var estado = {
     ocupado: false,
+    /* Botão liga/desliga do plugin: desligado = nenhuma consulta ao
+     * Illustrator (poll parado, leitura e arte bloqueadas). Persiste em
+     * localStorage para o painel continuar desligado após reabrir. */
+    pluginLigado: true,
     res: null,
     viewer3d: null,
     animacao: null,
@@ -66,6 +70,10 @@
     arteUnica: null,
     arteDupla: null,
     arteUnicaInfo: null,
+    /* Com uma única artboard, a arte vai só para a face externa; o checkbox
+     * "Inverter p/ interna" move a mesma arte (espelhada) para o verso. */
+    arteNaInterna: false,
+    fonteArte: null,
     assinaturaArte: null,
     artePollTimer: null,
     arteReloadTimer: null,
@@ -82,8 +90,102 @@
     assinaturaGeo: "",
     modoBase: false,
     baseCandidata: null,
+    /* Abas que ficam POR BAIXO no empilhamento, escolhidas no diagnóstico
+     * como a base fixa. abasEdicao é o conjunto em edição; abasPorBaixo é o
+     * aplicado. Toda aba NÃO marcada fica por cima. */
+    modoAbas: false,
+    abasPorBaixo: [],
+    abasEdicao: [],
+    abaCandidata: null,
     dobrasSalvas: null
   };
+
+  /* ---- Liga/desliga do plugin ------------------------------------------ */
+  var POLL_DOC_MS = 3000;
+  var PLUGIN_KEY = "faca3d.pluginLigado";
+  var pollTimer = null;
+
+  function iniciarPoll() {
+    pararPoll();
+    try { pollTimer = setInterval(verificarDocumento, POLL_DOC_MS); } catch (e) { pollTimer = null; }
+  }
+
+  function pararPoll() {
+    if (pollTimer) {
+      try { clearInterval(pollTimer); } catch (e) {}
+      pollTimer = null;
+    }
+  }
+
+  function lerPluginSalvo() {
+    try {
+      var v = window.localStorage.getItem(PLUGIN_KEY);
+      return v === null || v === undefined ? null : v === "1";
+    } catch (e) { return null; }
+  }
+
+  function salvarPluginSalvo(ligado) {
+    try { window.localStorage.setItem(PLUGIN_KEY, ligado ? "1" : "0"); } catch (e) {}
+  }
+
+  function atualizarBotaoPower() {
+    var btn = el("faca3dBtnPower");
+    var txt = el("faca3dBtnPowerTexto");
+    var app = el("faca3dApp");
+    if (btn) {
+      btn.classList.toggle("is-on", estado.pluginLigado);
+      btn.classList.toggle("is-off", !estado.pluginLigado);
+      btn.setAttribute("aria-checked", estado.pluginLigado ? "true" : "false");
+      btn.title = estado.pluginLigado
+        ? "Desligar: para de consultar o Illustrator e congela o painel"
+        : "Ligar: volta a ler o documento a cada 3s";
+    }
+    if (txt) txt.textContent = estado.pluginLigado ? "Ligado" : "Desligado";
+    if (app) app.classList.toggle("faca3d-off", !estado.pluginLigado);
+  }
+
+  function mostrarPausado() {
+    destruirViewer3D();
+    var host = el("faca3dViewer3D");
+    if (!host) return;
+    limpar(host);
+    var caixa = criar("div", "faca3d-empty faca3d-empty-pause");
+    caixa.appendChild(criar("div", "faca3d-empty-title", "Plugin desligado"));
+    caixa.appendChild(criar("div", "faca3d-empty-text",
+      "O 3D Faca parou de consultar o Illustrator. Clique no botão de energia no topo para religar."));
+    host.appendChild(caixa);
+    setInfo3D("Plugin desligado.");
+    var nota = el("faca3dNota3D");
+    if (nota) nota.textContent = "";
+  }
+
+  function definirPluginLigado(ligado) {
+    estado.pluginLigado = !!ligado;
+    salvarPluginSalvo(estado.pluginLigado);
+    if (!estado.pluginLigado) {
+      pararPoll();
+      if (estado.arteReloadTimer) {
+        try { clearTimeout(estado.arteReloadTimer); } catch (e) {}
+        estado.arteReloadTimer = null;
+      }
+      atualizarBotaoPower();
+      // Se não há 3D montado, troca a tela vazia pelo aviso de desligado.
+      var host = el("faca3dViewer3D");
+      if (!host || !host.querySelector(".faca3d-canvas3d")) mostrarPausado();
+      setStatus("Plugin desligado — o Illustrator não será consultado até religar.");
+      registrarLog("faca3d", "plugin desligado pelo usuário");
+      return;
+    }
+    // Religando: força releitura fresca (o documento pode ter mudado no
+    // intervalo em que o plugin esteve desligado).
+    estado.docNomeAtual = null;
+    estado.assinaturaArte = null;
+    atualizarBotaoPower();
+    iniciarPoll();
+    setStatus("Plugin ligado. Releando o documento...");
+    registrarLog("faca3d", "plugin ligado pelo usuário");
+    verificarDocumento();
+  }
 
   function el(id) {
     return document.getElementById(id);
@@ -396,6 +498,33 @@
     var chk = el("faca3dMostrarArte");
     var tem = !!(dados && ((dados.ext && dados.ext.texture) || (dados.int && dados.int.texture)));
     if (chk) chk.disabled = !tem;
+    var chkInt = el("faca3dArteInterna");
+    if (chkInt) chkInt.disabled = !(estado.fonteArte && estado.fonteArte.umaArtboard);
+  }
+
+  /* Aplica a fonte de arte respeitando o checkbox "Inverter p/ interna".
+   * Com 2 artboards, externa e interna são artboards diferentes e ficam nos
+   * dois lados. Com 1 artboard, a arte é da face externa; marcando o checkbox
+   * ela vai para o verso (espelhada), como a 2ª arte seria. */
+  function aplicarFonteArte(fonte) {
+    if (!fonte) {
+      aplicarArteDupla(null);
+      return;
+    }
+    var ext = fonte.ext;
+    var int = fonte.int;
+    if (fonte.umaArtboard && ext && !int) {
+      if (estado.arteNaInterna) {
+        int = ext;
+        int.espelhar = true;
+        ext = null;
+      } else {
+        // Desmarca o espelho herdado ao voltar para a face externa.
+        ext.espelhar = false;
+        int = null;
+      }
+    }
+    aplicarArteDupla({ ext: ext, int: int, avisos: fonte.avisos });
   }
 
   function atualizarNotaArteDupla() {
@@ -411,6 +540,11 @@
       if (info.int && info.int.texture) partes.push("interna \"" + (info.int.nome || "") + "\"");
       nota.textContent = "Arte: " + partes.join(" + ") +
         (w > 0 && h > 0 ? " · " + w.toFixed(1) + "×" + h.toFixed(1) + " mm (lateral inteira)" : "");
+      if (estado.fonteArte && estado.fonteArte.umaArtboard) {
+        nota.textContent += estado.arteNaInterna
+          ? " · na face interna (verso)"
+          : " · só na face externa";
+      }
       if (info.avisos && info.avisos.length) nota.textContent += " · " + info.avisos.join(" | ");
     } else if (info && info.semArte) {
       nota.textContent = "Sem camada ARTE: exibindo somente a estrutura da faca.";
@@ -423,6 +557,7 @@
   }
 
   function carregarArteDupla() {
+    if (!estado.pluginLigado) return Promise.resolve(null);
     if (!estado.viewer3d) return Promise.resolve(null);
     if (estado.carregandoArtes) return estado.carregandoArtes;
     var AU = F.view.arteUnica || F.view.arteDupla;
@@ -469,7 +604,9 @@
                   nome: ab.nome,
                   espelhar: ab.indice !== 0,
                   largura: tex.largura,
-                  altura: tex.altura
+                  altura: tex.altura,
+                  recorte: tex.recorte,
+                  dim: { w: tex.largura, h: tex.altura }
                 };
               }).catch(function () { return null; });
             }
@@ -479,14 +616,19 @@
             ]).then(function (pair) {
               var ext = pair[0], int = pair[1];
               if (!ext && !int) {
+                estado.fonteArte = null;
                 aplicarArteDupla({ semArte: true, avisos: dec.avisos });
                 return null;
               }
-              // 1 artboard só: verso herda a mesma arte (DoubleSide físico).
-              if (dd.artboards.length === 1 && ext && !int) {
-                int = ext;
-              }
-              aplicarArteDupla({ ext: ext, int: int, avisos: dec.avisos });
+              // Guarda a fonte para o checkbox "Inverter p/ interna" reaplicar
+              // sem precisar reexportar o PNG.
+              estado.fonteArte = {
+                ext: ext,
+                int: int,
+                avisos: dec.avisos,
+                umaArtboard: dd.artboards.length === 1
+              };
+              aplicarFonteArte(estado.fonteArte);
               registrarLog("faca3d", "arteDupla aplicada ext=" + (!!ext) + " int=" + (!!int));
               return pair;
             });
@@ -628,7 +770,9 @@
               W: wMm,
               H: hMm,
               largura: tex.largura,
-              altura: tex.altura
+              altura: tex.altura,
+              recorte: tex.recorte,
+              dim: { w: tex.largura, h: tex.altura }
             });
             registrarLog("faca3d", "arteUnica aplicada " + tex.largura + "x" + tex.altura);
             return tex;
@@ -783,6 +927,11 @@
   }
 
   function aoSelecionarFace(face) {
+    if (estado.modoAbas) {
+      // Em modo "ordem das abas", o clique no 3D empilha/desempilha a aba.
+      if (face !== null && face !== undefined) escolherAba(face, "3d");
+      return;
+    }
     if (estado.modoBase) {
       // Em modo de escolha da base, o clique no 3D define o painel candidato.
       if (face !== null && face !== undefined) escolherPainelBase(face, "3d");
@@ -892,6 +1041,9 @@
         aoSelecionar: mostrarDetalheVinco,
         aoSelecionarFace: function (faceId) {
           escolherPainelBase(faceId, "diagnostico");
+        },
+        aoSelecionarAba: function (faceId) {
+          escolherAba(faceId, "diagnostico");
         }
       });
     }
@@ -901,9 +1053,13 @@
     estado.diag.desenhar(estado.res, m);
     estado.diag.definirModoBase(estado.modoBase);
     estado.diag.definirCandidatoBase(estado.modoBase ? estado.baseCandidata : null);
+    estado.diag.definirModoAbas(estado.modoAbas);
+    estado.diag.definirAbasPorBaixo(estado.modoAbas ? estado.abasEdicao : estado.abasPorBaixo);
+    estado.diag.definirCandidatoAba(estado.modoAbas ? estado.abaCandidata : null);
     el("faca3dDiagResumo").textContent = resumoVincos(m);
     mostrarDetalheVinco(null);
     atualizarBaseUI();
+    atualizarAbasUI();
     F.diagAtual = estado.diag;
     requestAnimationFrame(function () {
       if (estado.diag && estado.diagAberto && estado.res) {
@@ -1121,6 +1277,15 @@
       esconderBarraBase();
       setStatus("A geometria da faca mudou: base fixa anterior descartada (voltou à automática).", "err");
     }
+    if (assinatura !== estado.assinaturaGeo && estado.abasPorBaixo.length) {
+      estado.abasPorBaixo = [];
+      estado.abasEdicao = [];
+      estado.abaCandidata = null;
+      estado.modoAbas = false;
+      esconderBarraAbas();
+      if (estado.diag) estado.diag.definirModoAbas(false);
+      setStatus("A geometria da faca mudou: abas de baixo anteriores descartadas (voltou à automática).", "err");
+    }
     estado.assinaturaGeo = assinatura;
     if (estado.modoBase) {
       estado.modoBase = false;
@@ -1128,7 +1293,21 @@
       esconderBarraBase();
       if (estado.diag) estado.diag.definirModoBase(false);
     }
+    if (estado.modoAbas) {
+      estado.modoAbas = false;
+      estado.abasEdicao = [];
+      estado.abaCandidata = null;
+      esconderBarraAbas();
+      if (estado.diag) estado.diag.definirModoAbas(false);
+    }
     viewer.desenhar(res, { raiz: estado.baseFixa });
+    // Viewer novo (recriado) nasce com o empilhamento automático: reaplica
+    // as abas escolhidas como "por baixo".
+    if (estado.abasPorBaixo.length && viewer.definirAbasPorBaixo && viewer.abasPorBaixoAtuais) {
+      if (viewer.abasPorBaixoAtuais().join(",") !== estado.abasPorBaixo.join(",")) {
+        viewer.definirAbasPorBaixo(estado.abasPorBaixo);
+      }
+    }
     F.viewer3dAtual = viewer;
     var m = viewer.montagem();
     var caixaPt = res.geometria && res.geometria.caixaPt;
@@ -1155,6 +1334,7 @@
       estado.diag.desenhar(res, m);
       el("faca3dDiagResumo").textContent = resumoVincos(m);
       mostrarDetalheVinco(null);
+      atualizarAbasUI();
     }
 
     carregarArtes();
@@ -1287,6 +1467,10 @@
       setStatus("Leia a faca antes de escolher a base fixa.", "err");
       return;
     }
+    if (estado.modoAbas) {
+      setStatus("Termine a ordem das abas antes de escolher a base fixa.", "err");
+      return;
+    }
     if (estado.modoBase) return;
     estado.modoBase = true;
     estado.baseCandidata = null;
@@ -1389,6 +1573,159 @@
     montarNota(estado.viewer3d.montagem(), faces);
     setStatus("Base automática: Painel " + r.raiz + ".", "ok");
     registrarLog("faca3d", "base fixa = automatica (painel " + r.raiz + ")");
+  }
+
+  /* --------------------- abas por baixo (empilhamento das abas) */
+
+  function mostrarBarraAbas(texto, comConfirmar) {
+    var bar = el("faca3dAbasBar");
+    var txt = el("faca3dAbasBarText");
+    var ok = el("faca3dAbasBarOk");
+    if (!bar || !txt) return;
+    txt.textContent = texto;
+    bar.hidden = false;
+    if (ok) ok.disabled = !comConfirmar;
+  }
+
+  function esconderBarraAbas() {
+    var bar = el("faca3dAbasBar");
+    if (bar) bar.hidden = true;
+  }
+
+  function textoAbas() {
+    var lista = estado.abasEdicao;
+    if (!lista.length) return "Nenhuma aba por baixo: todas fecham por cima.";
+    var partes = [];
+    for (var i = 0; i < lista.length; i++) partes.push("P" + lista[i]);
+    return "Por baixo: " + partes.join(", ") + " (" + partes.length + ").";
+  }
+
+  function atualizarAbasUI() {
+    var auto = el("faca3dBtnAbasAuto");
+    if (auto) auto.disabled = !estado.abasPorBaixo.length;
+    if (estado.diag) {
+      estado.diag.definirAbasPorBaixo(estado.modoAbas ? estado.abasEdicao : estado.abasPorBaixo);
+      estado.diag.definirCandidatoAba(estado.modoAbas ? estado.abaCandidata : null);
+    }
+  }
+
+  function entrarModoAbas() {
+    if (!estado.res || !estado.viewer3d) {
+      setStatus("Leia a faca antes de escolher as abas de baixo.", "err");
+      return;
+    }
+    if (estado.modoBase) {
+      setStatus("Termine a escolha da base fixa antes de definir as abas.", "err");
+      return;
+    }
+    if (estado.modoAbas) return;
+    estado.modoAbas = true;
+    estado.abasEdicao = estado.abasPorBaixo.slice();
+    estado.abaCandidata = null;
+    if (estado.diag) {
+      estado.diag.definirModoAbas(true);
+      estado.diag.definirAbasPorBaixo(estado.abasEdicao);
+      estado.diag.definirCandidatoAba(null);
+    }
+    mostrarBarraAbas(
+      "Clique SOMENTE nas abas que ficam por baixo. As não marcadas fecham por cima. Depois confirme.",
+      true
+    );
+    setStatus("Abas por baixo: clique só nas que ficam embaixo.", "ok");
+  }
+
+  function escolherAba(faceId, origem) {
+    if (!estado.modoAbas) return;
+    var id = faceId === null || faceId === undefined ? null : Number(faceId);
+    if (id === null || !isFinite(id)) return;
+    if (facesMontadasAtuais().indexOf(id) < 0) {
+      setStatus("O painel " + id + " não faz parte da montagem.", "err");
+      return;
+    }
+    var pos = estado.abasEdicao.indexOf(id);
+    if (pos >= 0) estado.abasEdicao.splice(pos, 1);
+    else estado.abasEdicao.push(id);
+    estado.abaCandidata = id;
+    if (estado.diag) {
+      estado.diag.definirAbasPorBaixo(estado.abasEdicao);
+      estado.diag.definirCandidatoAba(id);
+    }
+    // Não mexe na seleção do 3D: o notificarSelecao voltaria para cá e
+    // alternaria a aba de novo (recursão). O destaque fica no diagnóstico.
+    mostrarBarraAbas(textoAbas() + " Clique em outra aba ou confirme.", true);
+    setStatus(
+      pos >= 0
+        ? "Aba " + id + " desmarcada: fecha por cima."
+        : "Aba " + id + " marcada como POR BAIXO.",
+      "ok"
+    );
+  }
+
+  function confirmarAbas() {
+    if (!estado.modoAbas) return;
+    estado.abasPorBaixo = estado.abasEdicao.slice();
+    if (estado.viewer3d && estado.viewer3d.definirAbasPorBaixo) {
+      estado.viewer3d.definirAbasPorBaixo(estado.abasPorBaixo);
+    }
+    estado.modoAbas = false;
+    estado.abasEdicao = [];
+    estado.abaCandidata = null;
+    esconderBarraAbas();
+    if (estado.diag) {
+      estado.diag.definirModoAbas(false);
+      estado.diag.definirCandidatoAba(null);
+    }
+    atualizarAbasUI();
+    setStatus(
+      estado.abasPorBaixo.length
+        ? "Abas por baixo: " + estado.abasPorBaixo.join(", ") + ". As demais fecham por cima."
+        : "Nenhuma aba por baixo: vale a regra automática (mais larga por cima).",
+      "ok"
+    );
+    registrarLog("faca3d", "abas por baixo = " + (estado.abasPorBaixo.join(",") || "automatico"));
+    registrarLog("faca3d", "empilhamento: " + resumoEmpilhamento());
+  }
+
+  function cancelarAbas() {
+    estado.modoAbas = false;
+    estado.abasEdicao = [];
+    estado.abaCandidata = null;
+    esconderBarraAbas();
+    if (estado.diag) {
+      estado.diag.definirModoAbas(false);
+      estado.diag.definirCandidatoAba(null);
+    }
+    atualizarAbasUI();
+    setStatus("Escolha das abas de baixo cancelada.", "ok");
+  }
+
+  /* Resumo do deslocamento aplicado por face (vai para o log, permite
+   * conferir o empilhamento sem depender da tela). */
+  function resumoEmpilhamento() {
+    var emp = estado.viewer3d && estado.viewer3d.empilhamento ? estado.viewer3d.empilhamento() : [];
+    if (!emp.length) return "nenhuma face sobreposta (sem deslocamento)";
+    var partes = [];
+    for (var i = 0; i < emp.length; i++) {
+      var e = emp[i];
+      partes.push(
+        "P" + e.id + " " + (e.baixo ? "baixo" : "cima") +
+        " n" + e.nivel + " " + e.pt + "pt" +
+        " plano=" + e.plano + "pt ang=" + e.ang + "°"
+      );
+    }
+    return partes.join(" | ");
+  }
+
+  function abasAutomaticas() {    estado.abasPorBaixo = [];
+    estado.abasEdicao = [];
+    estado.abaCandidata = null;
+    if (estado.viewer3d && estado.viewer3d.definirAbasPorBaixo) {
+      estado.viewer3d.definirAbasPorBaixo([]);
+    }
+    if (estado.diag) estado.diag.definirAbasPorBaixo([]);
+    atualizarAbasUI();
+    setStatus("Automático: entre abas iguais, a mais larga fica por cima.", "ok");
+    registrarLog("faca3d", "abas por baixo = automatico");
   }
 
   /* ------------------------------------------- ângulos salvos (por faca) */
@@ -1549,6 +1886,7 @@
   }
 
   function executarLeitura() {
+    if (!estado.pluginLigado) return;
     if (estado.ocupado) return;
     if (Date.now() - (estado.ultimaLeitura || 0) < 3000) return;
     estado.ocupado = true;
@@ -1631,6 +1969,8 @@
   }
 
   function verificarDocumento() {
+    if (!estado.pluginLigado) return;
+    if (document.hidden) return;
     if (estado.ocupado) return;
     sendToHost("chamar", ["faca3dDocAtivo", []]).then(function (r) {
       var nome = String(r === null || r === undefined ? "" : r);
@@ -1657,6 +1997,7 @@
 
   // Poll leve da ARTE (sem exportar PNG): só re-exporta se a assinatura mudar.
   function verificarArte() {
+    if (!estado.pluginLigado) return;
     if (!estado.viewer3d || !estado.res || document.hidden || estado.carregandoArtes || estado.ocupado) return;
     chamarArte("faca3dArteAssinatura", []).then(function (resposta) {
       if (!estado.viewer3d || document.hidden || estado.carregandoArtes || estado.ocupado) return;
@@ -1710,6 +2051,12 @@
   }
 
   function ligarEventos() {
+    var btnPower = el("faca3dBtnPower");
+    if (btnPower) {
+      btnPower.addEventListener("click", function () {
+        definirPluginLigado(!estado.pluginLigado);
+      });
+    }
     var btnFechar = el("faca3dBtnFechar");
     if (btnFechar) btnFechar.addEventListener("click", fecharFerramenta);
     var home = el("faca3dBtnHome");
@@ -1811,6 +2158,65 @@
         carregarArtes();
       });
     }
+    
+    // Botão Render Top - HD com efeitos PBR, Bloom, DOF
+    var btnRenderTop = el("faca3dBtnRenderTop");
+    if (btnRenderTop) {
+      btnRenderTop.addEventListener("click", function () {
+        try {
+          // Verifica se há faca carregada (viewer3d inicializado)
+          if (!estado.viewer3d) {
+            // Nenhuma faca carregada - pedir para abrir ou carregar primeiro
+            registrarLog("faca3d", "Render Top: Nenhuma faca carregada - solicite leitura da faca primeiro");
+            el("faca3dStatusText").textContent = "Nenhuma faca carregada. Lere uma faca primeiro (botão 'Ler novamente').";
+            return;
+          }
+          
+          // Chama render top avançado
+          var resultado = window.faca3dRenderTop({
+            angulo: estado.angulo,
+            mostrarArte: estado.mostrarArte,
+            espessura: parseFloat(el("faca3dEspessura").value) || 1.5,
+            resolucao: 2, // 2x resolução HD
+            qualidadeBloom: 0.5
+          });
+          
+          // Exibe resultado
+          if (resultado && resultado.dataURL) {
+            // Cria elemento para exibir/download o render
+            registrarLog("faca3d", "Render Top gerado: " + resultado.dataURL.substring(0, 50) + "...");
+            
+            // Mostra mensagem no painel
+            el("faca3dStatusText").textContent = "Render Top HD gerado! Clique para salvar.";
+            
+            // Cria link de download oculto
+            var link = document.createElement("a");
+            link.href = resultado.dataURL;
+            link.download = "faca3d-render-top-" + new Date().getHours() + "h" + new Date().getMinutes() + "m.png";
+            link.style.display = "none";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            // Resultado sem dataURL - mostrar erro
+            registrarLog("faca3d", "Render Top: Sem dataURL no resultado");
+            el("faca3dStatusText").textContent = "Render concluído, mas não foi possível gerar o arquivo.";
+          }
+        } catch(e) {
+          registrarLog("faca3d", "Render Top error: " + e.message);
+          el("faca3dStatusText").textContent = "Erro no render top: " + e.message;
+        }
+      });
+    }
+    var chkArteInterna = el("faca3dArteInterna");
+    if (chkArteInterna) {
+      chkArteInterna.addEventListener("change", function () {
+        estado.arteNaInterna = this.checked;
+        // Reaplica a fonte já carregada (sem reexportar o PNG).
+        aplicarFonteArte(estado.fonteArte);
+        registrarLog("faca3d", "arte na face interna = " + estado.arteNaInterna);
+      });
+    }
     document.addEventListener("keydown", function (e) {
       estado.teclasMod.ctrl = e.ctrlKey || e.metaKey;
       estado.teclasMod.shift = e.shiftKey;
@@ -1842,6 +2248,15 @@
     if (barraOk) barraOk.addEventListener("click", confirmarBase);
     var barraCancelar = el("faca3dBaseBarCancel");
     if (barraCancelar) barraCancelar.addEventListener("click", cancelarBase);
+
+    var btnAbasDefinir = el("faca3dBtnAbasBaixo");
+    if (btnAbasDefinir) btnAbasDefinir.addEventListener("click", entrarModoAbas);
+    var btnAbasAuto = el("faca3dBtnAbasAuto");
+    if (btnAbasAuto) btnAbasAuto.addEventListener("click", abasAutomaticas);
+    var barraAbasOk = el("faca3dAbasBarOk");
+    if (barraAbasOk) barraAbasOk.addEventListener("click", confirmarAbas);
+    var barraAbasCancel = el("faca3dAbasBarCancel");
+    if (barraAbasCancel) barraAbasCancel.addEventListener("click", cancelarAbas);
 
     var btnSalvarDobra = el("faca3dBtnSalvarDobra");
     if (btnSalvarDobra) btnSalvarDobra.addEventListener("click", salvarDobras);
@@ -1875,11 +2290,27 @@
 
     ligarEventos();
     // Rele o documento ativo quando ele mudar no Illustrator.
-    try { window.addEventListener("focus", verificarDocumento); } catch (e) {}
-    try { document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) verificarDocumento();
+    try { window.addEventListener("focus", function () {
+      if (estado.pluginLigado) verificarDocumento();
     }); } catch (e) {}
-    try { setInterval(verificarDocumento, 3000); } catch (e) {}
+    try { document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && estado.pluginLigado) verificarDocumento();
+    }); } catch (e) {}
+    // Botão liga/desliga: se o usuário desligou o plugin, o painel abre
+    // congelado e não inicia o poll nem a leitura automática.
+    var salvoPlugin = lerPluginSalvo();
+    if (salvoPlugin === false) {
+      estado.pluginLigado = false;
+      estado.docNomeAtual = null;
+      atualizarBotaoPower();
+      pararPoll();
+      mostrarPausado();
+      setStatus("Plugin desligado — clique no botão de energia no topo para religar.");
+    } else {
+      estado.pluginLigado = true;
+      atualizarBotaoPower();
+      iniciarPoll();
+    }
     // Painel redimensionavel por alça própria (independente do host).
     try {
       var grip = el("faca3dResizeGrip");
@@ -1969,7 +2400,10 @@
       });
     }
 
-    sendToHost("carregarFerramenta", ["faca3d", extRoot]).then(iniciarLeitura, iniciarLeitura);
+    // Desligado: não carrega nada nem dispara a leitura automática.
+    if (estado.pluginLigado) {
+      sendToHost("carregarFerramenta", ["faca3d", extRoot]).then(iniciarLeitura, iniciarLeitura);
+    }
   }
 
   carregarLoader(function (erroLoader) {

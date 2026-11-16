@@ -95,6 +95,47 @@ ok("uv inversa canto 0,1", quase(uv.u, 0) && quase(uv.v, 1), JSON.stringify(uv))
 uv = AU.uvFacaInversa({ x: 50, y: 25 }, 200, 100);
 ok("uv inversa quarto 0.75,0.25", quase(uv.u, 0.75) && quase(uv.v, 0.25), JSON.stringify(uv));
 
+// uvComRecorte: sem recorte, UV intacta
+uv = AU.uvComRecorte({ u: 0.3, v: 0.7 }, null, null);
+ok("uvComRecorte sem recorte", quase(uv.u, 0.3) && quase(uv.v, 0.7), JSON.stringify(uv));
+uv = AU.uvComRecorte({ u: 0.3, v: 0.7 }, { dw: 100, dh: 100, ox: 0, oy: 0 }, null);
+ok("uvComRecorte sem dim", quase(uv.u, 0.3) && quase(uv.v, 0.7), JSON.stringify(uv));
+
+// uvComRecorte: recorte sem padding = identidade (v=0 na base)
+uv = AU.uvComRecorte({ u: 0, v: 0 }, { dw: 1000, dh: 500, ox: 0, oy: 0 }, { w: 1000, h: 500 });
+ok("uvComRecorte Identidade 0,0", quase(uv.u, 0) && quase(uv.v, 0), JSON.stringify(uv));
+uv = AU.uvComRecorte({ u: 1, v: 1 }, { dw: 1000, dh: 500, ox: 0, oy: 0 }, { w: 1000, h: 500 });
+ok("uvComRecorte Identidade 1,1", quase(uv.u, 1) && quase(uv.v, 1), JSON.stringify(uv));
+
+// uvComRecorte: padding central (canvas POT quadrado) — a arte não pode
+// encolher: os extremos da faca caem nas bordas do recorte, não do canvas.
+uv = AU.uvComRecorte({ u: 0, v: 0 }, { dw: 3686, dh: 1843, ox: 205, oy: 102.5 }, { w: 4096, h: 2048 });
+ok("uvComRecorte padding base-esquerda", quase(uv.u, 205 / 4096) && quase(uv.v, 1 - (102.5 + 1843) / 2048), JSON.stringify(uv));
+uv = AU.uvComRecorte({ u: 1, v: 1 }, { dw: 3686, dh: 1843, ox: 205, oy: 102.5 }, { w: 4096, h: 2048 });
+ok("uvComRecorte padding topo-direita", quase(uv.u, (205 + 3686) / 4096) && quase(uv.v, 1 - 102.5 / 2048), JSON.stringify(uv));
+uv = AU.uvComRecorte({ u: 0.5, v: 0.5 }, { dw: 3686, dh: 1843, ox: 205, oy: 102.5 }, { w: 4096, h: 2048 });
+ok("uvComRecorte padding centro", quase(uv.u, 0.5) && quase(uv.v, 0.5), JSON.stringify(uv));
+
+// Cadeia completa: recorteParaFaca -> tamanhoPot -> uvComRecorte.
+// Artboard 200x100 mm, faca 180x90 mm em (10,5), PNG 4096x2048 px.
+// Os cantos da faca devem cair nos cantos do recorte (não do canvas).
+const recCadeia = AU.recorteParaFaca(4096, 2048,
+  { left: 0, top: 100, right: 200, bottom: 0 },
+  { left: 10, top: 95, right: 190, bottom: 5 });
+ok("cadeia recorte tem tamanho", recCadeia && recCadeia.sw > 3600 && recCadeia.sh > 1800,
+  JSON.stringify(recCadeia));
+const tamCadeia = AU.tamanhoPot(recCadeia, {});
+ok("cadeia canvas POT", (tamCadeia.w & (tamCadeia.w - 1)) === 0 && (tamCadeia.h & (tamCadeia.h - 1)) === 0,
+  JSON.stringify(tamCadeia));
+const dimCadeia = { w: tamCadeia.w, h: tamCadeia.h };
+const recorteCadeia = { dw: tamCadeia.dw, dh: tamCadeia.dh, ox: tamCadeia.ox, oy: tamCadeia.oy };
+uv = AU.uvComRecorte({ u: 0, v: 0 }, recorteCadeia, dimCadeia);
+ok("cadeia base-esquerda no recorte", quase(uv.u, tamCadeia.ox / tamCadeia.w) &&
+  quase(uv.v, 1 - (tamCadeia.oy + tamCadeia.dh) / tamCadeia.h), JSON.stringify(uv));
+uv = AU.uvComRecorte({ u: 1, v: 1 }, recorteCadeia, dimCadeia);
+ok("cadeia topo-direita no recorte", quase(uv.u, (tamCadeia.ox + tamCadeia.dw) / tamCadeia.w) &&
+  quase(uv.v, 1 - tamCadeia.oy / tamCadeia.h), JSON.stringify(uv));
+
 // decidirDupla por nome
 function ab(nome) { return { indice: 0, nome: nome, hasArte: true, rect: null }; }
 let d = AU.decidirDupla([ab("externo"), ab("interno")]);
